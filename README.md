@@ -26,6 +26,7 @@ Este proyecto sigue el enfoque Trunk Based Development con las siguientes conven
 - Usar mensajes descriptivos
 - Formato recomendado: `[tipo]: descripción breve`
 - Tipos: feat, fix, docs, style, refactor, test
-DEPENDENCIAS
+  
+### DEPENDENCIAS
 -npm axios
 -npm install
