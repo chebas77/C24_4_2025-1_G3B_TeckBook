@@ -1,0 +1,23 @@
+# Node.js
+node_modules/
+dist/
+.env
+.vscode/
+
+# Java / Maven
+target/
+*.log
+
+# IDEs
+*.iml
+.idea/
+*.swp
+
+# Python (por si usas Django en el admin)
+__pycache__/
+*.py[cod]
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
