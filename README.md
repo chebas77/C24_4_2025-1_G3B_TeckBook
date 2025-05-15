@@ -28,5 +28,11 @@ Este proyecto sigue el enfoque Trunk Based Development con las siguientes conven
 - Tipos: feat, fix, docs, style, refactor, test
   
 ### DEPENDENCIAS
--npm axios
--npm install
+cd Usuario/web/TeckBookWeb /
+-npm axios /
+-npm install   /
+npm install react react-dom  /
+npm install react-router-dom   /
+npm install axios   /
+npm install vite --save-dev   /
+
