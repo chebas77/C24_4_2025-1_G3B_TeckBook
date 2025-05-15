@@ -1,10 +1,12 @@
 import { useState } from "react";
-import portalImage from "./assets/portal.png";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle, HelpCircle } from 'lucide-react';
+import portalImage from "./assets/portal.png";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -29,7 +31,7 @@ function Login() {
 
   return (
     <div style={styles.wrapper}>
-      {/* LADO IZQUIERDO */}
+      {/* LADO IZQUIERDO: Formulario */}
       <div style={styles.left}>
         <div style={styles.formBox}>
           <h1 style={styles.logo}>TecBook</h1>
@@ -38,93 +40,62 @@ function Login() {
             Inicia sesión con tus credenciales institucionales
           </p>
 
-          <div style={styles.form}>
-            <form onSubmit={handleLogin}>
-              <div style={styles.inputContainer}>
-                <div style={styles.inputIcon}>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </div>
-                <input
-                  type="email"
-                  placeholder="Correo institucional"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={styles.input}
-                  required
-                />
-              </div>
+          <form onSubmit={handleLogin} style={styles.form}>
+            <div style={styles.inputContainer}>
+              <Mail size={20} color="#005DAB" style={styles.inputIcon} />
+              <input
+                type="email"
+                placeholder="Correo institucional"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={styles.input}
+                required
+              />
+            </div>
 
-              <div style={styles.inputContainer}>
-                <div style={styles.inputIcon}>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
-                <input
-                  type="password"
-                  placeholder="Contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={styles.input}
-                  required
-                />
-              </div>
-
+            <div style={styles.inputContainer}>
+              <Lock size={20} color="#005DAB" style={styles.inputIcon} />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{...styles.input, paddingRight: '40px'}}
+                required
+              />
               <button
-                type="submit"
-                style={styles.button}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#004c8e")}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#005DAB")}
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={styles.passwordToggle}
               >
-                <span style={styles.buttonContent}>
-                  Ingresar
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={styles.arrowIcon}
-                  >
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </svg>
-                </span>
+                {showPassword ? 
+                  <EyeOff size={20} color="#005DAB" /> : 
+                  <Eye size={20} color="#005DAB" />
+                }
               </button>
-            </form>
-            <Link to="/register" style={styles.registerButton}>
-              ¿No tienes cuenta? Regístrate aquí
-            </Link>
-          </div>
+            </div>
+
+            <div style={styles.forgotPasswordContainer}>
+              <Link to="/recuperar" style={styles.forgotPasswordLink}>
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+
+            <button type="submit" style={styles.button}>
+              <span style={styles.buttonContent}>
+                Ingresar
+                <ArrowRight size={18} />
+              </span>
+            </button>
+          </form>
+
+          <Link to="/register" style={styles.registerButton}>
+            ¿No tienes cuenta? <span style={styles.registerHighlight}>Regístrate aquí</span>
+          </Link>
 
           <div style={styles.dividerContainer}>
             <div style={styles.divider}></div>
-            <span style={styles.dividerText}>o</span>
+            <span style={styles.dividerText}>o continúa con</span>
             <div style={styles.divider}></div>
           </div>
 
@@ -154,41 +125,22 @@ function Login() {
             </span>
           </button>
 
-          <div style={{ ...styles.dividerContainer, marginTop: "20px" }}>
-            <div style={styles.divider}></div>
-            <span style={styles.dividerText}>¿Problemas para acceder?</span>
-            <div style={styles.divider}></div>
-          </div>
-
           <div style={styles.helpLinks}>
-            <Link
-              to="/recuperar"
-              style={styles.link}
-              onMouseOver={(e) => (e.currentTarget.style.color = "#004c8e")}
-              onMouseOut={(e) => (e.currentTarget.style.color = "#005DAB")}
-            >
-              Recuperar contraseña
-            </Link>
-            <span style={styles.dot}>•</span>
-            <a
-              style={styles.link}
-              onMouseOver={(e) => (e.currentTarget.style.color = "#004c8e")}
-              onMouseOut={(e) => (e.currentTarget.style.color = "#005DAB")}
-            >
+            <span style={styles.helpText}>¿Necesitas ayuda?</span>
+            <a href="#" style={styles.link}>
+              <HelpCircle size={16} />
               Contactar soporte
             </a>
           </div>
         </div>
       </div>
 
-      {/* LADO DERECHO */}
+      {/* LADO DERECHO: Imagen */}
       <div style={styles.right}>
-        <div
-          style={{
-            ...styles.rightBackground,
-            backgroundImage: `url(${portalImage})`,
-          }}
-        ></div>
+        <div style={{
+          ...styles.rightBackground,
+          backgroundImage: `url(${portalImage})`,
+        }}></div>
         <div style={styles.overlay}></div>
         <div style={styles.infoCard}>
           <h3 style={styles.infoTitle}>Portal Académico</h3>
@@ -196,6 +148,20 @@ function Login() {
             Accede a todos tus recursos educativos, calificaciones y material de
             estudio en un solo lugar.
           </p>
+          <div style={styles.infoFeatures}>
+            <div style={styles.infoFeature}>
+              <CheckCircle size={20} color="#005DAB" />
+              <span>Material de estudio actualizado</span>
+            </div>
+            <div style={styles.infoFeature}>
+              <CheckCircle size={20} color="#005DAB" />
+              <span>Seguimiento de calificaciones</span>
+            </div>
+            <div style={styles.infoFeature}>
+              <CheckCircle size={20} color="#005DAB" />
+              <span>Comunicación con docentes</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -209,7 +175,7 @@ const styles = {
     width: "100vw",
     overflow: "hidden",
     fontFamily: "'Segoe UI', Arial, sans-serif",
-    background: "#ffffff",
+    background: "#f5f7fa",
   },
   left: {
     flex: 1,
@@ -245,36 +211,39 @@ const styles = {
     right: 0,
     bottom: 0,
     background:
-      "linear-gradient(135deg, rgba(0, 93, 171, 0.3) 0%, rgba(0, 93, 171, 0) 70%)",
+      "linear-gradient(135deg, rgba(0, 93, 171, 0.5) 0%, rgba(0, 93, 171, 0.2) 70%)",
   },
   formBox: {
     width: "100%",
-    maxWidth: "400px",
+    maxWidth: "450px",
+    background: "#fff",
+    borderRadius: "16px",
+    boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+    padding: "40px 35px",
     textAlign: "center",
   },
   logo: {
-    fontSize: "50px",
+    fontSize: "42px",
     color: "#005DAB",
     fontWeight: "bold",
-    marginBottom: "5px",
+    marginBottom: "8px",
     letterSpacing: "-0.5px",
   },
   title: {
-    fontSize: "26px",
-    marginBottom: "5px",
+    fontSize: "24px",
+    marginBottom: "8px",
     color: "#333",
     fontWeight: "600",
   },
   subtitle: {
     color: "#666",
     marginBottom: "30px",
-    fontSize: "15px",
+    fontSize: "16px",
   },
   form: {
     display: "flex",
     flexDirection: "column",
     gap: "15px",
-    marginBottom: "25px",
   },
   inputContainer: {
     position: "relative",
@@ -282,35 +251,61 @@ const styles = {
   },
   inputIcon: {
     position: "absolute",
-    left: "12px",
+    left: "15px",
     top: "50%",
     transform: "translateY(-50%)",
-    color: "#6b7280",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
   },
   input: {
     width: "100%",
-    padding: "14px 15px 14px 40px",
+    padding: "15px 15px 15px 45px",
     fontSize: "15px",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
+    border: "1px solid #e0e6ed",
+    borderRadius: "10px",
     outline: "none",
     transition: "all 0.2s ease",
     boxSizing: "border-box",
+    backgroundColor: "#f9fafc",
+    color: "#333",
+  },
+  passwordToggle: {
+    position: "absolute",
+    right: "15px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+  },
+  forgotPasswordContainer: {
+    display: "flex",
+    justifyContent: "flex-end",
+    width: "100%",
+    marginTop: "5px",
+  },
+  forgotPasswordLink: {
+    color: "#666",
+    textDecoration: "none",
+    fontSize: "14px",
+    fontWeight: "500",
+    transition: "color 0.2s ease",
+    "&:hover": {
+      color: "#005DAB",
+    },
   },
   button: {
     backgroundColor: "#005DAB",
     color: "white",
-    padding: "14px",
-    fontSize: "15px",
+    padding: "15px",
+    fontSize: "16px",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "10px",
     cursor: "pointer",
     fontWeight: "500",
     transition: "background-color 0.2s ease",
-    boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+    boxShadow: "0 4px 6px rgba(0,93,171,0.15)",
+    marginTop: "5px",
+    width: "100%",
   },
   buttonContent: {
     display: "flex",
@@ -318,113 +313,132 @@ const styles = {
     justifyContent: "center",
     gap: "8px",
   },
-  arrowIcon: {
-    marginLeft: "5px",
-    transition: "transform 0.3s ease",
-  },
-  dividerContainer: {
-    display: "flex",
-    alignItems: "center",
-    margin: "25px 0 15px",
-  },
-  divider: {
-    flex: 1,
-    height: "1px",
-    backgroundColor: "#e0e0e0",
-  },
-  dividerText: {
-    padding: "0 15px",
-    color: "#666",
-    fontSize: "14px",
-  },
-  helpLinks: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "10px",
-    marginTop: "15px",
-  },
-  link: {
-    color: "#005DAB",
-    textDecoration: "none",
-    fontSize: "14px",
-    fontWeight: "500",
-    cursor: "pointer",
-    transition: "color 0.2s ease",
-  },
-  dot: {
-    color: "#999",
-  },
-  infoCard: {
-    position: "absolute",
-    bottom: "40px",
-    left: "40px",
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
-    padding: "20px",
-    borderRadius: "12px",
-    backdropFilter: "blur(5px)",
-    maxWidth: "300px",
-    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-  },
-  infoTitle: {
-    fontSize: "20px",
-    color: "#005DAB",
-    fontWeight: "bold",
-    marginBottom: "8px",
-  },
-  infoText: {
-    color: "#000",
-  },
-  googleButton: {
-    display: "flex",
-    alignItems: "center",
-    backgroundColor: "white",
-    border: "1px solid #dadce0",
-    borderRadius: "8px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-    color: "#3c4043",
-    cursor: "pointer",
-    fontFamily: "'Segoe UI', Arial, sans-serif",
-    fontSize: "14px",
-    fontWeight: "500",
-    height: "48px",
-    justifyContent: "center",
-    letterSpacing: "0.25px",
-    padding: "0 12px",
-    position: "relative",
-    textAlign: "center",
-    transition: "all 0.2s ease",
-    width: "100%",
-    marginTop: "5px",
-  },
-  googleButtonText: {
-    paddingLeft: "35px",
-    textAlign: "center",
-    color: "#444",
-    fontSize: "14px",
-    fontWeight: "500",
-  },
-  googleIconWrapper: {
-    position: "absolute",
-    left: "12px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  googleIcon: {
-    width: "18px",
-    height: "18px",
-  },
   registerButton: {
     display: "block",
-    marginTop: "18px",
-    color: "#005DAB",
+    marginTop: "20px",
+    color: "#555",
     textDecoration: "none",
     fontWeight: "500",
     fontSize: "15px",
     transition: "color 0.2s",
     textAlign: "center",
     cursor: "pointer",
+  },
+  registerHighlight: {
+    color: "#005DAB",
+    fontWeight: "600",
+  },
+  dividerContainer: {
+    display: "flex",
+    alignItems: "center",
+    margin: "25px 0 20px",
+    width: "100%",
+  },
+  divider: {
+    flex: 1,
+    height: "1px",
+    backgroundColor: "#e0e6ed",
+  },
+  dividerText: {
+    padding: "0 15px",
+    color: "#666",
+    fontSize: "14px",
+    fontWeight: "500",
+  },
+  googleButton: {
+    display: "flex",
+    alignItems: "center",
+    backgroundColor: "white",
+    border: "1px solid #e0e6ed",
+    borderRadius: "10px",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+    color: "#3c4043",
+    cursor: "pointer",
+    fontFamily: "'Segoe UI', Arial, sans-serif",
+    fontSize: "15px",
+    fontWeight: "500",
+    height: "50px",
+    justifyContent: "center",
+    padding: "0 15px",
+    position: "relative",
+    transition: "all 0.2s ease",
+    width: "100%",
+  },
+  googleButtonText: {
+    paddingLeft: "35px",
+    textAlign: "center",
+    color: "#444",
+    fontSize: "15px",
+    fontWeight: "500",
+  },
+  googleIconWrapper: {
+    position: "absolute",
+    left: "15px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  googleIcon: {
+    width: "20px",
+    height: "20px",
+  },
+  helpLinks: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "8px",
+    marginTop: "25px",
+  },
+  helpText: {
+    color: "#666",
+    fontSize: "14px",
+  },
+  link: {
+    color: "#005DAB",
+    textDecoration: "none",
+    fontSize: "15px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "color 0.2s ease",
+    display: "flex",
+    alignItems: "center",
+    gap: "5px",
+  },
+  infoCard: {
+    position: "absolute",
+    bottom: "50px",
+    left: "50px",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: "25px",
+    borderRadius: "14px",
+    backdropFilter: "blur(10px)",
+    maxWidth: "320px",
+    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
+  },
+  infoTitle: {
+    fontSize: "22px",
+    color: "#005DAB",
+    fontWeight: "bold",
+    marginBottom: "10px",
+  },
+  infoText: {
+    color: "#2d3748",
+    fontSize: "15px",
+    lineHeight: "1.6",
+    marginBottom: "20px",
+  },
+  infoFeatures: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+  infoFeature: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    fontSize: "15px",
+    color: "#555",
   },
 };
 
