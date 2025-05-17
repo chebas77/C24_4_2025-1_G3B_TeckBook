@@ -4,7 +4,7 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle, HelpCircle } from 'lu
 import portalImage from "./assets/portal.png";
 
 function Login() {
-  const [email, setEmail] = useState("");
+  const [correoInstitucional, setCorreoInstitucional] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ function Login() {
       const response = await fetch("http://localhost:8080/api/usuarios/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ correoInstitucional:correoInstitucional, password:password }),
       });
       const result = await response.json();
       if (result) {
@@ -46,8 +46,8 @@ function Login() {
               <input
                 type="email"
                 placeholder="Correo institucional"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={correoInstitucional}
+                onChange={(e) => setCorreoInstitucional(e.target.value)}
                 style={styles.input}
                 required
               />

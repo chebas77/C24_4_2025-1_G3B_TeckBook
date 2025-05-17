@@ -13,19 +13,21 @@ public class UsuarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
-
+    
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public Usuario registrarUsuario(Usuario usuario) {
+        // Encriptar la contraseña antes de guardarla
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         return usuarioRepository.save(usuario);
     }
 
-    public boolean autenticarUsuario(String email, String password) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
-        if (usuarioOpt.isPresent()) {
-            return passwordEncoder.matches(password, usuarioOpt.get().getPassword());
+    public boolean autenticarUsuario(String correoInstitucional, String password) {
+        Usuario usuario = usuarioRepository.findByCorreoInstitucional(correoInstitucional);
+        if (usuario == null) {
+            return false;
         }
-        return false;
+        // Verificar si la contraseña coincide con la encriptada
+        return passwordEncoder.matches(password, usuario.getPassword());
     }
 }

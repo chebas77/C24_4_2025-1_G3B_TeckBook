@@ -1,79 +1,121 @@
 package com.usuario.backend.model;
 
-import jakarta.persistence.*;
+    import jakarta.persistence.*;
 
-@Entity
-@Table(name = "usuarios")
-public class Usuario {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Entity
+    @Table(name = "usuarios")
+    public class Usuario {
 
-    private String nombre;
-    private String apellidos;
-    private String codigo;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        
+        private String nombre;
+        private String apellidos;
+        private String codigo;
+        
+        @Column(name = "correo_institucional")
+        private String correoInstitucional;
+        
+        private String password;
+        private String ciclo;
+        private String rol;
+        
+        @Column(name = "departamento_id")
+        private Long departamentoId;
+        
+        @Column(name = "carrera_id")
+        private Long carreraId;
+        
+        @Column(name = "seccion_id")
+        private Long seccionId;
 
-    @Column(name = "correo_institucional")
-    private String correoInstitucional;
+        // Getters y Setters
+        public Long getId() {
+            return id;
+        }
 
-    @Column(name = "contraseña")
-    private String contrasena;
+        public void setId(Long id) {
+            this.id = id;
+        }
 
-    private Integer ciclo;
+        public String getNombre() {
+            return nombre;
+        }
 
-    private String rol;
+        public void setNombre(String nombre) {
+            this.nombre = nombre;
+        }
 
-    @Column(name = "departamento_id")
-    private Integer departamentoId;
+        public String getApellidos() {
+            return apellidos;
+        }
 
-    @Column(name = "carrera_id")
-    private Integer carreraId;
+        public void setApellidos(String apellidos) {
+            this.apellidos = apellidos;
+        }
 
-    @Column(name = "seccion_id")
-    private Integer seccionId;
+        public String getCodigo() {
+            return codigo;
+        }
 
-    private String password;
+        public void setCodigo(String codigo) {
+            this.codigo = codigo;
+        }
 
-    @Column(unique = true)
-    private String email;
+        public String getCorreoInstitucional() {
+            return correoInstitucional;
+        }
 
-    // getters y setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+        public void setCorreoInstitucional(String correoInstitucional) {
+            this.correoInstitucional = correoInstitucional;
+        }
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+        public String getPassword() {
+            return password;
+        }
 
-    public String getApellidos() { return apellidos; }
-    public void setApellidos(String apellidos) { this.apellidos = apellidos; }
+        public void setPassword(String password) {
+            this.password = password;
+        }
 
-    public String getCodigo() { return codigo; }
-    public void setCodigo(String codigo) { this.codigo = codigo; }
+        public String getCiclo() {
+            return ciclo;
+        }
 
-    public String getCorreoInstitucional() { return correoInstitucional; }
-    public void setCorreoInstitucional(String correoInstitucional) { this.correoInstitucional = correoInstitucional; }
+        public void setCiclo(String ciclo) {
+            this.ciclo = ciclo;
+        }
 
-    public String getContrasena() { return contrasena; }
-    public void setContrasena(String contrasena) { this.contrasena = contrasena; }
+        public String getRol() {
+            return rol;
+        }
 
-    public Integer getCiclo() { return ciclo; }
-    public void setCiclo(Integer ciclo) { this.ciclo = ciclo; }
+        public void setRol(String rol) {
+            this.rol = rol;
+        }
 
-    public String getRol() { return rol; }
-    public void setRol(String rol) { this.rol = rol; }
+        public Long getDepartamentoId() {
+            return departamentoId;
+        }
 
-    public Integer getDepartamentoId() { return departamentoId; }
-    public void setDepartamentoId(Integer departamentoId) { this.departamentoId = departamentoId; }
+        public void setDepartamentoId(Long departamentoId) {
+            this.departamentoId = departamentoId;
+        }
 
-    public Integer getCarreraId() { return carreraId; }
-    public void setCarreraId(Integer carreraId) { this.carreraId = carreraId; }
+        public Long getCarreraId() {
+            return carreraId;
+        }
 
-    public Integer getSeccionId() { return seccionId; }
-    public void setSeccionId(Integer seccionId) { this.seccionId = seccionId; }
+        public void setCarreraId(Long carreraId) {
+            this.carreraId = carreraId;
+        }
 
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+        public Long getSeccionId() {
+            return seccionId;
+        }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-}
+        public void setSeccionId(Long seccionId) {
+            this.seccionId = seccionId;
+        }
+    }

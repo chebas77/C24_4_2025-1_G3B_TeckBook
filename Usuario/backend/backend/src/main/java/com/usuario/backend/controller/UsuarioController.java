@@ -15,19 +15,20 @@ public class UsuarioController {
 
     @PostMapping("/register")
     public Usuario register(@RequestBody Usuario usuario) {
-        System.out.println("Registro recibido: email=" + usuario.getEmail() + ", password=" + usuario.getPassword());
-        if (usuario.getEmail() == null || usuario.getPassword() == null) {
-            throw new IllegalArgumentException("Email y password son requeridos");
+        System.out.println("Registro recibido: correo_institucional=" + usuario.getCorreoInstitucional() + ", password=" + usuario.getPassword());
+        if (usuario.getCorreoInstitucional() == null || usuario.getPassword() == null) {
+            throw new IllegalArgumentException("Correo institucional y password son requeridos");
         }
         return usuarioService.registrarUsuario(usuario);
     }
 
     @PostMapping("/login")
     public boolean login(@RequestBody Usuario usuario) {
-        System.out.println("Login recibido: email=" + usuario.getEmail() + ", password=" + usuario.getPassword());
-        if (usuario.getEmail() == null || usuario.getPassword() == null) {
+        System.out.println("Login recibido: correo_institucional=" + usuario.getCorreoInstitucional() + ", password=" + usuario.getPassword());
+        if (usuario.getCorreoInstitucional() == null || usuario.getPassword() == null) {
             return false;
         }
-        return usuarioService.autenticarUsuario(usuario.getEmail(), usuario.getPassword());
+        return usuarioService.autenticarUsuario(usuario.getCorreoInstitucional(), usuario.getPassword());
     }
+    
 }

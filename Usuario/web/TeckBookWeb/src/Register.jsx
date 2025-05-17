@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import portalImage from "./assets/portal.png";
 import { Eye, EyeOff, User, Mail, Lock, Book, BookOpen, School, Users, Database } from 'lucide-react';
 
+import { useNavigate } from "react-router-dom";
+
 function Register() {
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
@@ -17,6 +19,8 @@ function Register() {
   const [email, setEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
+
+  const navigate = useNavigate();  // <---- aquí
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -42,6 +46,7 @@ function Register() {
       });
       if (response.ok) {
         alert('Usuario registrado correctamente');
+        navigate('/home');  // <---- redirige a /home
       } else {
         const errorText = await response.text();
         alert('Error al registrar usuario: ' + errorText);
@@ -238,13 +243,13 @@ function Register() {
               </div>
               
               <div style={styles.buttonGroup}>
-                <button onClick={prevStep} style={styles.secondaryButton}>
-                  Atrás
-                </button>
-                <button onClick={handleRegister} style={styles.button}>
-                  Completar Registro
-                </button>
-              </div>
+      <button onClick={prevStep} style={styles.secondaryButton}>
+        Atrás
+      </button>
+      <button onClick={handleRegister} style={styles.button}>
+        Completar Registro
+      </button>
+    </div>
             </div>
           )}
           
