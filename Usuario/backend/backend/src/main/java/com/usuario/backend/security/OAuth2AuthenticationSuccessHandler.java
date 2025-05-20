@@ -103,7 +103,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             }
 
             // URL frontend con el token
-            String targetUrl = "http://localhost:5173/oauth/callback?token=" + token;
+            String targetUrl = "http://localhost:5173/home?token=" + token;
             logger.info("About to redirect to: {}", targetUrl);
 
             // Redirección al frontend

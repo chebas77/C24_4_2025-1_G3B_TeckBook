@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle, HelpCircle } from 'lucide-react';
 import portalImage from "./assets/portal.png";
@@ -7,26 +7,75 @@ function Login() {
   const [correoInstitucional, setCorreoInstitucional] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Verificar si ya hay un token almacenado
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      // Si hay un token, verificar si sigue siendo válido
+      fetch('http://localhost:8080/api/auth/user', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          // Si el token es válido, redireccionar al home
+          navigate('/home');
+        } else {
+          // Si el token no es válido, eliminarlo
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user_data');
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+      });
+    }
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage("");
+    
     try {
-      const response = await fetch("http://localhost:8080/api/usuarios/login", {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ correoInstitucional:correoInstitucional, password:password }),
+        body: JSON.stringify({ correoInstitucional, password }),
       });
-      const result = await response.json();
-      if (result) {
-        alert("Inicio de sesión exitoso");
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Guardar el token y datos del usuario
+        localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('user_data', JSON.stringify({
+          id: data.id,
+          nombre: data.nombre,
+          apellidos: data.apellidos,
+          correoInstitucional: data.correoInstitucional,
+          rol: data.rol
+        }));
         navigate("/home");
       } else {
-        alert("Credenciales incorrectas");
+        const errorData = await response.text();
+        setErrorMessage(errorData || "Credenciales incorrectas");
       }
     } catch (error) {
-      alert("Error de conexión con el backend");
+      setErrorMessage("Error de conexión con el servidor");
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    // Redireccionar a la URL de autenticación de Google
+    window.location.href = "http://localhost:8080/oauth2/authorize/google";
   };
 
   return (
@@ -39,6 +88,12 @@ function Login() {
           <p style={styles.subtitle}>
             Inicia sesión con tus credenciales institucionales
           </p>
+
+          {errorMessage && (
+            <div style={styles.errorMessage}>
+              {errorMessage}
+            </div>
+          )}
 
           <form onSubmit={handleLogin} style={styles.form}>
             <div style={styles.inputContainer}>
@@ -81,10 +136,14 @@ function Login() {
               </Link>
             </div>
 
-            <button type="submit" style={styles.button}>
+            <button 
+              type="submit" 
+              style={styles.button}
+              disabled={isLoading}
+            >
               <span style={styles.buttonContent}>
-                Ingresar
-                <ArrowRight size={18} />
+                {isLoading ? 'Ingresando...' : 'Ingresar'}
+                {!isLoading && <ArrowRight size={18} />}
               </span>
             </button>
           </form>
@@ -99,7 +158,10 @@ function Login() {
             <div style={styles.divider}></div>
           </div>
 
-          <button style={styles.googleButton}>
+          <button 
+            style={styles.googleButton}
+            onClick={handleGoogleLogin}
+          >
             <div style={styles.googleIconWrapper}>
               <svg style={styles.googleIcon} viewBox="0 0 24 24">
                 <path
@@ -124,6 +186,12 @@ function Login() {
               Ingresa con tu correo de Tecsup
             </span>
           </button>
+
+          <div style={styles.restrictionNotice}>
+            <p style={styles.restrictionText}>
+              Solo correos con dominio <strong>@tecsip.edu.pe</strong> son permitidos
+            </p>
+          </div>
 
           <div style={styles.helpLinks}>
             <span style={styles.helpText}>¿Necesitas ayuda?</span>
@@ -239,6 +307,14 @@ const styles = {
     color: "#666",
     marginBottom: "30px",
     fontSize: "16px",
+  },
+  errorMessage: {
+    backgroundColor: "#ffeceb",
+    color: "#e53935",
+    padding: "10px",
+    borderRadius: "8px",
+    marginBottom: "15px",
+    fontSize: "14px",
   },
   form: {
     display: "flex",
@@ -382,13 +458,25 @@ const styles = {
     width: "20px",
     height: "20px",
   },
+  restrictionNotice: {
+    margin: "15px 0",
+    padding: "8px",
+    backgroundColor: "#f5f7fa",
+    borderRadius: "8px",
+    borderLeft: "3px solid #005DAB",
+  },
+  restrictionText: {
+    fontSize: "13px",
+    color: "#555",
+    margin: 0,
+  },
   helpLinks: {
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
     gap: "8px",
-    marginTop: "25px",
+    marginTop: "15px",
   },
   helpText: {
     color: "#666",

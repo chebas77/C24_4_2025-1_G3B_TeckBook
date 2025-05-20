@@ -36,10 +36,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS) // Cambiar a ALWAYS para OAuth2
+                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS) // Cambiado a ALWAYS para OAuth2
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**").permitAll() // Permitir todo temporalmente para debugging
+                        .requestMatchers("/", "/oauth2/**", "/login/**", "/api/public/**", "/error").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(authEndpoint -> authEndpoint
@@ -49,7 +50,8 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
                                 .userService(oAuth2UserService))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
-                );
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
