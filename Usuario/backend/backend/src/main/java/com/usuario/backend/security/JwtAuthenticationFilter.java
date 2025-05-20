@@ -34,6 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
+            logger.debug("JWT token received: {}", jwt != null ? jwt.substring(0, Math.min(10, jwt.length())) + "..." : "null");
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String email = tokenProvider.getEmailFromToken(jwt);
@@ -51,6 +52,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 logger.debug("User authenticated via JWT: {}", email);
             } else if (StringUtils.hasText(jwt)) {
                 logger.debug("Invalid JWT token provided");
+                
+                // Solo retornamos un error en endpoints protegidos, no en públicos
+                if (!shouldNotFilter(request)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"Token JWT inválido\"}");
+                    return;
+                }
             }
         } catch (Exception ex) {
             logger.error("Could not set user authentication in security context", ex);
@@ -59,14 +68,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    // Este método determina para qué rutas NO se aplica el filtro JWT
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
-        return path.startsWith("/oauth2/") ||
-                path.startsWith("/login") ||
-                path.startsWith("/api/auth/") ||
-                path.startsWith("/api/usuarios/") ||
-                path.startsWith("/api/debug/");
+        
+        // Permitir acceso público a estas rutas
+        return path.equals("/") ||
+               path.startsWith("/oauth2/") ||
+               path.startsWith("/login") ||
+               path.equals("/api/auth/login") ||
+               path.equals("/api/usuarios/register") ||
+               path.equals("/api/usuarios/login") ||
+               path.startsWith("/api/public/") ||
+               path.equals("/error");
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

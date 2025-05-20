@@ -9,7 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct; // Cambiado de javax.annotation a jakarta.annotation
+import jakarta.annotation.PostConstruct;
 import java.security.Key;
 import java.util.Date;
 
@@ -31,11 +31,11 @@ public class JwtTokenProvider {
         try {
             // Inicializar la clave una vez al inicio
             this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-            logger.info("JWT Token Provider initialized successfully");
+            logger.info("JWT Token Provider initialized successfully with key length: {}", jwtSecret.getBytes().length);
 
             // Generar un token de prueba para verificar que la configuración es correcta
             String testToken = generateToken("test@tecsup.edu.pe");
-            logger.info("Test token generated successfully");
+            logger.info("Test token generated successfully: {}", testToken.substring(0, 20) + "...");
         } catch (Exception e) {
             logger.error("Failed to initialize JWT Token Provider: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to initialize JWT Token Provider", e);
@@ -63,7 +63,7 @@ public class JwtTokenProvider {
                     .signWith(key)
                     .compact();
 
-            logger.debug("Token generation successful");
+            logger.debug("Token generation successful: {}", token.substring(0, 20) + "...");
             return token;
         } catch (Exception e) {
             logger.error("Failed to generate token: {}", e.getMessage(), e);
@@ -74,12 +74,15 @@ public class JwtTokenProvider {
     // Extraer email del token
     public String getEmailFromToken(String token) {
         try {
-            return Jwts.parserBuilder()
+            Claims claims = Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token)
-                    .getBody()
-                    .getSubject();
+                    .getBody();
+            
+            String email = claims.getSubject();
+            logger.debug("Successfully extracted email from token: {}", email);
+            return email;
         } catch (Exception e) {
             logger.error("Failed to get email from token: {}", e.getMessage());
             return null;
@@ -93,6 +96,8 @@ public class JwtTokenProvider {
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token);
+            
+            logger.debug("Token validation successful");
             return true;
         } catch (MalformedJwtException e) {
             logger.error("Invalid JWT token: {}", e.getMessage());

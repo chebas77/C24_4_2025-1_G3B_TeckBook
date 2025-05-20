@@ -1,0 +1,75 @@
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+input, button, textarea, select {
+  font-family: inherit;
+}
+
+/* Estilos adicionales para mejorar la experiencia móvil */
+@media (max-width: 768px) {
+  .wrapper {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  .left, .right {
+    width: 100%;
+    flex: none;
+  }
+  
+  .right {
+    display: none; /* Ocultar la imagen en móviles para simplificar */
+  }
+  
+  .formBox {
+    max-width: 100%;
+    padding: 25px 20px;
+  }
+  
+  .main {
+    flex-direction: column;
+    padding: 30px 20px;
+  }
+  
+  .leftContent, .rightImage {
+    max-width: 100%;
+  }
+  
+  .rightImage {
+    margin-top: 30px;
+  }
+  
+  .header {
+    padding: 15px 20px;
+  }
+  
+  .nav {
+    gap: 10px;
+  }
+  
+  .navLink, .logout {
+    font-size: 14px;
+    padding: 3px 5px;
+  }
+  
+  .welcomeTitle {
+    font-size: 28px;
+  }
+  
+  .description {
+    font-size: 16px;
+  }
+  
+  .button {
+    width: 100%;
+  }
+}
