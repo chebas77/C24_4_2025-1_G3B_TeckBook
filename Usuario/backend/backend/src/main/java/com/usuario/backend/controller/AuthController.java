@@ -3,8 +3,10 @@ package com.usuario.backend.controller;
 import com.usuario.backend.model.Usuario;
 import com.usuario.backend.security.JwtTokenProvider;
 import com.usuario.backend.service.UsuarioService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;  // Agrega esta importación
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +18,8 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class AuthController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
     @Autowired
     private UsuarioService usuarioService;
 
@@ -23,20 +27,33 @@ public class AuthController {
     private JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Usuario usuario) {
-        boolean isAuthenticated = usuarioService.autenticarUsuario(
-                usuario.getCorreoInstitucional(), usuario.getPassword());
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
+        String correoInstitucional = loginRequest.get("correoInstitucional");
+        String password = loginRequest.get("password");
+        
+        logger.info("Intento de login para: {}", correoInstitucional);
+        
+        if (correoInstitucional == null || password == null) {
+            logger.warn("Login fallido: faltan credenciales");
+            return ResponseEntity.badRequest().body("Correo institucional y contraseña son requeridos");
+        }
+        
+        boolean isAuthenticated = usuarioService.autenticarUsuario(correoInstitucional, password);
 
         if (isAuthenticated) {
+            logger.info("Login exitoso para: {}", correoInstitucional);
+            
             // Generar JWT token
-            String token = jwtTokenProvider.generateToken(usuario.getCorreoInstitucional());
+            String token = jwtTokenProvider.generateToken(correoInstitucional);
+            logger.debug("Token generado: {}", token.substring(0, 20) + "...");
 
+            // Obtener información del usuario
+            Usuario user = usuarioService.findByCorreoInstitucional(correoInstitucional);
+            
             // Devolver token y datos básicos del usuario
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
             response.put("type", "Bearer");
-
-            Usuario user = usuarioService.findByCorreoInstitucional(usuario.getCorreoInstitucional());
             response.put("id", user.getId());
             response.put("nombre", user.getNombre());
             response.put("apellidos", user.getApellidos());
@@ -45,7 +62,8 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.badRequest().body("Credenciales inválidas");
+            logger.warn("Login fallido para: {}", correoInstitucional);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
         }
     }
 
@@ -58,77 +76,79 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         response.put("redirectUrl", redirectUrl);
 
+        logger.info("Redirección a login de Google: {}", redirectUrl);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user")
-    public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String token) {
-        if (token != null && token.startsWith("Bearer ")) {
-            String jwt = token.substring(7);
+    public ResponseEntity<?> getUserInfo(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        logger.debug("Solicitud de información de usuario con cabecera: {}", 
+                (authHeader != null ? authHeader.substring(0, Math.min(20, authHeader.length())) + "..." : "null"));
+        
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Cabecera de autorización inválida o ausente");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Se requiere una cabecera de autorización válida"));
+        }
+        
+        String token = authHeader.substring(7);
+        
+        if (token.isEmpty()) {
+            logger.warn("Token vacío proporcionado");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Token vacío"));
+        }
 
-            if (jwtTokenProvider.validateToken(jwt)) {
-                String email = jwtTokenProvider.getEmailFromToken(jwt);
+        try {
+            if (jwtTokenProvider.validateToken(token)) {
+                String email = jwtTokenProvider.getEmailFromToken(token);
+                
+                if (email == null) {
+                    logger.warn("No se pudo extraer el email del token");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("error", "Token inválido"));
+                }
+                
+                logger.debug("Token validado para: {}", email);
                 Usuario user = usuarioService.findByCorreoInstitucional(email);
 
                 if (user != null) {
+                    logger.info("Información de usuario encontrada para: {}", email);
                     Map<String, Object> userInfo = new HashMap<>();
                     userInfo.put("id", user.getId());
                     userInfo.put("nombre", user.getNombre());
                     userInfo.put("apellidos", user.getApellidos());
                     userInfo.put("correoInstitucional", user.getCorreoInstitucional());
                     userInfo.put("rol", user.getRol());
+                    userInfo.put("codigo", user.getCodigo());
+                    userInfo.put("ciclo", user.getCiclo());
+                    userInfo.put("departamentoId", user.getDepartamentoId());
+                    userInfo.put("carreraId", user.getCarreraId());
+                    userInfo.put("seccionId", user.getSeccionId());
 
                     return ResponseEntity.ok(userInfo);
+                } else {
+                    logger.warn("Usuario no encontrado para el email: {}", email);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(Map.of("error", "Usuario no encontrado"));
                 }
+            } else {
+                logger.warn("Token JWT inválido");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Token JWT inválido"));
             }
+        } catch (Exception e) {
+            logger.error("Error al procesar el token JWT: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al procesar el token", "message", e.getMessage()));
         }
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o usuario no encontrado");
     }
 
-    @PostMapping("/test-oauth-user")
-    public ResponseEntity<?> testOAuthUser(@RequestBody Map<String, String> request) {
-        try {
-            String email = request.get("email");
-            String name = request.get("name");
-            String lastName = request.get("lastName");
-
-            // Validar dominio
-            if (!email.endsWith("@tecsup.edu.pe")) {
-                return ResponseEntity.badRequest().body("Solo se permiten correos con dominio @tecsup.edu.pe");
-            }
-
-            // Crear usuario
-            Usuario newUser = new Usuario();
-            newUser.setCorreoInstitucional(email);
-            newUser.setNombre(name);
-            newUser.setApellidos(lastName);
-            newUser.setRol("ESTUDIANTE");
-            newUser.setCodigo(email.split("@")[0]);
-            newUser.setCiclo("1");
-
-            // Registrar usuario
-            Usuario saved = usuarioService.registrarUsuarioOAuth(newUser);
-
-            // Generar token JWT
-            String token = jwtTokenProvider.generateToken(email);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("user", saved);
-            response.put("token", token);
-            response.put("redirectUrl", "http://localhost:5173/oauth/callback?token=" + token);
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            error.put("class", e.getClass().getName());
-
-            if (e.getCause() != null) {
-                error.put("cause", e.getCause().getMessage());
-            }
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        // JWT es stateless, así que técnicamente no hay nada que hacer en el servidor
+        // El cliente simplemente elimina el token almacenado
+        logger.info("Solicitud de logout recibida");
+        return ResponseEntity.ok(Map.of("message", "Sesión cerrada correctamente"));
     }
 }
