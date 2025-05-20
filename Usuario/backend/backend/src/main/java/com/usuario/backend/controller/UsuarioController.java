@@ -30,5 +30,5 @@ public class UsuarioController {
         }
         return usuarioService.autenticarUsuario(usuario.getCorreoInstitucional(), usuario.getPassword());
     }
-    
+
 }
