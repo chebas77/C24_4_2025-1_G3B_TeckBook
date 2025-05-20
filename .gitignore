@@ -18,6 +18,9 @@ keys.json
 *token*
 serviceAccount*.json
 
+# Archivos específicos del proyecto
+Usuario/backend/backend/src/main/resources/application.properties
+
 # Archivos específicos para Google OAuth y otras credenciales
 client_secret*.json
 google_client*.json
