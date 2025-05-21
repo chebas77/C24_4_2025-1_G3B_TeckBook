@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   Mail, 
@@ -10,7 +10,9 @@ import {
   Users, 
   Save, 
   ArrowLeft,
-  Edit3
+  Edit3,
+  Upload,
+  Camera
 } from 'lucide-react';
 
 function Perfil() {
@@ -24,14 +26,52 @@ function Perfil() {
     rol: "",
     departamentoId: "",
     carreraId: "",
-    seccionId: ""
+    seccionId: "",
+    profileImageUrl: ""
   });
   
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  const handleRemovePhoto = async () => {
+  if (!confirm("¿Estás seguro de que deseas eliminar tu foto de perfil?")) {
+    return;
+  }
   
+  try {
+    setIsUploading(true);
+    setError(null);
+    setSuccess(null);
+    
+    const token = localStorage.getItem('token');
+    const response = await fetch('http://localhost:8080/api/upload/profile-image', {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al eliminar la imagen');
+    }
+    
+    // Actualizar el estado local
+    setUsuario(prev => ({
+      ...prev,
+      profileImageUrl: null
+    }));
+    
+    setSuccess('Foto de perfil eliminada correctamente');
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setIsUploading(false);
+  }
+};
   const navigate = useNavigate();
 
   // Obtener datos del usuario al cargar
@@ -81,6 +121,91 @@ function Perfil() {
       ...prev,
       [name]: value
     }));
+  };
+  
+  // Función para manejar la subida de imágenes
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validar tipo y tamaño
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setError('Formato de imagen no válido. Usa JPG, PNG, GIF o WebP.');
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      setError('La imagen es demasiado grande. Máximo 5MB.');
+      return;
+    }
+    
+    try {
+      setIsUploading(true);
+      setError(null);
+      setSuccess(null);
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/upload/profile-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al subir la imagen');
+      }
+      
+      const data = await response.json();
+      
+      // Actualizar el estado local
+      setUsuario(prev => ({
+        ...prev,
+        profileImageUrl: data.imageUrl
+      }));
+      
+      setSuccess('Imagen de perfil actualizada correctamente');
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Función para renderizar el avatar
+  const renderAvatar = () => {
+    return (
+      <div style={styles.avatarContainer}>
+        {usuario.profileImageUrl ? (
+          <img 
+            src={usuario.profileImageUrl} 
+            alt="Foto de perfil" 
+            style={styles.avatarImage} 
+          />
+        ) : (
+          <div style={styles.avatar}>
+            {usuario.nombre && usuario.apellidos ? 
+              `${usuario.nombre.charAt(0)}${usuario.apellidos.charAt(0)}`.toUpperCase() : 'GS'}
+          </div>
+        )}
+        
+        {isEditing && (
+          <button 
+            onClick={() => fileInputRef.current.click()} 
+            style={styles.changePhotoButton}
+            disabled={isUploading}
+          >
+            {isUploading ? '...' : (usuario.profileImageUrl ? <Camera size={16} /> : <Upload size={16} />)}
+          </button>
+        )}
+      </div>
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -178,12 +303,18 @@ function Perfil() {
       <div style={styles.mainContent}>
         <div style={styles.profileCard}>
           <div style={styles.profileHeader}>
-            <div style={styles.avatarContainer}>
-              <div style={styles.avatar}>
-                {usuario.nombre && usuario.apellidos ? 
-                  `${usuario.nombre.charAt(0)}${usuario.apellidos.charAt(0)}`.toUpperCase() : 'GS'}
-              </div>
-            </div>
+            {/* Aquí implementamos el avatar con foto o iniciales */}
+            {renderAvatar()}
+            
+            {/* Input file oculto para subir imágenes */}
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style={{ display: 'none' }} 
+            />
+            
             <div style={styles.profileInfo}>
               <h2 style={styles.profileName}>{`${usuario.nombre} ${usuario.apellidos}`}</h2>
               <p style={styles.profileRole}>{usuario.rol}</p>
@@ -291,170 +422,206 @@ function Perfil() {
         </div>
 
         {/* Modal de edición */}
-        {isEditing && (
-          <div style={styles.modalOverlay}>
-            <div style={styles.modalContent}>
-              <div style={styles.modalHeader}>
-                <h3>Editar Perfil</h3>
-                <button onClick={handleCancel} style={styles.closeButton}>
-                  <ArrowLeft size={20} />
+{isEditing && (
+  <div style={styles.modalOverlay}>
+    <div style={styles.modalContent}>
+      <div style={styles.modalHeader}>
+        <h3>Editar Perfil</h3>
+        <button onClick={handleCancel} style={styles.closeButton}>
+          <ArrowLeft size={20} />
+        </button>
+      </div>
+      <form onSubmit={handleSubmit} style={styles.form}>
+        {/* Sección de foto de perfil */}
+        <div style={styles.formSection}>
+          <h4 style={styles.formSectionTitle}>Foto de Perfil</h4>
+          <div style={styles.photoUploadContainer}>
+            <div style={styles.currentPhotoContainer}>
+              {usuario.profileImageUrl ? (
+                <img 
+                  src={usuario.profileImageUrl} 
+                  alt="Foto de perfil" 
+                  style={styles.currentPhoto} 
+                />
+              ) : (
+                <div style={styles.photoPlaceholder}>
+                  {usuario.nombre && usuario.apellidos ? 
+                    `${usuario.nombre.charAt(0)}${usuario.apellidos.charAt(0)}`.toUpperCase() : 'GS'}
+                </div>
+              )}
+            </div>
+            <div style={styles.photoUploadActions}>
+              <button 
+                type="button" 
+                onClick={() => fileInputRef.current.click()} 
+                style={styles.uploadPhotoButton}
+                disabled={isUploading}
+              >
+                {isUploading ? 'Subiendo...' : (
+                  <>
+                    <Upload size={16} style={{marginRight: '8px'}} />
+                    {usuario.profileImageUrl ? 'Cambiar foto' : 'Subir foto'}
+                  </>
+                )}
+              </button>
+              {usuario.profileImageUrl && (
+                <button 
+                  type="button" 
+                  onClick={handleRemovePhoto} 
+                  style={styles.removePhotoButton}
+                  disabled={isUploading}
+                >
+                  Eliminar foto
                 </button>
+              )}
+              <div style={styles.photoHelpText}>
+                Formatos aceptados: JPG, PNG, GIF (máx. 5MB)
               </div>
-              <form onSubmit={handleSubmit} style={styles.form}>
-                <div style={styles.formSection}>
-                  <h4 style={styles.formSectionTitle}>Información Personal</h4>
-                  <div style={styles.formRow}>
-                    <div style={styles.inputContainer}>
-                      <label style={styles.label}>Nombre</label>
-                      <div style={styles.inputWrapper}>
-                        <User size={18} color="#005DAB" style={styles.inputIcon} />
-                        <input
-                          type="text"
-                          name="nombre"
-                          value={usuario.nombre || ''}
-                          onChange={handleChange}
-                          style={styles.input}
-                        />
-                      </div>
-                    </div>
-                    <div style={styles.inputContainer}>
-                      <label style={styles.label}>Apellidos</label>
-                      <div style={styles.inputWrapper}>
-                        <User size={18} color="#005DAB" style={styles.inputIcon} />
-                        <input
-                          type="text"
-                          name="apellidos"
-                          value={usuario.apellidos || ''}
-                          onChange={handleChange}
-                          style={styles.input}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={styles.formSection}>
-                  <h4 style={styles.formSectionTitle}>Información Académica</h4>
-                  <div style={styles.formRow}>
-                    <div style={styles.inputContainer}>
-                      <label style={styles.label}>Código de Estudiante</label>
-                      <div style={styles.inputWrapper}>
-                        <Database size={18} color="#005DAB" style={styles.inputIcon} />
-                        <input
-                          type="text"
-                          name="codigo"
-                          value={usuario.codigo || ''}
-                          onChange={handleChange}
-                          disabled={true}
-                          style={{...styles.input, backgroundColor: '#e9ecef', cursor: 'default'}}
-                        />
-                      </div>
-                    </div>
-                    <div style={styles.inputContainer}>
-                      <label style={styles.label}>Correo Institucional</label>
-                      <div style={styles.inputWrapper}>
-                        <Mail size={18} color="#005DAB" style={styles.inputIcon} />
-                        <input
-                          type="email"
-                          name="correoInstitucional"
-                          value={usuario.correoInstitucional || ''}
-                          onChange={handleChange}
-                          disabled={true}
-                          style={{...styles.input, backgroundColor: '#e9ecef', cursor: 'default'}}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={styles.formRow}>
-                    <div style={styles.inputContainer}>
-                      <label style={styles.label}>Ciclo</label>
-                      <div style={styles.inputWrapper}>
-                        <BookOpen size={18} color="#005DAB" style={styles.inputIcon} />
-                        <input
-                          type="text"
-                          name="ciclo"
-                          value={usuario.ciclo || ''}
-                          onChange={handleChange}
-                          style={styles.input}
-                        />
-                      </div>
-                    </div>
-                    <div style={styles.inputContainer}>
-                      <label style={styles.label}>Rol</label>
-                      <div style={styles.inputWrapper}>
-                        <Users size={18} color="#005DAB" style={styles.inputIcon} />
-                        <input
-                          type="text"
-                          name="rol"
-                          value={usuario.rol || ''}
-                          onChange={handleChange}
-                          disabled={true}
-                          style={{...styles.input, backgroundColor: '#e9ecef', cursor: 'default'}}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={styles.formRow}>
-                    <div style={styles.inputContainer}>
-                      <label style={styles.label}>Departamento ID</label>
-                      <div style={styles.inputWrapper}>
-                        <Building size={18} color="#005DAB" style={styles.inputIcon} />
-                        <input
-                          type="number"
-                          name="departamentoId"
-                          value={usuario.departamentoId || ''}
-                          onChange={handleChange}
-                          style={styles.input}
-                        />
-                      </div>
-                    </div>
-                    <div style={styles.inputContainer}>
-                      <label style={styles.label}>Carrera ID</label>
-                      <div style={styles.inputWrapper}>
-                        <Book size={18} color="#005DAB" style={styles.inputIcon} />
-                        <input
-                          type="number"
-                          name="carreraId"
-                          value={usuario.carreraId || ''}
-                          onChange={handleChange}
-                          style={styles.input}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={styles.formRow}>
-                    <div style={styles.inputContainer}>
-                      <label style={styles.label}>Sección ID</label>
-                      <div style={styles.inputWrapper}>
-                        <Users size={18} color="#005DAB" style={styles.inputIcon} />
-                        <input
-                          type="number"
-                          name="seccionId"
-                          value={usuario.seccionId || ''}
-                          onChange={handleChange}
-                          style={styles.input}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={styles.formActions}>
-                  <button type="button" onClick={handleCancel} style={styles.cancelButton}>
-                    Cancelar
-                  </button>
-                  <button type="submit" style={styles.saveButton}>
-                    <Save size={18} style={{marginRight: '8px'}} />
-                    Guardar Cambios
-                  </button>
-                </div>
-              </form>
             </div>
           </div>
-        )}
+        </div>
+
+        <div style={styles.formSection}>
+          <h4 style={styles.formSectionTitle}>Información Personal</h4>
+          <div style={styles.formRow}>
+            <div style={styles.inputContainer}>
+              <label style={styles.label}>Nombre</label>
+              <div style={styles.inputWrapper}>
+                <User size={18} color="#005DAB" style={styles.inputIcon} />
+                <input
+                  type="text"
+                  name="nombre"
+                  value={usuario.nombre || ''}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+              </div>
+            </div>
+            <div style={styles.inputContainer}>
+              <label style={styles.label}>Apellidos</label>
+              <div style={styles.inputWrapper}>
+                <User size={18} color="#005DAB" style={styles.inputIcon} />
+                <input
+                  type="text"
+                  name="apellidos"
+                  value={usuario.apellidos || ''}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.formSection}>
+          <h4 style={styles.formSectionTitle}>Información Académica</h4>
+          <div style={styles.formRow}>
+            <div style={styles.inputContainer}>
+              <label style={styles.label}>Código de Estudiante</label>
+              <div style={styles.inputWrapper}>
+                <Database size={18} color="#005DAB" style={styles.inputIcon} />
+                <input
+                  type="text"
+                  name="codigo"
+                  value={usuario.codigo || ''}
+                  onChange={handleChange}
+                  disabled={true}
+                  style={{...styles.input, backgroundColor: '#e9ecef', cursor: 'default'}}
+                />
+              </div>
+            </div>
+            <div style={styles.inputContainer}>
+              <label style={styles.label}>Correo Institucional</label>
+              <div style={styles.inputWrapper}>
+                <Mail size={18} color="#005DAB" style={styles.inputIcon} />
+                <input
+                  type="email"
+                  name="correoInstitucional"
+                  value={usuario.correoInstitucional || ''}
+                  onChange={handleChange}
+                  disabled={true}
+                  style={{...styles.input, backgroundColor: '#e9ecef', cursor: 'default'}}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.formRow}>
+            <div style={styles.inputContainer}>
+              <label style={styles.label}>Ciclo</label>
+              <div style={styles.inputWrapper}>
+                <BookOpen size={18} color="#005DAB" style={styles.inputIcon} />
+                <input
+                  type="text"
+                  name="ciclo"
+                  value={usuario.ciclo || ''}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+              </div>
+            </div>
+            {/* Se elimina el campo del rol ya que no debe mostrarse */}
+          </div>
+
+          <div style={styles.formRow}>
+            <div style={styles.inputContainer}>
+              <label style={styles.label}>Departamento ID</label>
+              <div style={styles.inputWrapper}>
+                <Building size={18} color="#005DAB" style={styles.inputIcon} />
+                <input
+                  type="number"
+                  name="departamentoId"
+                  value={usuario.departamentoId || ''}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+              </div>
+            </div>
+            <div style={styles.inputContainer}>
+              <label style={styles.label}>Carrera ID</label>
+              <div style={styles.inputWrapper}>
+                <Book size={18} color="#005DAB" style={styles.inputIcon} />
+                <input
+                  type="number"
+                  name="carreraId"
+                  value={usuario.carreraId || ''}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.formRow}>
+            <div style={styles.inputContainer}>
+              <label style={styles.label}>Sección ID</label>
+              <div style={styles.inputWrapper}>
+                <Users size={18} color="#005DAB" style={styles.inputIcon} />
+                <input
+                  type="number"
+                  name="seccionId"
+                  value={usuario.seccionId || ''}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.formActions}>
+          <button type="button" onClick={handleCancel} style={styles.cancelButton}>
+            Cancelar
+          </button>
+          <button type="submit" style={styles.saveButton}>
+            <Save size={18} style={{marginRight: '8px'}} />
+            Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );
@@ -471,6 +638,72 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
   },
+  // Añadir estos estilos al objeto styles
+photoUploadContainer: {
+  display: "flex",
+  alignItems: "center",
+  gap: "20px",
+  flexWrap: "wrap",
+},
+currentPhotoContainer: {
+  width: "100px",
+  height: "100px",
+  position: "relative",
+},
+currentPhoto: {
+  width: "100px",
+  height: "100px",
+  borderRadius: "50%",
+  objectFit: "cover",
+  border: "2px solid #e0e6ed",
+},
+photoPlaceholder: {
+  width: "100px",
+  height: "100px",
+  borderRadius: "50%",
+  backgroundColor: "#005DAB",
+  color: "white",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  fontSize: "36px",
+  fontWeight: "bold",
+},
+photoUploadActions: {
+  flex: 1,
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+},
+uploadPhotoButton: {
+  backgroundColor: "#005DAB",
+  color: "white",
+  border: "none",
+  padding: "8px 15px",
+  borderRadius: "4px",
+  fontSize: "14px",
+  fontWeight: "500",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  maxWidth: "fit-content",
+},
+removePhotoButton: {
+  backgroundColor: "transparent",
+  color: "#dc3545",
+  border: "1px solid #dc3545",
+  padding: "6px 12px",
+  borderRadius: "4px",
+  fontSize: "14px",
+  fontWeight: "500",
+  cursor: "pointer",
+  maxWidth: "fit-content",
+},
+photoHelpText: {
+  fontSize: "12px",
+  color: "#666",
+  marginTop: "5px",
+},
   header: {
     width: '100%',
     backgroundColor: "#005DAB",
@@ -522,6 +755,7 @@ const styles = {
     padding: "20px",
   },
   avatarContainer: {
+    position: "relative",
     marginRight: "20px",
   },
   avatar: {
@@ -535,6 +769,30 @@ const styles = {
     alignItems: "center",
     fontSize: "24px",
     fontWeight: "bold",
+  },
+  avatarImage: {
+    width: '60px',
+    height: '60px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '2px solid #f0f4f8',
+  },
+  changePhotoButton: {
+    position: 'absolute',
+    bottom: '0',
+    right: '0',
+    backgroundColor: '#005DAB',
+    color: 'white',
+    border: 'none',
+    borderRadius: '50%',
+    width: '24px',
+    height: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+    padding: '0',
   },
   profileInfo: {
     flex: 1,
@@ -761,7 +1019,7 @@ const styles = {
     borderTop: "4px solid #005DAB",
     borderRadius: "50%",
     animation: "spin 1s linear infinite",
-  },
+  }
 };
 
 export default Perfil;
