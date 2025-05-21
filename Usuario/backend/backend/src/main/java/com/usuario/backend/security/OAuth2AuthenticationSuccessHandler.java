@@ -43,7 +43,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             String email = (String) attributes.get("email");
             String name = (String) attributes.get("given_name");
             String lastName = (String) attributes.get("family_name");
-
+            
             logger.info("User authenticated with OAuth2: {}", email);
 
             // Verificar dominio institucional
@@ -64,7 +64,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     newUser.setNombre(name != null ? name : "");
                     newUser.setApellidos(lastName != null ? lastName : "");
                     newUser.setRol("ESTUDIANTE");
-
+                    String pictureUrl = (String) attributes.get("picture");
+if (pictureUrl != null && !pictureUrl.isEmpty()) {
+    // Si el usuario es nuevo o no tiene imagen de perfil, usar la de Google
+    if (existingUser == null || existingUser.getProfileImageUrl() == null) {
+        newUser.setProfileImageUrl(pictureUrl);
+    }
+}
                     // Generar código de usuario basado en el email
                     String codigo = email.split("@")[0];
                     newUser.setCodigo(codigo);
@@ -90,7 +96,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 response.sendRedirect("http://localhost:5173/login?error=user_processing");
                 return;
             }
-
+            
             // Generar token JWT
             String token = null;
             try {
