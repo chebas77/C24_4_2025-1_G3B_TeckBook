@@ -14,7 +14,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 
 @Configuration
@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/usuarios/register", "/api/usuarios/login").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/usuarios/me", "/api/usuarios/{id}").authenticated()
+                        
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

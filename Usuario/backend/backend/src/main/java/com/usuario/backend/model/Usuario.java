@@ -30,7 +30,18 @@ package com.usuario.backend.model;
         @Column(name = "seccion_id")
         private Long seccionId;
 
+        @Column(name = "profile_image_url")
+        private String profileImageUrl;
+
         // Getters y Setters
+        public String getProfileImageUrl() {
+        return profileImageUrl;
+        }
+
+        public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+        }
+
         public Long getId() {
             return id;
         }

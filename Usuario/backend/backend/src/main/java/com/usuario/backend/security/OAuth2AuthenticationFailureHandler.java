@@ -13,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -20,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Component
-public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(OAuth2AuthenticationSuccessHandler.class);
 
