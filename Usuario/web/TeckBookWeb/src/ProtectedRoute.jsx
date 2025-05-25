@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import './ProtectedRoute.css';
 
 function ProtectedRoute({ children }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -15,8 +16,6 @@ function ProtectedRoute({ children }) {
       if (tokenFromUrl) {
         // Guardar el token de la URL en localStorage
         localStorage.setItem('token', tokenFromUrl);
-        
-        // No limpiamos la URL aquí para que el componente Home pueda procesarla
       }
       
       const token = localStorage.getItem('token');
@@ -56,8 +55,8 @@ function ProtectedRoute({ children }) {
 
   if (isLoading) {
     return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.loadingSpinner}></div>
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
         <p>Verificando autenticación...</p>
       </div>
     );
@@ -70,24 +69,5 @@ function ProtectedRoute({ children }) {
 
   return children;
 }
-
-const styles = {
-  loadingContainer: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100vh",
-    gap: "20px",
-  },
-  loadingSpinner: {
-    width: "40px",
-    height: "40px",
-    border: "4px solid #f3f3f3",
-    borderTop: "4px solid #005DAB",
-    borderRadius: "50%",
-    animation: "spin 1s linear infinite",
-  },
-};
 
 export default ProtectedRoute;
