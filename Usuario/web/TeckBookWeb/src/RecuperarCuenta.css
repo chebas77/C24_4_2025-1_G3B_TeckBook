@@ -1,0 +1,127 @@
+/* RecuperarCuenta.css */
+.wrapper {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #ffffff;
+}
+
+.left {
+  flex: 1;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.form-box {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.logo {
+  font-size: 36px;
+  color: #005DAB;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.instruction {
+  color: #666;
+  margin-bottom: 25px;
+  font-size: 15px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.input {
+  padding: 14px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.input:focus {
+  border-color: #005DAB;
+}
+
+.button {
+  padding: 14px;
+  font-size: 15px;
+  background-color: #005DAB;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: background-color 0.2s ease;
+}
+
+.button:hover {
+  background-color: #004a8f;
+}
+
+.right {
+  position: relative;
+  flex: 1;
+  background-color: #f0f4f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.right-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 93, 171, 0.3) 0%, rgba(0, 93, 171, 0) 70%);
+}
+
+.info-card {
+  position: absolute;
+  bottom: 40px;
+  left: 40px;
+  background-color: rgba(255, 255, 255, 0.85);
+  padding: 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+  max-width: 300px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.info-title {
+  font-size: 20px;
+  color: #005DAB;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.info-text {
+  color: #000;
+  font-size: 14px;
+}

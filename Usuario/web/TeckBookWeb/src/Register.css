@@ -1,0 +1,212 @@
+/* Register.css */
+.wrapper {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f5f7fa;
+}
+
+.left {
+  flex: 1;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.right {
+  position: relative;
+  flex: 1;
+  background-color: #f0f4f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.right-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 93, 171, 0.5) 0%, rgba(0, 93, 171, 0.2) 70%);
+}
+
+.form-box {
+  width: 100%;
+  max-width: 450px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  padding: 40px 35px;
+  text-align: center;
+}
+
+.logo {
+  font-size: 42px;
+  color: #005DAB;
+  font-weight: bold;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: #333;
+  font-weight: 600;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.input-container {
+  position: relative;
+  width: 100%;
+}
+
+.input-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.input {
+  width: 100%;
+  padding: 15px 15px 15px 45px;
+  font-size: 15px;
+  border: 1px solid #e0e6ed;
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  background-color: #f9fafc;
+  color: #333;
+}
+
+.input:focus {
+  border-color: #005DAB;
+  background-color: #fff;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.button {
+  background-color: #005DAB;
+  color: white;
+  padding: 15px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0,93,171,0.15);
+  margin-top: 5px;
+  width: 100%;
+  margin-right: 10px;
+}
+
+.button:hover {
+  background-color: #004a8f;
+}
+
+.secondary-button {
+  background-color: #e0e6ed;
+  color: #4a5568;
+  padding: 15px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  width: 100%;
+  margin-top: 5px;
+  margin-right: 10px;
+}
+
+.secondary-button:hover {
+  background-color: #d0d6dd;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 25px;
+}
+
+.step {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #e0e6ed;
+}
+
+.active-step {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #005DAB;
+}
+
+.info-card {
+  position: absolute;
+  bottom: 50px;
+  left: 50px;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 25px;
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  max-width: 320px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.info-title {
+  font-size: 22px;
+  color: #005DAB;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.info-text {
+  color: #2d3748;
+  font-size: 15px;
+  line-height: 1.6;
+}

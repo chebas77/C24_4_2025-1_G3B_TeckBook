@@ -1,0 +1,352 @@
+/* Login.css */
+.wrapper {
+  display: flex;
+  flex-direction: row; /* CLAVE: forzar dirección horizontal */
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f5f7fa;
+}
+
+.left {
+  flex: 1;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
+  min-width: 50%; /* Asegurar 50% mínimo */
+}
+
+.right {
+  position: relative;
+  flex: 1;
+  background-color: #f0f4f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  min-width: 50%; /* Asegurar 50% mínimo */
+}
+
+.right-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 93, 171, 0.5) 0%, rgba(0, 93, 171, 0.2) 70%);
+}
+
+.form-box {
+  width: 100%;
+  max-width: 450px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  padding: 40px 35px;
+  text-align: center;
+}
+
+.logo {
+  font-size: 42px;
+  color: #005DAB;
+  font-weight: bold;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 600;
+}
+
+.subtitle {
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+.error-message {
+  background-color: #ffeceb;
+  color: #e53935;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.input-container {
+  position: relative;
+  width: 100%;
+}
+
+.input-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.input {
+  width: 100%;
+  padding: 15px 15px 15px 45px;
+  font-size: 15px;
+  border: 1px solid #e0e6ed;
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  background-color: #f9fafc;
+  color: #333;
+}
+
+.input:focus {
+  border-color: #005DAB;
+  background-color: #fff;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.forgot-password-container {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.forgot-password-link {
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.forgot-password-link:hover {
+  color: #005DAB;
+}
+
+.button {
+  background-color: #005DAB;
+  color: white;
+  padding: 15px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0,93,171,0.15);
+  margin-top: 5px;
+  width: 100%;
+}
+
+.button:hover {
+  background-color: #004a8f;
+}
+
+.button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.register-button {
+  display: block;
+  margin-top: 20px;
+  color: #555;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+  transition: color 0.2s;
+  text-align: center;
+  cursor: pointer;
+}
+
+.register-button:hover {
+  color: #005DAB;
+}
+
+.register-highlight {
+  color: #005DAB;
+  font-weight: 600;
+}
+
+.divider-container {
+  display: flex;
+  align-items: center;
+  margin: 25px 0 20px;
+  width: 100%;
+}
+
+.divider {
+  flex: 1;
+  height: 1px;
+  background-color: #e0e6ed;
+}
+
+.divider-text {
+  padding: 0 15px;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.google-button {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  color: #3c4043;
+  cursor: pointer;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  height: 50px;
+  justify-content: center;
+  padding: 0 15px;
+  position: relative;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.google-button:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.google-button-text {
+  padding-left: 35px;
+  text-align: center;
+  color: #444;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.google-icon-wrapper {
+  position: absolute;
+  left: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.help-links {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.help-text {
+  color: #666;
+  font-size: 14px;
+}
+
+.link {
+  color: #005DAB;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.link:hover {
+  color: #004a8f;
+}
+
+.info-card {
+  position: absolute;
+  bottom: 50px;
+  left: 50px;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 25px;
+  border-radius: 14px;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  max-width: 320px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Fallback para navegadores sin soporte */
+@supports not (backdrop-filter: blur(10px)) {
+  .info-card {
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+}
+
+.info-title {
+  font-size: 22px;
+  color: #005DAB;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.info-text {
+  color: #2d3748;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.info-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #555;
+}
