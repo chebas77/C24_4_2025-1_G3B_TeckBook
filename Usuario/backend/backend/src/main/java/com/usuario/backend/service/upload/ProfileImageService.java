@@ -1,13 +1,12 @@
-package com.usuario.backend.service;
-
-import com.usuario.backend.model.Usuario;
+package com.usuario.backend.service.upload;
+import com.usuario.backend.model.entity.Usuario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.usuario.backend.service.user.UsuarioService;
 import java.util.HashMap;
 import java.util.Map;
 

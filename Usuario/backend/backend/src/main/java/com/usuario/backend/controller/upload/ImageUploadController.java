@@ -1,9 +1,8 @@
-package com.usuario.backend.controller;
-
-import com.usuario.backend.model.Usuario;
-import com.usuario.backend.service.CloudinaryService;
-import com.usuario.backend.service.ProfileImageService;
-import com.usuario.backend.service.UsuarioService;
+package com.usuario.backend.controller.upload;
+import com.usuario.backend.model.entity.Usuario;
+import com.usuario.backend.service.upload.CloudinaryService;
+import com.usuario.backend.service.upload.ProfileImageService;
+import com.usuario.backend.service.user.UsuarioService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

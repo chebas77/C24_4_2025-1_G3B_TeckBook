@@ -1,7 +1,7 @@
-package com.usuario.backend.controller;
+package com.usuario.backend.controller.user;
 
-import com.usuario.backend.model.Usuario;
-import com.usuario.backend.service.UsuarioService;
+import com.usuario.backend.model.entity.Usuario;
+import com.usuario.backend.service.user.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

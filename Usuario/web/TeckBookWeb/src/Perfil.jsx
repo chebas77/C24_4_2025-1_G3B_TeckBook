@@ -643,5 +643,28 @@ function Perfil() {
     </div>
   );
 }
+const handleCancel = () => {
+  const fetchUsuario = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/auth/user', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
+      if (!response.ok) {
+        throw new Error('No se pudo obtener la información del usuario');
+      }
+
+      const data = await response.json();
+      setUsuario(data);
+      setIsEditing(false);
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  fetchUsuario();
+};
 export default Perfil;

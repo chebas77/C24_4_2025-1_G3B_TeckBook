@@ -1,8 +1,8 @@
 package com.usuario.backend.config;
 
-import com.usuario.backend.security.CustomOAuth2UserService;
-import com.usuario.backend.security.OAuth2AuthenticationSuccessHandler;
-import com.usuario.backend.security.JwtAuthenticationFilter;
+import com.usuario.backend.security.oauth2.CustomOAuth2UserService;
+import com.usuario.backend.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.usuario.backend.security.jwt.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

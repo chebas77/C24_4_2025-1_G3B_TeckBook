@@ -1,6 +1,6 @@
-package com.usuario.backend.controller;
+package com.usuario.backend.controller.debug;
 
-import com.usuario.backend.security.JwtTokenProvider;
+import com.usuario.backend.security.jwt.JwtTokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

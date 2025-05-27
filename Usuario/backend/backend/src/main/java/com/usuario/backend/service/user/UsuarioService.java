@@ -1,6 +1,5 @@
-package com.usuario.backend.service;
-
-import com.usuario.backend.model.Usuario;
+package com.usuario.backend.service.user;
+import com.usuario.backend.model.entity.Usuario;
 import com.usuario.backend.repository.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

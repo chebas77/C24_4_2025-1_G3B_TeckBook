@@ -1,4 +1,4 @@
-package com.usuario.backend.security;
+package com.usuario.backend.security.oauth2;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

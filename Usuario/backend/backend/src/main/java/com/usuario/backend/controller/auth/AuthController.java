@@ -1,9 +1,8 @@
-package com.usuario.backend.controller;
-
-import com.usuario.backend.model.Usuario;
-import com.usuario.backend.security.JwtTokenManager;
-import com.usuario.backend.security.JwtTokenProvider;
-import com.usuario.backend.service.UsuarioService;
+package com.usuario.backend.controller.auth;
+import com.usuario.backend.model.entity.Usuario;
+import com.usuario.backend.security.jwt.JwtTokenProvider;
+import com.usuario.backend.security.jwt.JwtTokenManager;
+import com.usuario.backend.service.user.UsuarioService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,4 +1,4 @@
-package com.usuario.backend.model;
+package com.usuario.backend.model.entity;
 
     import jakarta.persistence.*;
 
