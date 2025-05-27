@@ -239,30 +239,49 @@ function Perfil() {
     }
   };
 
-  const handleCancel = () => {
-    const fetchUsuario = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:8080/api/auth/user', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('No se pudo obtener la información del usuario');
+  const handleLogout = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      console.log("Cerrando sesión en el backend...");
+      
+      // 🎯 LLAMADA AL BACKEND PARA INVALIDAR TOKEN
+      const response = await fetch('http://localhost:8080/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-
+      });
+      
+      if (response.ok) {
         const data = await response.json();
-        setUsuario(data);
-        setIsEditing(false);
-      } catch (error) {
-        setError(error.message);
+        console.log("✅ Sesión cerrada en el backend:", data);
+        
+        if (data.tokenInvalidated) {
+          console.log("✅ Token invalidado correctamente");
+        }
+      } else {
+        console.warn("⚠️ Error al cerrar sesión en backend, pero continuando logout");
       }
-    };
-
-    fetchUsuario();
-  };
+    }
+    
+    // 🔧 LIMPIAR FRONTEND SIEMPRE (incluso si falla el backend)
+    localStorage.removeItem('token');
+    console.log("✅ Token eliminado del localStorage");
+    
+    // Redireccionar al login
+    navigate('/');
+    
+  } catch (error) {
+    console.error("❌ Error durante logout:", error);
+    
+    // 🔧 LIMPIAR FRONTEND AUNQUE FALLE EL BACKEND
+    localStorage.removeItem('token');
+    navigate('/');
+  }
+};
 
   if (isLoading) {
     return (
@@ -286,16 +305,15 @@ function Perfil() {
             <a href="/perfil" className="nav-link active">Perfil</a>
             <a href="/cursos" className="nav-link">Cursos</a>
             <a 
-              href="/"
-              onClick={(e) => {
-                e.preventDefault();
-                localStorage.removeItem('token');
-                navigate('/');
-              }} 
-              className="nav-link"
-            >
-              Cerrar sesión
-            </a>
+  href="/"
+  onClick={(e) => {
+    e.preventDefault();
+    handleLogout(); // 🔧 USAR LA NUEVA FUNCIÓN
+  }} 
+  className="nav-link"
+>
+  Cerrar sesión
+</a>
           </nav>
         </div>
       </header>

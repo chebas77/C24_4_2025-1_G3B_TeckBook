@@ -67,12 +67,17 @@ function Home() {
 
         const data = await response.json();
         console.log("Datos del usuario obtenidos:", data);
-        setUserData(data);
+        console.log("URL de imagen en Home:", data.profileImageUrl); // Para debug
+        
+        // 🔧 FIX: Asegurar que profileImageUrl se maneje correctamente
+        setUserData({
+          ...data,
+          profileImageUrl: data.profileImageUrl || ""
+        });
       } catch (error) {
         console.error("Error al obtener datos del usuario:", error);
         setError(error.message);
         
-        // Si hay un error de autenticación, redirigir al login
         localStorage.removeItem('token');
         setTimeout(() => {
           navigate('/');
@@ -85,16 +90,154 @@ function Home() {
     fetchUserData();
   }, [navigate]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      console.log("Cerrando sesión en el backend...");
+      
+      // 🎯 LLAMADA AL BACKEND PARA INVALIDAR TOKEN
+      const response = await fetch('http://localhost:8080/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Sesión cerrada en el backend:", data);
+        
+        if (data.tokenInvalidated) {
+          console.log("✅ Token invalidado correctamente");
+        }
+      } else {
+        console.warn("⚠️ Error al cerrar sesión en backend, pero continuando logout");
+      }
+    }
+    
+    // 🔧 LIMPIAR FRONTEND SIEMPRE (incluso si falla el backend)
+    localStorage.removeItem('token');
+    console.log("✅ Token eliminado del localStorage");
+    
+    // Redireccionar al login
+    navigate('/');
+    
+  } catch (error) {
+    console.error("❌ Error durante logout:", error);
+    
+    // 🔧 LIMPIAR FRONTEND AUNQUE FALLE EL BACKEND
     localStorage.removeItem('token');
     navigate('/');
-  };
+  }
+};
+const checkTokenStatus = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return { isValid: false };
+    
+    const response = await fetch('http://localhost:8080/api/auth/token/status', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Estado del token:", data);
+      
+      // Si el token está invalidado, hacer logout automático
+      if (data.isBlacklisted || !data.isValid) {
+        console.log("🔒 Token inválido detectado, cerrando sesión automáticamente");
+        localStorage.removeItem('token');
+        navigate('/');
+        return { isValid: false };
+      }
+      
+      return data;
+    }
+    
+    return { isValid: false };
+  } catch (error) {
+    console.error("Error verificando token:", error);
+    return { isValid: false };
+  }
+};
 
   const getUserInitials = () => {
     if (userData?.nombre && userData?.apellidos) {
       return `${userData.nombre.charAt(0)}${userData.apellidos.charAt(0)}`.toUpperCase();
     }
     return 'GS';
+  };
+
+  // 🔧 FIX: Función para renderizar avatar con imagen
+  const renderUserAvatar = () => {
+    // Si hay imagen de perfil, mostrarla
+    if (userData?.profileImageUrl && userData.profileImageUrl.trim() !== "") {
+      return (
+        <img 
+          src={userData.profileImageUrl} 
+          alt="Foto de perfil" 
+          className="home-user-avatar"
+          style={{
+            objectFit: 'cover',
+            backgroundColor: '#005DAB' // Fallback mientras carga
+          }}
+          onLoad={() => console.log("✅ Imagen de perfil cargada en Home")}
+          onError={(e) => {
+            // Si la imagen falla al cargar, ocultar imagen y mostrar iniciales
+            console.warn("❌ Error cargando imagen de perfil en Home:", userData.profileImageUrl);
+            e.target.style.display = 'none';
+            // Crear div con iniciales como fallback
+            const fallback = document.createElement('div');
+            fallback.className = 'home-user-avatar';
+            fallback.textContent = getUserInitials();
+            e.target.parentNode.appendChild(fallback);
+          }}
+        />
+      );
+    }
+    
+    // Si no hay imagen, mostrar iniciales
+    return (
+      <div className="home-user-avatar">
+        {getUserInitials()}
+      </div>
+    );
+  };
+
+  // 🔧 FIX: Función para renderizar avatar en posts (create-post y post-avatar)
+  const renderPostAvatar = (className = "home-create-post-avatar") => {
+    if (userData?.profileImageUrl && userData.profileImageUrl.trim() !== "") {
+      return (
+        <img 
+          src={userData.profileImageUrl} 
+          alt="Foto de perfil" 
+          className={className}
+          style={{
+            objectFit: 'cover',
+            backgroundColor: '#005DAB'
+          }}
+          onError={(e) => {
+            // Fallback a iniciales si falla la imagen
+            e.target.style.display = 'none';
+            const fallback = document.createElement('div');
+            fallback.className = className;
+            fallback.textContent = getUserInitials();
+            e.target.parentNode.appendChild(fallback);
+          }}
+        />
+      );
+    }
+    
+    return (
+      <div className={className}>
+        {getUserInitials()}
+      </div>
+    );
   };
 
   const mockPosts = [
@@ -155,7 +298,7 @@ function Home() {
 
   return (
     <div className="home-wrapper">
-      {/* ENCABEZADO - Mantengo la lógica exacta */}
+      {/* ENCABEZADO */}
       <header className="home-header">
         <h1 className="home-logo">TecBook</h1>
         <nav className="home-nav">
@@ -174,16 +317,14 @@ function Home() {
         </nav>
       </header>
 
-      {/* NUEVO LAYOUT DE 3 COLUMNAS */}
+      {/* LAYOUT DE 3 COLUMNAS */}
       <div className="home-main-layout">
         
-        {/* COLUMNA IZQUIERDA - Las tarjetas originales */}
+        {/* COLUMNA IZQUIERDA */}
         <aside className="home-left-sidebar">
           <div className="home-welcome-card">
             <div className="home-user-info">
-              <div className="home-user-avatar">
-                {getUserInitials()}
-              </div>
+              {renderUserAvatar()}
               <div className="home-user-details">
                 <h3>{userData ? `${userData.nombre} ${userData.apellidos}` : 'Bienvenido a TecBook'}</h3>
                 <p>{userData?.rol || 'Estudiante'}</p>
@@ -232,13 +373,11 @@ function Home() {
           </div>
         </aside>
 
-        {/* COLUMNA CENTRAL - Feed de noticias */}
+        {/* COLUMNA CENTRAL - Feed */}
         <main className="home-main-content">
           <div className="home-create-post">
             <div className="home-create-post-header">
-              <div className="home-create-post-avatar">
-                {getUserInitials()}
-              </div>
+              {renderPostAvatar("home-create-post-avatar")}
               <input 
                 type="text" 
                 placeholder={`¿Qué estás pensando, ${userData?.nombre || 'Usuario'}?`}
