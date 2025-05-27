@@ -1,4 +1,4 @@
-package com.usuario.backend.service;
+package com.usuario.backend.service.upload;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;

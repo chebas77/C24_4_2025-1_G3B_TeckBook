@@ -1,6 +1,6 @@
-package com.usuario.backend.security;
+package com.usuario.backend.security.jwt;
 
-import com.usuario.backend.service.UsuarioService;
+import com.usuario.backend.service.user.UsuarioService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
