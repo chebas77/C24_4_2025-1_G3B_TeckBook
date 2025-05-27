@@ -77,44 +77,53 @@ function Perfil() {
   
   const navigate = useNavigate();
 
-  // Obtener datos del usuario al cargar
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      navigate('/');
-      return;
-    }
+  const token = localStorage.getItem('token');
+  
+  if (!token) {
+    navigate('/');
+    return;
+  }
 
-    const fetchUsuario = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('http://localhost:8080/api/auth/user', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('No se pudo obtener la información del usuario');
+  const fetchUsuario = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('http://localhost:8080/api/auth/user', {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
+      });
 
-        const data = await response.json();
-        setUsuario(data);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error al obtener datos del usuario:", error);
-        setError("Error al cargar los datos del perfil. Por favor, inicie sesión nuevamente.");
-        setIsLoading(false);
-        setTimeout(() => {
-          localStorage.removeItem('token');
-          navigate('/');
-        }, 3000);
+      if (!response.ok) {
+        throw new Error('No se pudo obtener la información del usuario');
       }
-    };
 
-    fetchUsuario();
-  }, [navigate]);
+      const data = await response.json();
+      
+      // 🔧 FIX: Asegurar que profileImageUrl se asigne correctamente
+      console.log("Datos recibidos del backend:", data); // Para debug
+      console.log("URL de imagen desde backend:", data.profileImageUrl); // Para debug
+      
+      setUsuario({
+        ...data,
+        // Asegurar que profileImageUrl no sea undefined/null
+        profileImageUrl: data.profileImageUrl || ""
+      });
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error al obtener datos del usuario:", error);
+      setError("Error al cargar los datos del perfil. Por favor, inicie sesión nuevamente.");
+      setIsLoading(false);
+      setTimeout(() => {
+        localStorage.removeItem('token');
+        navigate('/');
+      }, 3000);
+    }
+  };
+
+  fetchUsuario();
+}, [navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

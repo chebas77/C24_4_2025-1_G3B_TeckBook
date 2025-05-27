@@ -44,6 +44,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             String name = (String) attributes.get("given_name");
             String lastName = (String) attributes.get("family_name");
             
+            // 🎯 OBTENER IMAGEN DE GOOGLE
+            String pictureUrl = (String) attributes.get("picture");
+            logger.info("Google profile picture URL: {}", pictureUrl);
+            
             logger.info("User authenticated with OAuth2: {}", email);
 
             // Verificar dominio institucional
@@ -58,19 +62,19 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 Usuario existingUser = usuarioService.findByCorreoInstitucional(email);
 
                 if (existingUser == null) {
-                    // Crear nuevo usuario con los datos básicos
+                    // 🔧 CREAR NUEVO USUARIO CON IMAGEN DE GOOGLE
                     Usuario newUser = new Usuario();
                     newUser.setCorreoInstitucional(email);
                     newUser.setNombre(name != null ? name : "");
                     newUser.setApellidos(lastName != null ? lastName : "");
                     newUser.setRol("ESTUDIANTE");
-                    String pictureUrl = (String) attributes.get("picture");
-if (pictureUrl != null && !pictureUrl.isEmpty()) {
-    // Si el usuario es nuevo o no tiene imagen de perfil, usar la de Google
-    if (existingUser == null || existingUser.getProfileImageUrl() == null) {
-        newUser.setProfileImageUrl(pictureUrl);
-    }
-}
+                    
+                    // 🎯 GUARDAR IMAGEN DE GOOGLE
+                    if (pictureUrl != null && !pictureUrl.isEmpty()) {
+                        logger.info("Guardando imagen de Google para nuevo usuario: {}", pictureUrl);
+                        newUser.setProfileImageUrl(pictureUrl);
+                    }
+                    
                     // Generar código de usuario basado en el email
                     String codigo = email.split("@")[0];
                     newUser.setCodigo(codigo);
@@ -81,15 +85,43 @@ if (pictureUrl != null && !pictureUrl.isEmpty()) {
                     // Usar IDs válidos existentes
                     newUser.setDepartamentoId(1L); // Tecnología Digital
 
-                    // Si necesitas valores para campos opcionales pero con restricción de clave foránea
-                    // newUser.setCarreraId(1L);
-                    // newUser.setSeccionId(1L);
-
                     // Registrar usuario
-                    usuarioService.registrarUsuarioOAuth(newUser);
-                    logger.info("Created new user for: {}", email);
+                    Usuario usuarioCreado = usuarioService.registrarUsuarioOAuth(newUser);
+                    logger.info("Created new user with Google image for: {} - Image URL: {}", 
+                              email, usuarioCreado.getProfileImageUrl());
+                    
                 } else {
+                    // 🔧 ACTUALIZAR USUARIO EXISTENTE CON IMAGEN DE GOOGLE
                     logger.info("User already exists: {}", email);
+                    
+                    // Actualizar información básica
+                    existingUser.setNombre(name != null ? name : existingUser.getNombre());
+                    existingUser.setApellidos(lastName != null ? lastName : existingUser.getApellidos());
+                    
+                    // 🎯 ACTUALIZAR IMAGEN SOLO SI NO TIENE O SI QUIERE LA DE GOOGLE
+                    boolean shouldUpdateImage = false;
+                    
+                    if (pictureUrl != null && !pictureUrl.isEmpty()) {
+                        if (existingUser.getProfileImageUrl() == null || existingUser.getProfileImageUrl().isEmpty()) {
+                            // No tiene imagen, usar la de Google
+                            shouldUpdateImage = true;
+                            logger.info("Usuario sin imagen, usando imagen de Google: {}", pictureUrl);
+                        } else if (existingUser.getProfileImageUrl().contains("googleusercontent.com")) {
+                            // Ya tiene imagen de Google, actualizarla por si cambió
+                            shouldUpdateImage = true;
+                            logger.info("Actualizando imagen de Google existente: {}", pictureUrl);
+                        } else {
+                            // Tiene imagen personalizada, mantenerla
+                            logger.info("Usuario tiene imagen personalizada, manteniéndola: {}", existingUser.getProfileImageUrl());
+                        }
+                        
+                        if (shouldUpdateImage) {
+                            existingUser.setProfileImageUrl(pictureUrl);
+                            Usuario usuarioActualizado = usuarioService.actualizarUsuario(existingUser);
+                            logger.info("Updated user with Google image: {} - New URL: {}", 
+                                      email, usuarioActualizado.getProfileImageUrl());
+                        }
+                    }
                 }
             } catch (Exception e) {
                 logger.error("Error processing user: {}", e.getMessage(), e);
