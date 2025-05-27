@@ -90,10 +90,81 @@ function Home() {
     fetchUserData();
   }, [navigate]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      console.log("Cerrando sesión en el backend...");
+      
+      // 🎯 LLAMADA AL BACKEND PARA INVALIDAR TOKEN
+      const response = await fetch('http://localhost:8080/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Sesión cerrada en el backend:", data);
+        
+        if (data.tokenInvalidated) {
+          console.log("✅ Token invalidado correctamente");
+        }
+      } else {
+        console.warn("⚠️ Error al cerrar sesión en backend, pero continuando logout");
+      }
+    }
+    
+    // 🔧 LIMPIAR FRONTEND SIEMPRE (incluso si falla el backend)
+    localStorage.removeItem('token');
+    console.log("✅ Token eliminado del localStorage");
+    
+    // Redireccionar al login
+    navigate('/');
+    
+  } catch (error) {
+    console.error("❌ Error durante logout:", error);
+    
+    // 🔧 LIMPIAR FRONTEND AUNQUE FALLE EL BACKEND
     localStorage.removeItem('token');
     navigate('/');
-  };
+  }
+};
+const checkTokenStatus = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return { isValid: false };
+    
+    const response = await fetch('http://localhost:8080/api/auth/token/status', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Estado del token:", data);
+      
+      // Si el token está invalidado, hacer logout automático
+      if (data.isBlacklisted || !data.isValid) {
+        console.log("🔒 Token inválido detectado, cerrando sesión automáticamente");
+        localStorage.removeItem('token');
+        navigate('/');
+        return { isValid: false };
+      }
+      
+      return data;
+    }
+    
+    return { isValid: false };
+  } catch (error) {
+    console.error("Error verificando token:", error);
+    return { isValid: false };
+  }
+};
 
   const getUserInitials = () => {
     if (userData?.nombre && userData?.apellidos) {

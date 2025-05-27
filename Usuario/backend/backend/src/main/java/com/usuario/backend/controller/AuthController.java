@@ -1,6 +1,7 @@
 package com.usuario.backend.controller;
 
 import com.usuario.backend.model.Usuario;
+import com.usuario.backend.security.JwtTokenManager;
 import com.usuario.backend.security.JwtTokenProvider;
 import com.usuario.backend.service.UsuarioService;
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -151,13 +153,105 @@ public ResponseEntity<?> getUserInfo(@RequestHeader(value = "Authorization", req
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error al procesar el token", "message", e.getMessage()));
     }
-}
+}   
+    @Autowired
+    private JwtTokenManager jwtTokenManager;
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        // JWT es stateless, así que técnicamente no hay nada que hacer en el servidor
-        // El cliente simplemente elimina el token almacenado
-        logger.info("Solicitud de logout recibida");
-        return ResponseEntity.ok(Map.of("message", "Sesión cerrada correctamente"));
+public ResponseEntity<?> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    logger.info("Solicitud de logout recibida");
+    
+    Map<String, Object> response = new HashMap<>();
+    
+    try {
+        // Verificar si hay token
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            
+            if (!token.trim().isEmpty()) {
+                // Obtener información del usuario antes de invalidar
+                String email = null;
+                try {
+                    if (jwtTokenProvider.validateToken(token)) {
+                        email = jwtTokenProvider.getEmailFromToken(token);
+                    }
+                } catch (Exception e) {
+                    logger.debug("Error al obtener email del token (token probablemente expirado): {}", e.getMessage());
+                }
+                
+                // 🔧 INVALIDAR TOKEN EN BLACKLIST
+                jwtTokenManager.blacklistToken(token);
+                
+                logger.info("Token invalidado exitosamente para usuario: {}", email != null ? email : "desconocido");
+                
+                response.put("message", "Sesión cerrada correctamente");
+                response.put("userEmail", email);
+                response.put("tokenInvalidated", true);
+                response.put("timestamp", System.currentTimeMillis());
+                
+                // Estadísticas de tokens (opcional, para debugging)
+                JwtTokenManager.TokenStats stats = jwtTokenManager.getTokenStats();
+                response.put("stats", Map.of(
+                    "blacklistedTokens", stats.getBlacklistedCount(),
+                    "expiredTokensCache", stats.getExpiredCacheCount()
+                ));
+                
+            } else {
+                logger.warn("Token vacío en solicitud de logout");
+                response.put("message", "Sesión cerrada (token vacío)");
+                response.put("tokenInvalidated", false);
+            }
+        } else {
+            logger.info("Logout sin token (ya no autenticado)");
+            response.put("message", "Sesión cerrada (sin token activo)");
+            response.put("tokenInvalidated", false);
+        }
+        
+        return ResponseEntity.ok(response);
+        
+    } catch (Exception e) {
+        logger.error("Error durante logout: {}", e.getMessage(), e);
+        response.put("message", "Error al cerrar sesión, pero sesión terminada");
+        response.put("error", e.getMessage());
+        response.put("tokenInvalidated", false);
+        
+        // Aún retornar 200 porque técnicamente el logout se completó
+        return ResponseEntity.ok(response);
     }
+}
+@GetMapping("/token/status")
+public ResponseEntity<?> getTokenStatus(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    Map<String, Object> response = new HashMap<>();
+    
+    if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        String token = authHeader.substring(7);
+        
+        boolean isValid = jwtTokenManager.isTokenValid(token);
+        boolean isBlacklisted = jwtTokenManager.isTokenBlacklisted(token);
+        
+        String email = null;
+        Date expiration = null;
+        
+        try {
+            if (jwtTokenProvider.validateToken(token)) {
+                email = jwtTokenProvider.getEmailFromToken(token);
+                // Si necesitas la fecha de expiración, agregar método en JwtTokenProvider
+            }
+        } catch (Exception e) {
+            logger.debug("Error al obtener info del token: {}", e.getMessage());
+        }
+        
+        response.put("isValid", isValid);
+        response.put("isBlacklisted", isBlacklisted);
+        response.put("userEmail", email);
+        response.put("timestamp", System.currentTimeMillis());
+        
+    } else {
+        response.put("isValid", false);
+        response.put("isBlacklisted", false);
+        response.put("error", "No token provided");
+    }
+    
+    return ResponseEntity.ok(response);
+}
 }

@@ -1,7 +1,10 @@
 package com.usuario.backend.controller;
 
 import com.usuario.backend.model.Usuario;
+import com.usuario.backend.service.CloudinaryService;
 import com.usuario.backend.service.ProfileImageService;
+import com.usuario.backend.service.UsuarioService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +28,12 @@ public class ImageUploadController {
     @Autowired
     private ProfileImageService profileImageService;
     
+     // 🔧 FIX: Agregar las dependencias que faltaban
+    @Autowired
+    private CloudinaryService cloudinaryService;
+    
+    @Autowired
+    private UsuarioService usuarioService;
     /**
      * REFACTORIZADO: Subir imagen de perfil usando ProfileImageService
      * SOLUCIÓN AL BUG: Garantiza persistencia inmediata en base de datos
