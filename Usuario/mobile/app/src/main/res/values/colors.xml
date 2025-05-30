@@ -1,5 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Colores principales de TeckBook -->
+    <color name="primary_blue">#1877F2</color>
+    <color name="primary_blue_dark">#166FE5</color>
+    <color name="primary_blue_light">#42A5F5</color>
+
+    <!-- Colores base -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <!-- Colores de texto -->
+    <color name="gray_text">#65676B</color>
+    <color name="gray_light">#DADDE1</color>
+    <color name="gray_lighter">#F0F2F5</color>
+
+    <!-- Colores de estado -->
+    <color name="green_success">#42B883</color>
+    <color name="red_error">#E74C3C</color>
+
+    <!-- Colores de fondo -->
+    <color name="background_light">#F8F9FA</color>
+
+    <!-- Color transparente -->
+    <color name="transparent">#00000000</color>
 </resources>

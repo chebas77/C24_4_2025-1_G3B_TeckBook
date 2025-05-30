@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Header con progreso -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp">
+
+            <!-- Botón de regresar -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_arrow_back"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Regresar" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
+
+            </LinearLayout>
+
+            <!-- Logo -->
+            <ImageView
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/ic_launcher_foreground"
+                android:background="@drawable/circle_background"
+                android:layout_marginBottom="12dp"
+                android:contentDescription="TeckBook Logo" />
+
+            <!-- Título dinámico -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Crear cuenta"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_blue"
+                android:fontFamily="sans-serif-medium" />
+
+            <!-- Indicador de progreso -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp">
+
+                <View
+                    android:id="@+id/progress1"
+                    android:layout_width="40dp"
+                    android:layout_height="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@color/primary_blue" />
+
+                <View
+                    android:id="@+id/progress2"
+                    android:layout_width="40dp"
+                    android:layout_height="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@color/gray_light" />
+
+                <View
+                    android:id="@+id/progress3"
+                    android:layout_width="40dp"
+                    android:layout_height="4dp"
+                    android:background="@color/gray_light" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Paso 1 de 3"
+                android:textSize="12sp"
+                android:textColor="@color/gray_text"
+                android:layout_marginTop="8dp" />
+
+        </LinearLayout>
+
+        <!-- Contenedor de formularios (se intercambia dinámicamente) -->
+        <LinearLayout
+            android:id="@+id/formContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- PASO 1: Información Personal y Contraseña -->
+            <LinearLayout
+                android:id="@+id/step1Container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <!-- Nombres -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etNombres"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Nombres"
+                        android:inputType="textPersonName"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Apellidos -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etApellidos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Apellidos"
+                        android:inputType="textPersonName"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Código -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCodigo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Código de estudiante"
+                        android:inputType="number"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Correo Institucional -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCorreoInstitucional"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Correo institucional"
+                        android:inputType="textEmailAddress"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Contraseña -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue"
+                    app:passwordToggleEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etContraseña"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Contraseña"
+                        android:inputType="textPassword"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+
+            <!-- PASO 2: Información Académica -->
+            <LinearLayout
+                android:id="@+id/step2Container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Ciclo -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCiclo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Ciclo (ej: 2024-I)"
+                        android:inputType="text"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Rol -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etRol"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Rol (Estudiante/Docente)"
+                        android:inputType="text"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Departamento ID -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etDepartamentoId"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="ID Departamento"
+                        android:inputType="number"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Carrera ID -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCarreraId"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="ID Carrera"
+                        android:inputType="number"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Sección ID -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etSeccionId"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="ID Sección"
+                        android:inputType="number"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+
+            <!-- PASO 3: Información de Contacto -->
+            <LinearLayout
+                android:id="@+id/step3Container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Email Personal -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Email personal"
+                        android:inputType="textEmailAddress"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Confirmar Contraseña -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeColor="@color/primary_blue"
+                    app:passwordToggleEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Confirmar contraseña"
+                        android:inputType="textPassword"
+                        android:textSize="16sp"
+                        android:padding="14dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Botones de navegación -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="24dp">
+
+            <!-- Botón Anterior -->
+            <Button
+                android:id="@+id/btnPrevious"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="Anterior"
+                android:textSize="16sp"
+                android:textColor="@color/primary_blue"
+                android:layout_marginEnd="8dp"
+                app:strokeColor="@color/primary_blue"
+                app:strokeWidth="2dp"
+                app:cornerRadius="8dp"
+                android:visibility="gone" />
+
+            <!-- Botón Siguiente/Registrar -->
+            <Button
+                android:id="@+id/btnNext"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="Siguiente"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/primary_blue"
+                android:layout_marginStart="8dp"
+                app:cornerRadius="8dp"
+                android:elevation="2dp" />
+
+        </LinearLayout>
+
+        <!-- Enlace para regresar al login -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="¿Ya tienes cuenta? "
+                android:textColor="@color/gray_text"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvBackToLogin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Iniciar sesión"
+                android:textColor="@color/primary_blue"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

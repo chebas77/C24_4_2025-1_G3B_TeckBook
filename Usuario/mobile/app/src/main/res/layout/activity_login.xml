@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:minHeight="600dp">
+
+        <!-- Header con logo y título -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="30dp">
+
+            <!-- Logo placeholder -->
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_launcher_foreground"
+                android:background="@drawable/circle_background"
+                android:layout_marginBottom="12dp"
+                android:contentDescription="TeckBook Logo" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TeckBook"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_blue"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Conecta con el mundo tech"
+                android:textSize="14sp"
+                android:textColor="@color/gray_text"
+                android:layout_marginTop="6dp"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <!-- Formulario de login -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="20dp">
+
+            <!-- Campo de email/usuario -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:boxBackgroundMode="outline"
+                app:boxCornerRadiusTopStart="8dp"
+                app:boxCornerRadiusTopEnd="8dp"
+                app:boxCornerRadiusBottomStart="8dp"
+                app:boxCornerRadiusBottomEnd="8dp"
+                app:boxStrokeColor="@color/primary_blue">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Email o número de teléfono"
+                    android:inputType="textEmailAddress"
+                    android:textSize="16sp"
+                    android:padding="14dp" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Campo de contraseña -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                app:boxBackgroundMode="outline"
+                app:boxCornerRadiusTopStart="8dp"
+                app:boxCornerRadiusTopEnd="8dp"
+                app:boxCornerRadiusBottomStart="8dp"
+                app:boxCornerRadiusBottomEnd="8dp"
+                app:boxStrokeColor="@color/primary_blue"
+                app:passwordToggleEnabled="true">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Contraseña"
+                    android:inputType="textPassword"
+                    android:textSize="16sp"
+                    android:padding="14dp" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Enlace "¿Olvidaste tu contraseña?" -->
+            <TextView
+                android:id="@+id/tvForgotPassword"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_gravity="end"
+                android:text="¿Olvidaste tu contraseña?"
+                android:textColor="@color/primary_blue"
+                android:textSize="14sp"
+                android:layout_marginBottom="20dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="12dp"
+                android:gravity="center_vertical" />
+
+        </LinearLayout>
+
+        <!-- Botón de iniciar sesión -->
+        <Button
+            android:id="@+id/btnLogin"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Iniciar sesión"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/primary_blue"
+            android:layout_marginBottom="16dp"
+            app:cornerRadius="8dp"
+            android:elevation="2dp" />
+
+        <!-- Divisor "O" -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="@color/gray_light" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="O"
+                android:textColor="@color/gray_text"
+                android:textSize="14sp"
+                android:layout_marginHorizontal="16dp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="@color/gray_light" />
+
+        </LinearLayout>
+
+        <!-- Botón de Google -->
+        <Button
+            android:id="@+id/btnGoogleSignIn"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Continuar con Google"
+            android:textSize="16sp"
+            android:textStyle="normal"
+            android:textColor="@color/gray_text"
+            android:layout_marginBottom="16dp"
+            app:strokeColor="@color/gray_light"
+            app:strokeWidth="1dp"
+            app:cornerRadius="8dp"
+            android:drawableStart="@drawable/ic_google"
+            android:drawablePadding="12dp"
+            android:gravity="center"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            app:iconTint="@null" />
+
+        <!-- Botón de crear cuenta -->
+        <Button
+            android:id="@+id/btnCreateAccount"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Crear cuenta nueva"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary_blue"
+            android:layout_marginBottom="20dp"
+            app:strokeColor="@color/primary_blue"
+            app:strokeWidth="2dp"
+            app:cornerRadius="8dp" />
+
+        <!-- Footer -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TeckBook"
+                android:textColor="@color/gray_text"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
