@@ -1,4 +1,5 @@
 package com.usuario.backend.service.user;
+
 import com.usuario.backend.model.entity.Usuario;
 import com.usuario.backend.repository.UsuarioRepository;
 import org.slf4j.Logger;
@@ -25,10 +26,80 @@ public class UsuarioService implements UserDetailsService {
 
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    /**
+     * 🔧 MEJORADO: Registra un usuario con validaciones y debug
+     */
     public Usuario registrarUsuario(Usuario usuario) {
-        // Encriptar la contraseña antes de guardarla
-        usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
-        return usuarioRepository.save(usuario);
+        try {
+            logger.info("🔧 Iniciando registro para usuario: {}", usuario.getCorreoInstitucional());
+            
+            // 🔥 VALIDACIÓN: Verificar que el usuario no exista ya
+            Usuario existingUser = usuarioRepository.findByCorreoInstitucional(usuario.getCorreoInstitucional());
+            if (existingUser != null) {
+                logger.warn("❌ Usuario ya existe: {}", usuario.getCorreoInstitucional());
+                throw new IllegalArgumentException("Ya existe un usuario con el correo: " + usuario.getCorreoInstitucional());
+            }
+            
+            // 🔥 VALIDACIÓN: Verificar campos requeridos
+            if (usuario.getPassword() == null || usuario.getPassword().trim().isEmpty()) {
+                logger.error("❌ Password es null o vacío");
+                throw new IllegalArgumentException("La contraseña es requerida");
+            }
+            
+            if (usuario.getCorreoInstitucional() == null || usuario.getCorreoInstitucional().trim().isEmpty()) {
+                logger.error("❌ Correo institucional es null o vacío");
+                throw new IllegalArgumentException("El correo institucional es requerido");
+            }
+            
+            // 🔧 DEBUG: Log de datos recibidos
+            logger.debug("🔧 Datos recibidos:");
+            logger.debug("   - Nombre: {}", usuario.getNombre());
+            logger.debug("   - Apellidos: {}", usuario.getApellidos());
+            logger.debug("   - Código: {}", usuario.getCodigo());
+            logger.debug("   - Correo: {}", usuario.getCorreoInstitucional());
+            logger.debug("   - Password recibido: {}", usuario.getPassword() != null ? "***[PRESENTE]***" : "NULL");
+            logger.debug("   - Ciclo: {}", usuario.getCiclo());
+            logger.debug("   - CarreraId: {}", usuario.getCarreraId());
+            logger.debug("   - Rol: {}", usuario.getRol());
+            
+            // 🔧 ENCRIPTAR CONTRASEÑA
+            String passwordOriginal = usuario.getPassword();
+            String passwordEncriptada = passwordEncoder.encode(passwordOriginal);
+            usuario.setPassword(passwordEncriptada);
+            
+            logger.info("✅ Contraseña encriptada correctamente");
+            logger.debug("🔧 Hash generado: {}", passwordEncriptada.substring(0, Math.min(30, passwordEncriptada.length())) + "...");
+            
+            // 🔧 VERIFICACIÓN: Probar que la encriptación funciona inmediatamente
+            boolean verificacion = passwordEncoder.matches(passwordOriginal, passwordEncriptada);
+            logger.info("🔧 Verificación inmediata de encriptación: {}", verificacion ? "✅ ÉXITO" : "❌ FALLÓ");
+            
+            if (!verificacion) {
+                logger.error("❌ CRÍTICO: La encriptación falló durante el registro");
+                throw new RuntimeException("Error en la encriptación de contraseña");
+            }
+            
+            // 🔧 GUARDAR USUARIO
+            Usuario usuarioGuardado = usuarioRepository.save(usuario);
+            logger.info("✅ Usuario guardado exitosamente con ID: {}", usuarioGuardado.getId());
+            
+            // 🔧 VERIFICACIÓN FINAL: Leer desde BD y verificar password
+            Usuario usuarioVerificacion = usuarioRepository.findByCorreoInstitucional(usuario.getCorreoInstitucional());
+            if (usuarioVerificacion != null) {
+                boolean verificacionFinal = passwordEncoder.matches(passwordOriginal, usuarioVerificacion.getPassword());
+                logger.info("🔧 Verificación final desde BD: {}", verificacionFinal ? "✅ ÉXITO" : "❌ FALLÓ");
+                
+                if (!verificacionFinal) {
+                    logger.error("❌ CRÍTICO: El usuario se guardó pero la contraseña no es verificable");
+                }
+            }
+            
+            return usuarioGuardado;
+            
+        } catch (Exception e) {
+            logger.error("❌ Error al registrar usuario {}: {}", usuario.getCorreoInstitucional(), e.getMessage(), e);
+            throw e;
+        }
     }
 
     public Usuario registrarUsuarioOAuth(Usuario usuario) {
@@ -63,16 +134,6 @@ public class UsuarioService implements UserDetailsService {
                 usuario.setDepartamentoId(1L); // ID 1: Tecnología Digital
             }
 
-            // Valores por defecto para campos con restricciones de clave foránea que pueden ser NULL
-            // Comentados por defecto ya que según el esquema pueden ser NULL
-            // if (usuario.getCarreraId() == null) {
-            //     usuario.setCarreraId(1L);
-            // }
-            //
-            // if (usuario.getSeccionId() == null) {
-            //     usuario.setSeccionId(1L);
-            // }
-
             // Para un usuario OAuth no necesitamos contraseña, pero podemos
             // establecer un valor aleatorio si la columna no permite nulos
             if (usuario.getPassword() == null) {
@@ -106,18 +167,68 @@ public class UsuarioService implements UserDetailsService {
     }
 
     /**
-     * Verifica las credenciales de un usuario
-     * @param correoInstitucional El correo institucional del usuario
-     * @param password La contraseña a verificar
-     * @return true si las credenciales son válidas, false en caso contrario
+     * 🔧 MEJORADO: Verifica las credenciales con debug detallado
      */
     public boolean autenticarUsuario(String correoInstitucional, String password) {
-        Usuario usuario = usuarioRepository.findByCorreoInstitucional(correoInstitucional);
-        if (usuario == null) {
+        try {
+            logger.info("🔧 Iniciando autenticación para: {}", correoInstitucional);
+            
+            // 🔥 VALIDACIÓN: Verificar parámetros
+            if (correoInstitucional == null || correoInstitucional.trim().isEmpty()) {
+                logger.warn("❌ Correo institucional vacío o null");
+                return false;
+            }
+            
+            if (password == null || password.trim().isEmpty()) {
+                logger.warn("❌ Password vacío o null");
+                return false;
+            }
+            
+            // 🔧 BUSCAR USUARIO
+            Usuario usuario = usuarioRepository.findByCorreoInstitucional(correoInstitucional);
+            if (usuario == null) {
+                logger.warn("❌ Usuario no encontrado en BD: {}", correoInstitucional);
+                return false;
+            }
+            
+            logger.info("✅ Usuario encontrado: {} {} (ID: {})", usuario.getNombre(), usuario.getApellidos(), usuario.getId());
+            
+            // 🔧 DEBUG: Información del usuario
+            logger.debug("🔧 Datos del usuario en BD:");
+            logger.debug("   - ID: {}", usuario.getId());
+            logger.debug("   - Nombre: {}", usuario.getNombre());
+            logger.debug("   - Correo: {}", usuario.getCorreoInstitucional());
+            logger.debug("   - Rol: {}", usuario.getRol());
+            logger.debug("   - Password hash: {}", usuario.getPassword() != null ? usuario.getPassword().substring(0, Math.min(30, usuario.getPassword().length())) + "..." : "NULL");
+            logger.debug("   - Password recibido: {}", "***[" + password.length() + " caracteres]***");
+            
+            // 🔧 VERIFICAR CONTRASEÑA
+            if (usuario.getPassword() == null || usuario.getPassword().trim().isEmpty()) {
+                logger.error("❌ Usuario no tiene contraseña configurada en BD");
+                return false;
+            }
+            
+            boolean matches = passwordEncoder.matches(password, usuario.getPassword());
+            logger.info("🔧 Resultado de verificación de contraseña: {}", matches ? "✅ CORRECTO" : "❌ INCORRECTO");
+            
+            if (!matches) {
+                logger.warn("❌ Contraseña incorrecta para usuario: {}", correoInstitucional);
+                
+                // 🔧 DEBUG ADICIONAL: Verificar si es problema de encoding
+                logger.debug("🔧 Diagnóstico adicional:");
+                logger.debug("   - Longitud password BD: {}", usuario.getPassword().length());
+                logger.debug("   - Longitud password recibido: {}", password.length());
+                logger.debug("   - Password comienza con $2: {}", usuario.getPassword().startsWith("$2"));
+            } else {
+                logger.info("✅ Autenticación exitosa para: {}", correoInstitucional);
+            }
+            
+            return matches;
+            
+        } catch (Exception e) {
+            logger.error("❌ Error durante autenticación para {}: {}", correoInstitucional, e.getMessage(), e);
             return false;
         }
-        // Verificar si la contraseña coincide con la encriptada
-        return passwordEncoder.matches(password, usuario.getPassword());
     }
 
     /**
@@ -144,7 +255,7 @@ public class UsuarioService implements UserDetailsService {
             throw new UsernameNotFoundException("Usuario no encontrado con correo: " + correoInstitucional);
         }
 
-        logger.debug("Usuario encontrado: {}", usuario.getNombre());
+        logger.debug("Usuario encontrado para Spring Security: {}", usuario.getNombre());
 
         // Para usuarios OAuth, la contraseña puede ser null
         String password = usuario.getPassword() != null ? usuario.getPassword() : "";
@@ -200,5 +311,4 @@ public class UsuarioService implements UserDetailsService {
     public void deleteById(Long id) {
         usuarioRepository.deleteById(id);
     }
-
 }

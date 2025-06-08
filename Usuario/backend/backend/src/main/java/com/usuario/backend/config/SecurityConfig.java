@@ -1,3 +1,4 @@
+// Usuario/backend/backend/src/main/java/com/usuario/backend/config/SecurityConfig.java
 package com.usuario.backend.config;
 
 import com.usuario.backend.security.oauth2.CustomOAuth2UserService;
@@ -36,14 +37,36 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS) // Cambiado a ALWAYS para OAuth2
+                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS) // Para OAuth2
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // 🔥 ENDPOINTS COMPLETAMENTE PÚBLICOS
                         .requestMatchers("/", "/oauth2/**", "/login/**", "/api/public/**", "/error").permitAll()
-                        .requestMatchers("/api/usuarios/register", "/api/usuarios/login").permitAll()
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/usuarios/me", "/api/usuarios/{id}").authenticated()
                         
+                        // 🔥 ENDPOINTS DE AUTENTICACIÓN PÚBLICOS
+                        .requestMatchers("/api/usuarios/register", "/api/usuarios/login").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/google-login").permitAll()
+                        
+                        // 🔥 ENDPOINT DE CARRERAS PÚBLICO (PARA REGISTRO)
+                        .requestMatchers("/api/carreras/activas").permitAll()
+                        .requestMatchers("/api/carreras/health").permitAll()
+                        
+                        // 🔥 ENDPOINTS QUE REQUIEREN AUTENTICACIÓN
+                        .requestMatchers("/api/usuarios/me", "/api/usuarios/{id}").authenticated()
+                        .requestMatchers("/api/auth/user", "/api/auth/logout", "/api/auth/token/status").authenticated()
+                        .requestMatchers("/api/upload/**").authenticated()
+                        
+                        // 🔥 ENDPOINTS DE CARRERAS QUE REQUIEREN AUTENTICACIÓN (ADMINISTRACIÓN)
+                        .requestMatchers("/api/carreras/{id}", "/api/carreras/departamento/**", 
+                                        "/api/carreras/buscar").authenticated()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/carreras").authenticated()
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/carreras/**").authenticated()
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/carreras/**").authenticated()
+                        
+                        // 🔥 DEBUG ENDPOINTS (TEMPORALES)
+                        .requestMatchers("/api/debug/**").permitAll()
+                        
+                        // 🔥 TODOS LOS DEMÁS REQUIEREN AUTENTICACIÓN
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
@@ -70,9 +93,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+        
+        // 🔥 CONFIGURACIÓN CORS MEJORADA
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

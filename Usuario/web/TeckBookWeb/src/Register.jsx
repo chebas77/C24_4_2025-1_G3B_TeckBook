@@ -1,67 +1,170 @@
-import React, { useState } from 'react';
-import portalImage from "./assets/portal.png";
-import { Eye, EyeOff, User, Mail, Lock, Book, BookOpen, School, Users, Database } from 'lucide-react';
+// Usuario/web/TeckBookWeb/src/Register.jsx - CON IMAGEN LATERAL
+import React, { useState, useEffect } from 'react';
+import { Eye, EyeOff, User, Mail, Lock, BookOpen, Database, GraduationCap, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
+import portalImage from "./assets/portal.png";
 import './Register.css';
 
 function Register() {
-  const [nombre, setNombre] = useState('');
-  const [apellidos, setApellidos] = useState('');
-  const [codigo, setCodigo] = useState('');
-  const [correoInstitucional, setCorreoInstitucional] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [ciclo, setCiclo] = useState('');
-  const [rol, setRol] = useState('');
-  const [departamentoId, setDepartamentoId] = useState('');
-  const [carreraId, setCarreraId] = useState('');
-  const [seccionId, setSeccionId] = useState('');
-  const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('');
+  const [formData, setFormData] = useState({
+    nombre: '',
+    apellidos: '',
+    codigo: '',
+    correoInstitucional: '',
+    password: '',
+    ciclo: '',
+    carreraId: ''
+  });
+  
+  const [carreras, setCarreras] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
-  const [activeStep, setActiveStep] = useState(1);
-
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCarreras, setIsLoadingCarreras] = useState(true);
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    const usuario = {
-      nombre,
-      apellidos,
-      codigo,
-      correoInstitucional,
-      contrasena,
-      ciclo: ciclo ? parseInt(ciclo) : null,
-      rol,
-      departamentoId: departamentoId ? parseInt(departamentoId) : null,
-      carreraId: carreraId ? parseInt(carreraId) : null,
-      seccionId: seccionId ? parseInt(seccionId) : null,
-      password,
-      email
-    };
+  // Cargar carreras al montar el componente
+  useEffect(() => {
+    fetchCarreras();
+  }, []);
+
+  const fetchCarreras = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/usuarios/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(usuario)
-      });
-      if (response.ok) {
-        alert('Usuario registrado correctamente');
-        navigate('/home');
-      } else {
-        const errorText = await response.text();
-        alert('Error al registrar usuario: ' + errorText);
+      setIsLoadingCarreras(true);
+      console.log('Obteniendo carreras desde el backend...');
+      
+      const response = await fetch('http://localhost:8080/api/carreras/activas');
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
       }
-    } catch (err) {
-      alert('Error de conexión: ' + err.message);
+      
+      const data = await response.json();
+      console.log('Carreras obtenidas:', data);
+      
+      if (data.carreras && Array.isArray(data.carreras)) {
+        setCarreras(data.carreras);
+        console.log(`Se cargaron ${data.carreras.length} carreras`);
+      } else {
+        console.warn('Respuesta de carreras no tiene el formato esperado:', data);
+        setCarreras([]);
+      }
+      
+    } catch (error) {
+      console.error('Error al obtener carreras:', error);
+      setError('Error al cargar las carreras. Por favor, recarga la página.');
+      
+      // Fallback con carreras predeterminadas
+      setCarreras([
+        { id: 1, nombre: 'Desarrollo de Software' },
+        { id: 2, nombre: 'Administración de Redes y Comunicaciones' },
+        { id: 3, nombre: 'Electrónica y Automatización Industrial' }
+      ]);
+    } finally {
+      setIsLoadingCarreras(false);
     }
   };
 
-  const nextStep = () => {
-    setActiveStep(activeStep + 1);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Limpiar error cuando el usuario empiece a escribir
+    if (error) {
+      setError('');
+    }
   };
 
-  const prevStep = () => {
-    setActiveStep(activeStep - 1);
+  const validateForm = () => {
+    const { nombre, apellidos, codigo, correoInstitucional, password, ciclo, carreraId } = formData;
+    
+    if (!nombre.trim()) return 'El nombre es requerido';
+    if (!apellidos.trim()) return 'Los apellidos son requeridos';
+    if (!codigo.trim()) return 'El código de estudiante es requerido';
+    if (!correoInstitucional.trim()) return 'El correo institucional es requerido';
+    if (!correoInstitucional.endsWith('@tecsup.edu.pe')) {
+      return 'Debe usar un correo institucional (@tecsup.edu.pe)';
+    }
+    if (!password.trim()) return 'La contraseña es requerida';
+    if (password.length < 6) return 'La contraseña debe tener al menos 6 caracteres';
+    if (!ciclo.trim()) return 'El ciclo es requerido';
+    const cicloNum = parseInt(ciclo);
+    if (isNaN(cicloNum) || cicloNum < 1 || cicloNum > 6) {
+      return 'El ciclo debe ser un número entre 1 y 6';
+    }
+    if (!carreraId) return 'Debe seleccionar una carrera';
+    
+    return null;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    
+    setIsLoading(true);
+
+    try {
+      // Preparar datos para envío
+      const usuarioData = {
+        nombre: formData.nombre.trim(),
+        apellidos: formData.apellidos.trim(),
+        codigo: formData.codigo.trim(),
+        correoInstitucional: formData.correoInstitucional.trim().toLowerCase(),
+        password: formData.password,
+        ciclo: formData.ciclo.trim(),
+        rol: 'ESTUDIANTE',
+        carreraId: parseInt(formData.carreraId),
+        departamentoId: 1,
+        seccionId: null,
+        telefono: null,
+        direccion: null,
+        fechaNacimiento: null,
+        profileImageUrl: null
+      };
+
+      console.log('Enviando datos de registro:', usuarioData);
+
+      const response = await fetch('http://localhost:8080/api/usuarios/register', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify(usuarioData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Usuario registrado exitosamente:', result);
+        
+        // Encontrar el nombre de la carrera seleccionada
+        const carreraSeleccionada = carreras.find(c => c.id === parseInt(formData.carreraId));
+        const nombreCarrera = carreraSeleccionada ? carreraSeleccionada.nombre : 'la carrera seleccionada';
+        
+        // Mostrar mensaje de éxito
+        alert(`¡Registro exitoso! Bienvenido ${formData.nombre}.\nCarrera: ${nombreCarrera}\nYa puedes iniciar sesión.`);
+        
+        // Redireccionar al login
+        navigate('/');
+      } else {
+        const errorText = await response.text();
+        console.error('Error en el registro:', errorText);
+        setError('Error al registrar usuario: ' + errorText);
+      }
+    } catch (err) {
+      console.error('Error de conexión:', err);
+      setError('Error de conexión con el servidor. Por favor, intenta nuevamente.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -69,200 +172,183 @@ function Register() {
       {/* LADO IZQUIERDO: Formulario */}
       <div className="left">
         <div className="form-box">
-          <h1 className="logo">TecBook</h1>
-          <h2 className="title">Registro de Usuario</h2>
-          
-          {activeStep === 1 && (
-            <div className="form">
+          <div className="header-section">
+            <div className="logo-container">
+              <GraduationCap size={40} color="#005DAB" />
+              <h1 className="logo">TecBook</h1>
+            </div>
+            <h2 className="title">Crear Cuenta</h2>
+            <p className="subtitle">Únete a la comunidad académica de Tecsup</p>
+          </div>
+
+          {error && (
+            <div className="error-message">
+              <AlertCircle size={16} style={{ marginRight: '8px', flexShrink: 0 }} />
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="form">
+            {/* NOMBRE Y APELLIDOS */}
+            <div className="form-row">
               <div className="input-container">
-                <User size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="text" 
-                  placeholder="Nombre" 
-                  value={nombre} 
-                  onChange={e => setNombre(e.target.value)} 
-                  className="input" 
-                  required 
-                />
-              </div>
-              
-              <div className="input-container">
-                <User size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="text" 
-                  placeholder="Apellidos" 
-                  value={apellidos} 
-                  onChange={e => setApellidos(e.target.value)} 
-                  className="input" 
-                  required 
-                />
-              </div>
-              
-              <div className="input-container">
-                <Database size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="text" 
-                  placeholder="Código" 
-                  value={codigo} 
-                  onChange={e => setCodigo(e.target.value)} 
-                  className="input" 
-                  required 
-                />
-              </div>
-              
-              <div className="input-container">
-                <Mail size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="email" 
-                  placeholder="Correo Institucional" 
-                  value={correoInstitucional} 
-                  onChange={e => setCorreoInstitucional(e.target.value)} 
-                  className="input" 
-                  required 
-                />
-              </div>
-              
-              <div className="input-container">
-                <Lock size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="Contraseña" 
-                  value={contrasena} 
-                  onChange={e => setContrasena(e.target.value)} 
+                <User size={18} color="#005DAB" className="input-icon" />
+                <input
+                  type="text"
+                  name="nombre"
+                  placeholder="Nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  required
                   className="input"
-                  style={{paddingRight: '40px'}} 
-                  required 
                 />
-                <button 
-                  type="button" 
-                  onClick={() => setShowPassword(!showPassword)} 
-                  className="password-toggle"
-                >
-                  {showPassword ? 
-                    <EyeOff size={20} color="#005DAB" /> : 
-                    <Eye size={20} color="#005DAB" />
-                  }
-                </button>
               </div>
-              
-              <button onClick={nextStep} className="button">
-                Siguiente
+              <div className="input-container">
+                <User size={18} color="#005DAB" className="input-icon" />
+                <input
+                  type="text"
+                  name="apellidos"
+                  placeholder="Apellidos"
+                  value={formData.apellidos}
+                  onChange={handleChange}
+                  required
+                  className="input"
+                />
+              </div>
+            </div>
+
+            {/* CÓDIGO Y CICLO */}
+            <div className="form-row">
+              <div className="input-container">
+                <Database size={18} color="#005DAB" className="input-icon" />
+                <input
+                  type="text"
+                  name="codigo"
+                  placeholder="Código estudiante"
+                  value={formData.codigo}
+                  onChange={handleChange}
+                  required
+                  className="input"
+                />
+              </div>
+              <div className="input-container">
+                <BookOpen size={18} color="#005DAB" className="input-icon" />
+                <input
+                  type="number"
+                  name="ciclo"
+                  placeholder="Ciclo"
+                  value={formData.ciclo}
+                  onChange={handleChange}
+                  min="1"
+                  max="6"
+                  required
+                  className="input"
+                />
+              </div>
+            </div>
+
+            {/* CORREO INSTITUCIONAL */}
+            <div className="input-container">
+              <Mail size={18} color="#005DAB" className="input-icon" />
+              <input
+                type="email"
+                name="correoInstitucional"
+                placeholder="Correo institucional (@tecsup.edu.pe)"
+                value={formData.correoInstitucional}
+                onChange={handleChange}
+                required
+                className="input"
+              />
+            </div>
+
+            {/* CARRERA */}
+            <div className="input-container">
+              <GraduationCap size={18} color="#005DAB" className="input-icon" />
+              <select
+                name="carreraId"
+                value={formData.carreraId}
+                onChange={handleChange}
+                required
+                className="input select"
+                disabled={isLoadingCarreras}
+              >
+                <option value="">
+                  {isLoadingCarreras ? 'Cargando carreras...' : 'Selecciona tu carrera'}
+                </option>
+                {carreras.map(carrera => (
+                  <option key={carrera.id} value={carrera.id}>
+                    {carrera.nombre}
+                  </option>
+                ))}
+              </select>
+              {isLoadingCarreras && (
+                <div className="loading-spinner-small"></div>
+              )}
+            </div>
+
+            {/* CONTRASEÑA */}
+            <div className="input-container">
+              <Lock size={18} color="#005DAB" className="input-icon" />
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Contraseña (mínimo 6 caracteres)"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="input password-input"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="password-toggle"
+              >
+                {showPassword ? 
+                  <EyeOff size={18} color="#005DAB" /> : 
+                  <Eye size={18} color="#005DAB" />
+                }
               </button>
             </div>
-          )}
-          
-          {activeStep === 2 && (
-            <div className="form">
-              <div className="input-container">
-                <BookOpen size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="number" 
-                  placeholder="Ciclo" 
-                  value={ciclo} 
-                  onChange={e => setCiclo(e.target.value)} 
-                  className="input" 
-                />
-              </div>
-              
-              <div className="input-container">
-                <Users size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="text" 
-                  placeholder="Rol" 
-                  value={rol} 
-                  onChange={e => setRol(e.target.value)} 
-                  className="input" 
-                />
-              </div>
-              
-              <div className="input-container">
-                <School size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="number" 
-                  placeholder="Departamento ID" 
-                  value={departamentoId} 
-                  onChange={e => setDepartamentoId(e.target.value)} 
-                  className="input" 
-                />
-              </div>
-              
-              <div className="input-container">
-                <Book size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="number" 
-                  placeholder="Carrera ID" 
-                  value={carreraId} 
-                  onChange={e => setCarreraId(e.target.value)} 
-                  className="input" 
-                />
-              </div>
-              
-              <div className="input-container">
-                <Users size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="number" 
-                  placeholder="Sección ID" 
-                  value={seccionId} 
-                  onChange={e => setSeccionId(e.target.value)} 
-                  className="input" 
-                />
-              </div>
-              
-              <div className="button-group">
-                <button onClick={prevStep} className="secondary-button">
-                  Atrás
+
+            {/* BOTÓN DE REGISTRO */}
+            <button
+              type="submit"
+              disabled={isLoading || isLoadingCarreras}
+              className="button"
+            >
+              <span className="button-content">
+                {isLoading ? (
+                  <>
+                    <div className="loading-spinner" />
+                    Registrando...
+                  </>
+                ) : (
+                  <>
+                    Crear cuenta
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </span>
+            </button>
+
+            {/* LINK A LOGIN */}
+            <div className="login-link">
+              <p>
+                ¿Ya tienes cuenta?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  className="link-button"
+                >
+                  Inicia sesión aquí
                 </button>
-                <button onClick={nextStep} className="button">
-                  Siguiente
-                </button>
-              </div>
+              </p>
             </div>
-          )}
-          
-          {activeStep === 3 && (
-            <div className="form">
-              <div className="input-container">
-                <Mail size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="email" 
-                  placeholder="Email (opcional)" 
-                  value={email} 
-                  onChange={e => setEmail(e.target.value)} 
-                  className="input" 
-                />
-              </div>
-              
-              <div className="input-container">
-                <Lock size={20} color="#005DAB" className="input-icon" />
-                <input 
-                  type="password" 
-                  placeholder="Password (opcional)" 
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)} 
-                  className="input" 
-                />
-              </div>
-              
-              <div className="button-group">
-                <button onClick={prevStep} className="secondary-button">
-                  Atrás
-                </button>
-                <button onClick={handleRegister} className="button">
-                  Completar Registro
-                </button>
-              </div>
-            </div>
-          )}
-          
-          <div className="step-indicator">
-            <div className={activeStep === 1 ? 'active-step' : 'step'}></div>
-            <div className={activeStep === 2 ? 'active-step' : 'step'}></div>
-            <div className={activeStep === 3 ? 'active-step' : 'step'}></div>
-          </div>
+          </form>
         </div>
       </div>
-      
-      {/* LADO DERECHO: Imagen */}
+
+      {/* LADO DERECHO: Imagen - RESTAURADO */}
       <div className="right">
         <div className="right-background" style={{backgroundImage: `url(${portalImage})`}}></div>
         <div className="overlay"></div>
@@ -272,6 +358,20 @@ function Register() {
             Accede a todos tus recursos educativos, calificaciones y material de
             estudio en un solo lugar.
           </p>
+          <div className="info-features">
+            <div className="info-feature">
+              <CheckCircle size={20} color="#005DAB" />
+              <span>Acceso a materiales de estudio</span>
+            </div>
+            <div className="info-feature">
+              <CheckCircle size={20} color="#005DAB" />
+              <span>Comunicación con docentes</span>
+            </div>
+            <div className="info-feature">
+              <CheckCircle size={20} color="#005DAB" />
+              <span>Seguimiento de calificaciones</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

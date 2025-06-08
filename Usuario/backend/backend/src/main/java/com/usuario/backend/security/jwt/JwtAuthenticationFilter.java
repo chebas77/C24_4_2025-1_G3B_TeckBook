@@ -98,29 +98,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * Determina si un endpoint requiere autenticación
      */
     private boolean isProtectedEndpoint(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        
-        // Endpoints públicos (no requieren autenticación)
-        String[] publicPaths = {
-            "/",
-            "/oauth2/",
-            "/login",
-            "/api/auth/login",
-            "/api/usuarios/register",
-            "/api/usuarios/login",
-            "/api/public/",
-            "/error",
-            "/api/debug/"  // Temporal para debugging
-        };
-        
-        for (String publicPath : publicPaths) {
-            if (path.equals(publicPath) || path.startsWith(publicPath)) {
-                return false;
-            }
+    String path = request.getRequestURI();
+    String method = request.getMethod();
+    
+    // 🔥 ENDPOINTS PÚBLICOS (NO REQUIEREN AUTENTICACIÓN)
+    String[] publicPaths = {
+        "/",
+        "/oauth2/",
+        "/login",
+        "/api/auth/login",           // 🔥 CRÍTICO: Login debe ser público
+        "/api/auth/google-login",    // 🔥 Google login público
+        "/api/usuarios/register",    // 🔥 Registro público
+        "/api/usuarios/login",       // 🔥 Login legacy público
+        "/api/carreras/activas",     // 🔥 Carreras para registro
+        "/api/carreras/health",      // 🔥 Health check público
+        "/api/public/",
+        "/error",
+        "/api/debug/"  // Temporal para debugging
+    };
+    
+    // Verificar si la ruta coincide con algún endpoint público
+    for (String publicPath : publicPaths) {
+        if (path.equals(publicPath) || path.startsWith(publicPath)) {
+            logger.debug("Endpoint público detectado: {} {}", method, path);
+            return false;
         }
-        
-        return true;
     }
+    
+    logger.debug("Endpoint protegido detectado: {} {}", method, path);
+    return true;
+}
     
     /**
      * Maneja tokens inválidos con respuesta JSON estructurada
