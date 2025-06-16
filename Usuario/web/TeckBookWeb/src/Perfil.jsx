@@ -303,7 +303,7 @@ function Perfil() {
           <nav className="nav">
             <a href="/home" className="nav-link">Inicio</a>
             <a href="/perfil" className="nav-link active">Perfil</a>
-            <a href="/cursos" className="nav-link">Cursos</a>
+            <a href="/aulas" className="nav-link">Aulas</a>
             <a 
   href="/"
   onClick={(e) => {

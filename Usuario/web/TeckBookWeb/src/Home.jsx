@@ -2,9 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   User, 
-  Calendar, 
   BookOpen, 
-  BarChart3, 
   Image, 
   Video, 
   Smile, 
@@ -12,7 +10,8 @@ import {
   ThumbsUp, 
   Share2,
   MoreHorizontal,
-  Search
+  Search,
+  Plus
 } from 'lucide-react';
 import './Home.css';
 
@@ -67,9 +66,8 @@ function Home() {
 
         const data = await response.json();
         console.log("Datos del usuario obtenidos:", data);
-        console.log("URL de imagen en Home:", data.profileImageUrl); // Para debug
+        console.log("URL de imagen en Home:", data.profileImageUrl);
         
-        // 🔧 FIX: Asegurar que profileImageUrl se maneje correctamente
         setUserData({
           ...data,
           profileImageUrl: data.profileImageUrl || ""
@@ -91,80 +89,44 @@ function Home() {
   }, [navigate]);
 
   const handleLogout = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    
-    if (token) {
-      console.log("Cerrando sesión en el backend...");
+    try {
+      const token = localStorage.getItem('token');
       
-      // 🎯 LLAMADA AL BACKEND PARA INVALIDAR TOKEN
-      const response = await fetch('http://localhost:8080/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log("✅ Sesión cerrada en el backend:", data);
+      if (token) {
+        console.log("Cerrando sesión en el backend...");
         
-        if (data.tokenInvalidated) {
-          console.log("✅ Token invalidado correctamente");
+        const response = await fetch('http://localhost:8080/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("✅ Sesión cerrada en el backend:", data);
+          
+          if (data.tokenInvalidated) {
+            console.log("✅ Token invalidado correctamente");
+          }
+        } else {
+          console.warn("⚠️ Error al cerrar sesión en backend, pero continuando logout");
         }
-      } else {
-        console.warn("⚠️ Error al cerrar sesión en backend, pero continuando logout");
-      }
-    }
-    
-    // 🔧 LIMPIAR FRONTEND SIEMPRE (incluso si falla el backend)
-    localStorage.removeItem('token');
-    console.log("✅ Token eliminado del localStorage");
-    
-    // Redireccionar al login
-    navigate('/');
-    
-  } catch (error) {
-    console.error("❌ Error durante logout:", error);
-    
-    // 🔧 LIMPIAR FRONTEND AUNQUE FALLE EL BACKEND
-    localStorage.removeItem('token');
-    navigate('/');
-  }
-};
-const checkTokenStatus = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) return { isValid: false };
-    
-    const response = await fetch('http://localhost:8080/api/auth/token/status', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      console.log("Estado del token:", data);
-      
-      // Si el token está invalidado, hacer logout automático
-      if (data.isBlacklisted || !data.isValid) {
-        console.log("🔒 Token inválido detectado, cerrando sesión automáticamente");
-        localStorage.removeItem('token');
-        navigate('/');
-        return { isValid: false };
       }
       
-      return data;
+      localStorage.removeItem('token');
+      console.log("✅ Token eliminado del localStorage");
+      
+      navigate('/');
+      
+    } catch (error) {
+      console.error("❌ Error durante logout:", error);
+      
+      localStorage.removeItem('token');
+      navigate('/');
     }
-    
-    return { isValid: false };
-  } catch (error) {
-    console.error("Error verificando token:", error);
-    return { isValid: false };
-  }
-};
+  };
 
   const getUserInitials = () => {
     if (userData?.nombre && userData?.apellidos) {
@@ -173,9 +135,7 @@ const checkTokenStatus = async () => {
     return 'GS';
   };
 
-  // 🔧 FIX: Función para renderizar avatar con imagen
   const renderUserAvatar = () => {
-    // Si hay imagen de perfil, mostrarla
     if (userData?.profileImageUrl && userData.profileImageUrl.trim() !== "") {
       return (
         <img 
@@ -184,14 +144,12 @@ const checkTokenStatus = async () => {
           className="home-user-avatar"
           style={{
             objectFit: 'cover',
-            backgroundColor: '#005DAB' // Fallback mientras carga
+            backgroundColor: '#005DAB'
           }}
           onLoad={() => console.log("✅ Imagen de perfil cargada en Home")}
           onError={(e) => {
-            // Si la imagen falla al cargar, ocultar imagen y mostrar iniciales
             console.warn("❌ Error cargando imagen de perfil en Home:", userData.profileImageUrl);
             e.target.style.display = 'none';
-            // Crear div con iniciales como fallback
             const fallback = document.createElement('div');
             fallback.className = 'home-user-avatar';
             fallback.textContent = getUserInitials();
@@ -201,7 +159,6 @@ const checkTokenStatus = async () => {
       );
     }
     
-    // Si no hay imagen, mostrar iniciales
     return (
       <div className="home-user-avatar">
         {getUserInitials()}
@@ -209,7 +166,6 @@ const checkTokenStatus = async () => {
     );
   };
 
-  // 🔧 FIX: Función para renderizar avatar en posts (create-post y post-avatar)
   const renderPostAvatar = (className = "home-create-post-avatar") => {
     if (userData?.profileImageUrl && userData.profileImageUrl.trim() !== "") {
       return (
@@ -222,7 +178,6 @@ const checkTokenStatus = async () => {
             backgroundColor: '#005DAB'
           }}
           onError={(e) => {
-            // Fallback a iniciales si falla la imagen
             e.target.style.display = 'none';
             const fallback = document.createElement('div');
             fallback.className = className;
@@ -308,8 +263,12 @@ const checkTokenStatus = async () => {
           <button onClick={() => navigate('/perfil')} className="home-nav-link">
             Perfil
           </button>
-          <button onClick={() => navigate('/cursos')} className="home-nav-link">
-            Cursos
+          <button onClick={() => navigate('/aulas')} className="home-nav-link">
+            Aulas
+          </button>
+          <button onClick={() => navigate('/crear-aula')} className="home-nav-link home-create-btn">
+            <Plus size={16} style={{marginRight: '4px'}} />
+            Crear Aula
           </button>
           <button onClick={handleLogout} className="home-logout">
             Cerrar sesión
@@ -331,7 +290,7 @@ const checkTokenStatus = async () => {
               </div>
             </div>
             <p className="home-welcome-text">
-              Conecta con tu comunidad académica. Explora cursos, comparte recursos y mantente informado.
+              Conecta con tu comunidad académica. Explora aulas, comparte recursos y mantente informado.
             </p>
           </div>
 
@@ -346,27 +305,11 @@ const checkTokenStatus = async () => {
                 </div>
               </div>
               
-              <div className="home-action-button">
+              <div className="home-action-button" onClick={() => navigate('/aulas')}>
                 <BookOpen className="home-action-icon" size={20} />
                 <div className="home-action-text">
-                  <span className="home-action-title">Mis Cursos</span>
-                  <span className="home-action-subtitle">Accede a tus materiales</span>
-                </div>
-              </div>
-              
-              <div className="home-action-button">
-                <Calendar className="home-action-icon" size={20} />
-                <div className="home-action-text">
-                  <span className="home-action-title">Calendario</span>
-                  <span className="home-action-subtitle">Revisa tus próximas entregas</span>
-                </div>
-              </div>
-              
-              <div className="home-action-button">
-                <BarChart3 className="home-action-icon" size={20} />
-                <div className="home-action-text">
-                  <span className="home-action-title">Notas</span>
-                  <span className="home-action-subtitle">Consulta tus calificaciones</span>
+                  <span className="home-action-title">Mis Aulas</span>
+                  <span className="home-action-subtitle">Accede a tus aulas asignadas</span>
                 </div>
               </div>
             </div>
