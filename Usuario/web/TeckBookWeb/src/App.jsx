@@ -4,9 +4,10 @@ import RecuperarCuenta from "./RecuperarCuenta";
 import Home from "./Home";
 import Register from "./Register";
 import Perfil from "./Perfil";
-import Aulas from "./Aula"; // ✅ Importación agregada
+import Aulas from "./Aula";
 import ProtectedRoute from "./ProtectedRoute";
 import CrearAula from './CrearAula';
+import CompletarPerfil from './CompletarPerfil'; // 🆕 AGREGAR ESTA IMPORTACIÓN
 
 function App() {
   return (
@@ -16,6 +17,9 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/recuperar" element={<RecuperarCuenta />} />
         <Route path="/register" element={<Register />} />
+        
+        {/* 🆕 RUTA PARA COMPLETAR PERFIL DESPUÉS DE OAUTH2 */}
+        <Route path="/completar-perfil" element={<CompletarPerfil />} />
 
         {/* Rutas protegidas */}
         <Route path="/home" element={

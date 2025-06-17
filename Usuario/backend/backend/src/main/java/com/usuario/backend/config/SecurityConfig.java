@@ -1,8 +1,8 @@
-// Usuario/backend/backend/src/main/java/com/usuario/backend/config/SecurityConfig.java
 package com.usuario.backend.config;
 
 import com.usuario.backend.security.oauth2.CustomOAuth2UserService;
 import com.usuario.backend.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.usuario.backend.security.oauth2.OAuth2AuthenticationFailureHandler;
 import com.usuario.backend.security.jwt.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +29,9 @@ public class SecurityConfig {
     private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @Autowired
+    private OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+
+    @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
@@ -47,14 +50,20 @@ public class SecurityConfig {
                         .requestMatchers("/api/usuarios/register", "/api/usuarios/login").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/google-login").permitAll()
                         
-                        // 🔥 ENDPOINT DE CARRERAS PÚBLICO (PARA REGISTRO)
+                        // 🔥 ENDPOINTS PÚBLICOS PARA FORMULARIOS
                         .requestMatchers("/api/carreras/activas").permitAll()
                         .requestMatchers("/api/carreras/health").permitAll()
+                        .requestMatchers("/api/ciclos/activos").permitAll()
+                        .requestMatchers("/api/departamentos/activos").permitAll()
+                        
+                        // 🆕 NUEVA RUTA: Completar perfil (requiere token)
+                        .requestMatchers("/completar-perfil").permitAll()
                         
                         // 🔥 ENDPOINTS QUE REQUIEREN AUTENTICACIÓN
                         .requestMatchers("/api/usuarios/me", "/api/usuarios/{id}").authenticated()
                         .requestMatchers("/api/auth/user", "/api/auth/logout", "/api/auth/token/status").authenticated()
                         .requestMatchers("/api/upload/**").authenticated()
+                        .requestMatchers("/api/secciones/**").authenticated()
                         
                         // 🔥 ENDPOINTS DE CARRERAS QUE REQUIEREN AUTENTICACIÓN (ADMINISTRACIÓN)
                         .requestMatchers("/api/carreras/{id}", "/api/carreras/departamento/**", 
@@ -77,6 +86,7 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
                                 .userService(oAuth2UserService))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex

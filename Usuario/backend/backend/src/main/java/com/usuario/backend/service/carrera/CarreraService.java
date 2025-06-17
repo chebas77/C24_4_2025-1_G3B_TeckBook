@@ -1,4 +1,3 @@
-// Usuario/backend/backend/src/main/java/com/usuario/backend/service/carrera/CarreraService.java
 package com.usuario.backend.service.carrera;
 
 import com.usuario.backend.model.entity.Carrera;
@@ -20,54 +19,26 @@ public class CarreraService {
     private CarreraRepository carreraRepository;
 
     /**
-     * 🔥 FIX: Obtiene todas las carreras activas (usando "activo" no "activa")
+     * 📚 Obtiene todas las carreras activas
      */
     public List<Carrera> getAllCarrerasActivas() {
         try {
-            // 🔥 DEBUGGING: Primero contar todas las carreras
-            long totalCarreras = carreraRepository.count();
-            logger.info("Total de carreras en BD: {}", totalCarreras);
-            
-            // 🔥 DEBUGGING: Contar carreras activas
-            Long carrerasActivas = carreraRepository.countCarrerasActivas();
-            logger.info("Total de carreras activas: {}", carrerasActivas);
-            
-            // Obtener carreras activas
             List<Carrera> carreras = carreraRepository.findByActivoTrue();
-            logger.info("Se obtuvieron {} carreras activas de la BD", carreras.size());
-            
-            // 🔥 DEBUGGING: Si no hay carreras activas, obtener todas para ver qué pasa
-            if (carreras.isEmpty()) {
-                logger.warn("No se encontraron carreras activas. Obteniendo todas las carreras para debugging...");
-                List<Carrera> todasCarreras = carreraRepository.findAllOrderByNombre();
-                logger.info("Total de carreras encontradas: {}", todasCarreras.size());
-                
-                for (Carrera carrera : todasCarreras) {
-                    logger.info("Carrera: {} - Activo: {} - ID: {}", 
-                               carrera.getNombre(), carrera.getActivo(), carrera.getId());
-                }
-            }
-            
+            logger.info("Se obtuvieron {} carreras activas", carreras.size());
             return carreras;
         } catch (Exception e) {
             logger.error("Error al obtener carreras activas: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al obtener las carreras", e);
+            throw new RuntimeException("Error al obtener las carreras activas", e);
         }
     }
 
     /**
-     * Busca una carrera por su ID
+     * 🔍 Busca una carrera por ID
      */
     public Carrera findById(Long id) {
         try {
             Optional<Carrera> carrera = carreraRepository.findById(id);
-            if (carrera.isPresent()) {
-                logger.debug("Carrera encontrada: {}", carrera.get().getNombre());
-                return carrera.get();
-            } else {
-                logger.warn("No se encontró carrera con ID: {}", id);
-                return null;
-            }
+            return carrera.orElse(null);
         } catch (Exception e) {
             logger.error("Error al buscar carrera por ID {}: {}", id, e.getMessage(), e);
             return null;
@@ -75,17 +46,11 @@ public class CarreraService {
     }
 
     /**
-     * Busca una carrera por su código
+     * 🔍 Busca una carrera por código
      */
     public Carrera findByCodigo(String codigo) {
         try {
-            Carrera carrera = carreraRepository.findByCodigo(codigo);
-            if (carrera != null) {
-                logger.debug("Carrera encontrada por código {}: {}", codigo, carrera.getNombre());
-            } else {
-                logger.warn("No se encontró carrera con código: {}", codigo);
-            }
-            return carrera;
+            return carreraRepository.findByCodigo(codigo);
         } catch (Exception e) {
             logger.error("Error al buscar carrera por código {}: {}", codigo, e.getMessage(), e);
             return null;
@@ -93,7 +58,7 @@ public class CarreraService {
     }
 
     /**
-     * 🔥 FIX: Obtiene carreras por departamento (usando "activo")
+     * 🏢 Obtiene carreras por departamento
      */
     public List<Carrera> getCarrerasByDepartamento(Long departamentoId) {
         try {
@@ -107,7 +72,7 @@ public class CarreraService {
     }
 
     /**
-     * 🔥 FIX: Busca carreras por nombre (usando "activo")
+     * 🔎 Busca carreras por nombre
      */
     public List<Carrera> findByNombre(String nombre) {
         try {
@@ -121,11 +86,11 @@ public class CarreraService {
     }
 
     /**
-     * Crea una nueva carrera
+     * ➕ Crea una nueva carrera
      */
     public Carrera crearCarrera(Carrera carrera) {
         try {
-            // Validar que no existe una carrera con el mismo código
+            // Validar código duplicado
             if (carrera.getCodigo() != null) {
                 Carrera existente = carreraRepository.findByCodigo(carrera.getCodigo());
                 if (existente != null) {
@@ -133,13 +98,13 @@ public class CarreraService {
                 }
             }
 
-            // 🔥 FIX: Establecer valores por defecto usando "activo"
+            // Establecer activo por defecto
             if (carrera.getActivo() == null) {
                 carrera.setActivo(true);
             }
 
             Carrera carreraGuardada = carreraRepository.save(carrera);
-            logger.info("Carrera creada exitosamente: {} (ID: {})", carreraGuardada.getNombre(), carreraGuardada.getId());
+            logger.info("Carrera creada: {} (ID: {})", carreraGuardada.getNombre(), carreraGuardada.getId());
             return carreraGuardada;
 
         } catch (Exception e) {
@@ -149,7 +114,21 @@ public class CarreraService {
     }
 
     /**
-     * 🔥 FIX: Desactiva una carrera (soft delete usando "activo")
+     * ✏️ Actualiza una carrera
+     */
+    public Carrera actualizarCarrera(Carrera carrera) {
+        try {
+            Carrera carreraActualizada = carreraRepository.save(carrera);
+            logger.info("Carrera actualizada: {} (ID: {})", carreraActualizada.getNombre(), carreraActualizada.getId());
+            return carreraActualizada;
+        } catch (Exception e) {
+            logger.error("Error al actualizar carrera: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al actualizar la carrera", e);
+        }
+    }
+
+    /**
+     * 🗑️ Desactiva una carrera
      */
     public void desactivarCarrera(Long id) {
         try {
