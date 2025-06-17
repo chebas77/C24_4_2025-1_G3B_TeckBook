@@ -76,24 +76,27 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     usuario = actualizarUsuarioOAuth2(usuario, name, lastName, pictureUrl);
                 }
 
-                // 🔍 VERIFICAR SI NECESITA COMPLETAR DATOS
-                String redirectUrl;
+                // ✅ GENERAR TOKEN Y REDIRIGIR SIEMPRE A HOME
+                String token = tokenProvider.generateToken(email);
+                
+                // 🔧 CONSTRUIR URL CON PARÁMETROS PARA EL FRONTEND
+                StringBuilder redirectUrl = new StringBuilder(frontendUrl + "/home?token=" + token);
+                
+                // Agregar parámetros adicionales para el frontend
+                if (isNewUser) {
+                    redirectUrl.append("&new=true");
+                }
+                
+                // 🔍 Verificar si necesita completar datos y agregar parámetro
                 if (usuario.requiereCompletarDatos()) {
+                    redirectUrl.append("&incomplete=true");
                     logger.info("📝 Usuario requiere completar datos: {}", email);
-                    
-                    // Generar token temporal para completar datos
-                    String token = tokenProvider.generateToken(email);
-                    redirectUrl = frontendUrl + "/completar-perfil?token=" + token + "&new=" + isNewUser;
                 } else {
                     logger.info("✅ Usuario con perfil completo: {}", email);
-                    
-                    // Generar token normal y redirigir a home
-                    String token = tokenProvider.generateToken(email);
-                    redirectUrl = frontendUrl + "/home?token=" + token;
                 }
 
-                logger.info("🔀 Redirigiendo a: {}", redirectUrl);
-                response.sendRedirect(redirectUrl);
+                logger.info("🔀 Redirigiendo a: {}", redirectUrl.toString());
+                response.sendRedirect(redirectUrl.toString());
 
             } catch (Exception e) {
                 logger.error("❌ Error procesando usuario OAuth2: {}", e.getMessage(), e);
@@ -117,21 +120,31 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         newUser.setCorreoInstitucional(email);
         newUser.setNombre(name != null ? name : "");
         newUser.setApellidos(lastName != null ? lastName : "");
-        newUser.setRol(Usuario.RolUsuario.ESTUDIANTE);
+        newUser.setRol("ESTUDIANTE");
         
         // 🔧 Imagen de Google si está disponible
         if (pictureUrl != null && !pictureUrl.isEmpty()) {
             newUser.setProfileImageUrl(pictureUrl);
         }
         
-        // 🚨 CAMPOS FALTANTES - Se completarán en el formulario
-        // carreraId = null
-        // cicloActual = null 
-        // departamentoId = null
-        // seccionId = null (opcional)
-        // telefono = null (opcional)
+        // 🔧 Código generado a partir del email
+        String codigo = email.split("@")[0];
+        newUser.setCodigo(codigo);
         
-        return usuarioService.guardarUsuarioOAuth2(newUser);
+        // 🔧 Valores por defecto para campos requeridos por la BD
+        newUser.setDepartamentoId(1L); // Tecnología Digital por defecto
+        
+        // 🚨 CAMPOS QUE QUEDARÁN NULL PARA FORZAR COMPLETAR DATOS:
+        // carreraId = null (se completa en el modal)
+        // cicloActual = null (se completa en el modal)
+        
+        // ✅ CAMPOS QUE NO REQUIEREN COMPLETAR (se asignan después):
+        // seccionId = null (se asigna por admin más tarde)
+        // telefono = null (opcional, se puede completar en el modal)
+        // direccion = null (opcional)
+        // fechaNacimiento = null (opcional)
+        
+        return usuarioService.registrarUsuarioOAuth(newUser);
     }
 
     /**

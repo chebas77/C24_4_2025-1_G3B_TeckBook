@@ -11,31 +11,42 @@ import {
   Share2,
   MoreHorizontal,
   Search,
-  Plus
+  Plus,
+  Calendar,
+  BarChart3
 } from 'lucide-react';
 import './Home.css';
+import CompletarPerfil from './CompletarPerfil'; // ✅ IMPORTAR EL MODAL
 
 function Home() {
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // ✅ ESTADO PARA EL MODAL DE COMPLETAR PERFIL
+  const [showCompletarPerfil, setShowCompletarPerfil] = useState(false);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true; // Flag para evitar actualizaciones si el componente se desmonta
+    
     // Verificar si hay un token en la URL (redirección desde OAuth2)
     const queryParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = queryParams.get('token');
+    const isNewUserParam = queryParams.get('new') === 'true';
+    const isIncompleteParam = queryParams.get('incomplete') === 'true';
     
     if (tokenFromUrl) {
       console.log("Token encontrado en URL:", tokenFromUrl.substring(0, 20) + "...");
+      console.log("Es nuevo usuario:", isNewUserParam);
+      console.log("Perfil incompleto:", isIncompleteParam);
       
       // Guardar el token de la URL en localStorage
       localStorage.setItem('token', tokenFromUrl);
       
       // Limpiar la URL para evitar problemas si se recarga la página
       window.history.replaceState({}, document.title, '/home');
-    } else {
-      console.log("No se encontró token en la URL");
     }
     
     // Verificar si el usuario está autenticado
@@ -47,7 +58,7 @@ function Home() {
       return;
     }
 
-    console.log("Token encontrado en localStorage, obteniendo datos de usuario");
+    console.log("Token encontrado, obteniendo datos de usuario");
 
     // Obtener datos del usuario
     const fetchUserData = async () => {
@@ -66,27 +77,67 @@ function Home() {
 
         const data = await response.json();
         console.log("Datos del usuario obtenidos:", data);
-        console.log("URL de imagen en Home:", data.profileImageUrl);
+        
+        // Solo actualizar el estado si el componente sigue montado
+        if (!isMounted) return;
         
         setUserData({
           ...data,
           profileImageUrl: data.profileImageUrl || ""
         });
+
+        // ✅ VERIFICAR SI EL PERFIL ESTÁ INCOMPLETO
+        // Verificar por parámetros de URL o por datos faltantes CRÍTICOS
+        // NO verificar seccionId porque se asigna después por admin
+        const needsCompletion = isNewUserParam || 
+                               isIncompleteParam || 
+                               !data.carreraId || 
+                               !data.cicloActual || // Ajusta a 'ciclo' si tu campo se llama así
+                               !data.departamentoId;
+                               
+        if (needsCompletion) {
+          console.log("Perfil incompleto detectado, mostrando modal");
+          console.log("Razones:", {
+            isNewUser: isNewUserParam,
+            isIncomplete: isIncompleteParam,
+            noCarrera: !data.carreraId,
+            noCicloActual: !data.cicloActual, // Ajusta según tu campo
+            noDepartamento: !data.departamentoId,
+            // ❌ CAMPOS QUE NO AFECTAN LA DECISIÓN (solo para debug):
+            seccionId: data.seccionId, // Se asigna por admin después
+            telefono: data.telefono, // Es opcional
+            createdAt: data.createdAt, // Se genera automáticamente
+            updatedAt: data.updatedAt, // Se actualiza automáticamente
+            profileImageUrl: !!data.profileImageUrl // Es opcional
+          });
+          if (isMounted) {
+            setShowCompletarPerfil(true);
+          }
+        }
+        
       } catch (error) {
         console.error("Error al obtener datos del usuario:", error);
-        setError(error.message);
-        
-        localStorage.removeItem('token');
-        setTimeout(() => {
-          navigate('/');
-        }, 2000);
+        if (isMounted) {
+          setError(error.message);
+          localStorage.removeItem('token');
+          setTimeout(() => {
+            navigate('/');
+          }, 2000);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchUserData();
-  }, [navigate]);
+    
+    // Cleanup function para evitar actualizaciones en componente desmontado
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]); // Solo depende de navigate, no de otros estados
 
   const handleLogout = async () => {
     try {
@@ -122,10 +173,20 @@ function Home() {
       
     } catch (error) {
       console.error("❌ Error durante logout:", error);
-      
       localStorage.removeItem('token');
       navigate('/');
     }
+  };
+
+  // ✅ FUNCIÓN PARA MANEJAR COMPLETAR PERFIL
+  const handleCompletarPerfil = (result) => {
+    console.log('Perfil completado:', result);
+    // Actualizar userData con los nuevos datos
+    setUserData(prev => ({
+      ...prev,
+      ...result
+    }));
+    setShowCompletarPerfil(false);
   };
 
   const getUserInitials = () => {
@@ -312,6 +373,34 @@ function Home() {
                   <span className="home-action-subtitle">Accede a tus aulas asignadas</span>
                 </div>
               </div>
+              
+              <div className="home-action-button">
+                <Calendar className="home-action-icon" size={20} />
+                <div className="home-action-text">
+                  <span className="home-action-title">Calendario</span>
+                  <span className="home-action-subtitle">Revisa tus próximas entregas</span>
+                </div>
+              </div>
+              
+              <div className="home-action-button">
+                <BarChart3 className="home-action-icon" size={20} />
+                <div className="home-action-text">
+                  <span className="home-action-title">Notas</span>
+                  <span className="home-action-subtitle">Consulta tus calificaciones</span>
+                </div>
+              </div>
+
+              {/* ✅ BOTÓN PARA ABRIR MODAL MANUALMENTE */}
+              <div 
+                className="home-action-button" 
+                onClick={() => setShowCompletarPerfil(true)}
+              >
+                <User className="home-action-icon" size={20} />
+                <div className="home-action-text">
+                  <span className="home-action-title">Completar Perfil</span>
+                  <span className="home-action-subtitle">Actualiza tu información académica</span>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
@@ -409,6 +498,16 @@ function Home() {
           </div>
         </aside>
       </div>
+
+      {/* ✅ MODAL DE COMPLETAR PERFIL */}
+      <CompletarPerfil
+        isOpen={showCompletarPerfil}
+        onClose={() => setShowCompletarPerfil(false)}
+        token={localStorage.getItem('token')}
+        userData={userData}
+        onComplete={handleCompletarPerfil}
+        isNewUser={false}
+      />
     </div>
   );
 }

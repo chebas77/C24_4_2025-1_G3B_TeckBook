@@ -250,7 +250,7 @@ public class Usuario {
      * Verifica si faltan datos críticos después de OAuth2
      */
     public boolean requiereCompletarDatos() {
-        return carreraId == null || cicloActual == null || departamentoId == null;
+        return carreraId == null || cicloActual == null || departamentoId == null || seccionId == null || createdAt == null;
     }
 
     /**

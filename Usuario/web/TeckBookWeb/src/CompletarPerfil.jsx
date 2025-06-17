@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { 
+  X, 
+  GraduationCap, 
+  BookOpen, 
+  User, 
+  CheckCircle,
+  AlertCircle,
+  Phone 
+} from 'lucide-react';
+import './CompletarPerfil.css';
 
-function CompletarPerfil() {
-  const [searchParams] = useSearchParams();
+function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUser = false }) {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
@@ -12,64 +21,70 @@ function CompletarPerfil() {
     telefono: ''
   });
   
-  const [usuario, setUsuario] = useState(null);
   const [carreras, setCarreras] = useState([]);
   const [departamentos, setDepartamentos] = useState([]);
-  
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCarreras, setIsLoadingCarreras] = useState(true);
+  const [isLoadingDepartamentos, setIsLoadingDepartamentos] = useState(true);
   const [error, setError] = useState('');
-  
-  const token = searchParams.get('token');
-  const isNewUser = searchParams.get('new') === 'true';
 
+  // Cargar carreras al abrir el modal
   useEffect(() => {
-    if (!token) {
-      navigate('/');
-      return;
-    }
-    
-    loadData();
-  }, [token]);
-
-  const loadData = async () => {
-    try {
-      // Cargar usuario
-      const userResponse = await fetch('http://localhost:8080/api/auth/user', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+    if (isOpen) {
+      // Pequeño delay para evitar múltiples ejecuciones
+      const timer = setTimeout(() => {
+        fetchCarreras();
+        fetchDepartamentos();
+      }, 100);
       
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        setUsuario(userData);
-        
-        setFormData({
-          carreraId: userData.carreraId || '',
-          cicloActual: userData.cicloActual || '',
-          departamentoId: userData.departamentoId || '',
-          telefono: userData.telefono || ''
-        });
-      }
+      // Prevenir scroll del body cuando el modal está abierto
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        clearTimeout(timer);
+        document.body.style.overflow = 'unset';
+      };
+    } else {
+      // Restaurar scroll del body cuando el modal se cierra
+      document.body.style.overflow = 'unset';
+    }
+  }, [isOpen]);
 
-      // Cargar carreras desde BD
-      const carrerasResponse = await fetch('http://localhost:8080/api/carreras/activas');
-      if (carrerasResponse.ok) {
-        const carrerasData = await carrerasResponse.json();
-        setCarreras(carrerasData.carreras || []);
+  const fetchCarreras = async () => {
+    try {
+      setIsLoadingCarreras(true);
+      console.log('Cargando carreras...');
+      const response = await fetch('http://localhost:8080/api/carreras/activas');
+      if (response.ok) {
+        const data = await response.json();
+        setCarreras(data.carreras || []);
+        console.log('Carreras cargadas:', data.carreras?.length || 0);
+      } else {
+        console.error('Error al cargar carreras:', response.status);
+        setError('Error al cargar carreras');
       }
-
-      // Cargar departamentos desde BD
-      const departamentosResponse = await fetch('http://localhost:8080/api/departamentos/activos');
-      if (departamentosResponse.ok) {
-        const departamentosData = await departamentosResponse.json();
-        setDepartamentos(departamentosData.departamentos || []);
-      }
-
-    } catch (error) {
-      console.error('Error cargando datos:', error);
-      setError('Error al cargar la información');
+    } catch (err) {
+      console.error('Error de conexión:', err);
+      setError('Error de conexión al cargar carreras');
     } finally {
-      setIsLoading(false);
+      setIsLoadingCarreras(false);
+    }
+  };
+
+  const fetchDepartamentos = async () => {
+    try {
+      setIsLoadingDepartamentos(true);
+      const response = await fetch('http://localhost:8080/api/departamentos/activos');
+      if (response.ok) {
+        const data = await response.json();
+        setDepartamentos(data.departamentos || []);
+      } else {
+        setError('Error al cargar departamentos');
+      }
+    } catch (err) {
+      setError('Error de conexión al cargar departamentos');
+    } finally {
+      setIsLoadingDepartamentos(false);
     }
   };
 
@@ -83,37 +98,43 @@ function CompletarPerfil() {
     if (error) setError('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validaciones
+  const validateForm = () => {
     if (!formData.carreraId) {
-      setError('Debe seleccionar una carrera');
-      return;
+      setError('Por favor selecciona una carrera');
+      return false;
     }
     
     if (!formData.cicloActual) {
-      setError('Debe seleccionar un ciclo');
-      return;
+      setError('Por favor selecciona tu ciclo actual');
+      return false;
     }
     
     if (!formData.departamentoId) {
-      setError('Debe seleccionar un departamento');
-      return;
+      setError('Por favor selecciona un departamento');
+      return false;
     }
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
-    setIsSubmitting(true);
+    if (!validateForm()) return;
+    
+    setIsLoading(true);
     setError('');
 
     try {
-      const response = await fetch(`http://localhost:8080/api/usuarios/${usuario.id}`, {
+      // Endpoint para completar perfil
+      const response = await fetch(`http://localhost:8080/api/usuarios/${userData.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          ...usuario,
+          ...userData,
           carreraId: parseInt(formData.carreraId),
           cicloActual: parseInt(formData.cicloActual),
           departamentoId: parseInt(formData.departamentoId),
@@ -122,269 +143,236 @@ function CompletarPerfil() {
       });
 
       if (response.ok) {
-        localStorage.setItem('token', token);
-        navigate('/home');
+        const result = await response.json();
+        console.log('Perfil completado exitosamente:', result);
+        
+        // Callback para el padre
+        if (onComplete) {
+          onComplete(result);
+        }
+        
+        // Guardar token si es nuevo usuario
+        if (isNewUser && token) {
+          localStorage.setItem('token', token);
+        }
+
+        // Cerrar modal
+        onClose();
+        
+        // Navegar si es nuevo usuario
+        if (isNewUser) {
+          setTimeout(() => {
+            navigate('/home');
+          }, 500);
+        }
       } else {
         const errorData = await response.text();
-        setError('Error al guardar: ' + errorData);
+        console.error('Error del servidor:', errorData);
+        setError('Error al completar perfil: ' + errorData);
       }
-    } catch (error) {
+    } catch (err) {
+      console.error('Error de red:', err);
       setError('Error de conexión. Intenta nuevamente.');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontFamily: 'Arial, sans-serif'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #005DAB',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 20px'
-          }}></div>
-          <p>Cargando información...</p>
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-        </div>
-      </div>
-    );
-  }
+  const handleClose = () => {
+    if (!isLoading) {
+      onClose();
+    }
+  };
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget && !isLoading) {
+      handleClose();
+    }
+  };
+
+  // No renderizar si no está abierto
+  if (!isOpen) return null;
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '20px',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-        maxWidth: '600px',
-        width: '100%',
-        padding: '40px'
-      }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <h1 style={{ fontSize: '28px', color: '#333', margin: '0 0 10px 0' }}>
-            {isNewUser ? '¡Bienvenido a TecBook!' : 'Completar Perfil'}
-          </h1>
-          <p style={{ color: '#666', margin: 0 }}>
-            {isNewUser 
-              ? `Hola ${usuario?.nombre}! Completa tu información académica.`
-              : 'Completa la información faltante.'
-            }
-          </p>
-        </div>
-
-        {/* Usuario Info */}
-        {usuario && (
-          <div style={{
-            background: '#f8f9fa',
-            borderRadius: '12px',
-            padding: '20px',
-            marginBottom: '30px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '15px'
-          }}>
-            {usuario.profileImageUrl ? (
-              <img 
-                src={usuario.profileImageUrl} 
-                alt="Perfil" 
-                style={{ width: '50px', height: '50px', borderRadius: '50%' }}
-              />
-            ) : (
-              <div style={{
-                width: '50px',
-                height: '50px',
-                background: '#005DAB',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold'
-              }}>
-                {usuario.nombre?.charAt(0)}{usuario.apellidos?.charAt(0)}
-              </div>
-            )}
-            <div>
-              <h3 style={{ margin: '0 0 5px 0', fontSize: '18px' }}>
-                {usuario.nombre} {usuario.apellidos}
-              </h3>
-              <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
-                {usuario.correoInstitucional}
-              </p>
-            </div>
+    <div className="modal-overlay" onClick={handleBackdropClick}>
+      <div className="modal-container">
+        {/* Header del modal */}
+        <div className="modal-header">
+          <div className="modal-title">
+            <GraduationCap size={24} className="modal-icon" />
+            <h2>¡Completa tu perfil!</h2>
           </div>
-        )}
-
-        {/* Error */}
-        {error && (
-          <div style={{
-            background: '#fee2e2',
-            color: '#dc2626',
-            padding: '15px',
-            borderRadius: '8px',
-            marginBottom: '20px'
-          }}>
-            {error}
-          </div>
-        )}
-
-        {/* Formulario */}
-        <div onSubmit={handleSubmit}>
-          {/* Carrera */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-              Carrera *
-            </label>
-            <select
-              name="carreraId"
-              value={formData.carreraId}
-              onChange={handleChange}
-              required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '8px',
-                fontSize: '16px'
-              }}
-            >
-              <option value="">Selecciona tu carrera</option>
-              {carreras.map(carrera => (
-                <option key={carrera.id} value={carrera.id}>
-                  {carrera.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Ciclo y Departamento */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '20px',
-            marginBottom: '20px'
-          }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                Ciclo Actual *
-              </label>
-              <select
-                name="cicloActual"
-                value={formData.cicloActual}
-                onChange={handleChange}
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '8px',
-                  fontSize: '16px'
-                }}
-              >
-                <option value="">Ciclo</option>
-                {[1,2,3,4,5,6].map(ciclo => (
-                  <option key={ciclo} value={ciclo}>
-                    {ciclo}° Ciclo
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                Departamento *
-              </label>
-              <select
-                name="departamentoId"
-                value={formData.departamentoId}
-                onChange={handleChange}
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '8px',
-                  fontSize: '16px'
-                }}
-              >
-                <option value="">Selecciona departamento</option>
-                {departamentos.map(depto => (
-                  <option key={depto.id} value={depto.id}>
-                    {depto.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Teléfono */}
-          <div style={{ marginBottom: '30px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-              Teléfono (Opcional)
-            </label>
-            <input
-              type="tel"
-              name="telefono"
-              value={formData.telefono}
-              onChange={handleChange}
-              placeholder="Ej: +51 999 888 777"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '8px',
-                fontSize: '16px'
-              }}
-            />
-          </div>
-
-          {/* Botón */}
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            style={{
-              width: '100%',
-              background: isSubmitting ? '#94a3b8' : '#005DAB',
-              color: 'white',
-              padding: '15px',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '18px',
-              fontWeight: 'bold',
-              cursor: isSubmitting ? 'not-allowed' : 'pointer'
-            }}
+          <button 
+            onClick={handleClose} 
+            className="close-button" 
+            disabled={isLoading}
           >
-            {isSubmitting ? 'Guardando...' : 'Completar Perfil'}
+            <X size={20} />
           </button>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#666' }}>
-          Los campos marcados con * son obligatorios
+        {/* Contenido del modal */}
+        <div className="modal-content">
+          <div className="welcome-section">
+            <div className="user-info">
+              <div className="user-avatar">
+                {userData?.profileImageUrl ? (
+                  <img src={userData.profileImageUrl} alt="Perfil" />
+                ) : (
+                  <span>
+                    {userData?.nombre?.charAt(0)}{userData?.apellidos?.charAt(0)}
+                  </span>
+                )}
+              </div>
+              <div className="user-details">
+                <h3>¡Hola {userData?.nombre || 'Usuario'}! 👋</h3>
+                <p>Para completar tu registro, necesitamos algunos datos adicionales</p>
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="error-message">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="profile-form">
+            {/* Selección de Carrera */}
+            <div className="form-group">
+              <label htmlFor="carreraId" className="form-label">
+                <GraduationCap size={18} />
+                Carrera
+              </label>
+              <select
+                id="carreraId"
+                name="carreraId"
+                value={formData.carreraId}
+                onChange={handleChange}
+                className="form-select"
+                disabled={isLoadingCarreras || isLoading}
+                required
+              >
+                <option value="">
+                  {isLoadingCarreras ? 'Cargando carreras...' : 'Selecciona tu carrera'}
+                </option>
+                {carreras.map(carrera => (
+                  <option key={carrera.id} value={carrera.id}>
+                    {carrera.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Ciclo y Departamento */}
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="cicloActual" className="form-label">
+                  <BookOpen size={18} />
+                  Ciclo Actual
+                </label>
+                <select
+                  id="cicloActual"
+                  name="cicloActual"
+                  value={formData.cicloActual}
+                  onChange={handleChange}
+                  className="form-select"
+                  disabled={isLoading}
+                  required
+                >
+                  <option value="">Selecciona tu ciclo</option>
+                  {[1, 2, 3, 4, 5, 6].map(ciclo => (
+                    <option key={ciclo} value={ciclo}>
+                      {ciclo}° Ciclo
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="departamentoId" className="form-label">
+                  <GraduationCap size={18} />
+                  Departamento
+                </label>
+                <select
+                  id="departamentoId"
+                  name="departamentoId"
+                  value={formData.departamentoId}
+                  onChange={handleChange}
+                  className="form-select"
+                  disabled={isLoadingDepartamentos || isLoading}
+                  required
+                >
+                  <option value="">
+                    {isLoadingDepartamentos ? 'Cargando departamentos...' : 'Selecciona departamento'}
+                  </option>
+                  {departamentos.map(depto => (
+                    <option key={depto.id} value={depto.id}>
+                      {depto.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Campo de Teléfono */}
+            <div className="form-group">
+              <label htmlFor="telefono" className="form-label">
+                <Phone size={18} />
+                Teléfono (Opcional)
+              </label>
+              <input
+                type="tel"
+                id="telefono"
+                name="telefono"
+                value={formData.telefono}
+                onChange={handleChange}
+                placeholder="Ej: +51 999 888 777"
+                className="form-select"
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* Información adicional */}
+            <div className="info-box">
+              <CheckCircle size={16} />
+              <span>Esta información nos ayuda a personalizar tu experiencia y mantenerte conectado</span>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="form-actions">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="btn-secondary"
+                disabled={isLoading}
+              >
+                Completar después
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={isLoading || isLoadingCarreras || isLoadingDepartamentos}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="loading-spinner" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={18} />
+                    Completar perfil
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="form-note">
+              Los campos marcados con * son obligatorios. El teléfono es opcional.
+            </div>
+          </form>
         </div>
       </div>
     </div>

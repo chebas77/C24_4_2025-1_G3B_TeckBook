@@ -7,7 +7,7 @@ import Perfil from "./Perfil";
 import Aulas from "./Aula";
 import ProtectedRoute from "./ProtectedRoute";
 import CrearAula from './CrearAula';
-import CompletarPerfil from './CompletarPerfil'; // 🆕 AGREGAR ESTA IMPORTACIÓN
+// ❌ NO importar CompletarPerfil aquí si es modal
 
 function App() {
   return (
@@ -18,9 +18,8 @@ function App() {
         <Route path="/recuperar" element={<RecuperarCuenta />} />
         <Route path="/register" element={<Register />} />
         
-        {/* 🆕 RUTA PARA COMPLETAR PERFIL DESPUÉS DE OAUTH2 */}
-        <Route path="/completar-perfil" element={<CompletarPerfil />} />
-
+        {/* ❌ NO agregar ruta para el modal */}
+        
         {/* Rutas protegidas */}
         <Route path="/home" element={
           <ProtectedRoute>
