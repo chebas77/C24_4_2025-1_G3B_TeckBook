@@ -63,24 +63,6 @@ public class Carrera {
         this.activo = true;
     }
 
-    // 🔧 TIMESTAMPS AUTOMÁTICOS - COMENTADOS HASTA AGREGAR COLUMNAS A BD
-    /*
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-        if (activo == null) {
-            activo = true;
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-    */
-
-    // ========== GETTERS Y SETTERS ==========
     
     public Long getId() {
         return id;
@@ -148,30 +130,7 @@ public class Carrera {
         this.modalidad = modalidad != null ? modalidad.trim() : null;
     }
 
-    /*
-    // 🔧 TIMESTAMPS - COMENTADOS
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-    */
-
-    // ========== MÉTODOS AUXILIARES ==========
-    
-    /**
-     * ✅ Verifica si la carrera está activa
-     */
     public boolean isActiva() {
         return activo != null && activo;
     }

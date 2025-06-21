@@ -10,8 +10,11 @@ import {
   Filter,
   MoreVertical,
   Clock,
-  MapPin
+  MapPin,
+  UserPlus,
+  Settings
 } from 'lucide-react';
+import InvitarEstudiantesModal from './InvitarEstudiantesModal';
 import './Aula.css';
 
 function Aulas() {
@@ -21,67 +24,9 @@ function Aulas() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCarrera, setFilterCarrera] = useState('');
   const [userData, setUserData] = useState(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [selectedAula, setSelectedAula] = useState(null);
   const navigate = useNavigate();
-
-  // Mock data para aulas (esto debería venir del backend)
-  const mockAulas = [
-    {
-      id: 1,
-      nombre: "Algoritmos y Estructuras de Datos",
-      carrera: "Desarrollo de Software",
-      ciclo: "IV",
-      seccion: "A",
-      profesor: "Dr. Carlos Mendoza",
-      estudiantes: 28,
-      horario: "Lunes y Miércoles 10:00-12:00",
-      aula: "Lab 301",
-      codigo: "AED-2024-I",
-      descripcion: "Curso fundamental sobre algoritmos y estructuras de datos",
-      color: "#3B82F6"
-    },
-    {
-      id: 2,
-      nombre: "Base de Datos",
-      carrera: "Desarrollo de Software",
-      ciclo: "V",
-      seccion: "B",
-      profesor: "Ing. María González",
-      estudiantes: 25,
-      horario: "Martes y Jueves 14:00-16:00",
-      aula: "Aula 205",
-      codigo: "BD-2024-I",
-      descripcion: "Diseño y administración de bases de datos relacionales",
-      color: "#10B981"
-    },
-    {
-      id: 3,
-      nombre: "Redes y Comunicaciones",
-      carrera: "Administración de Redes",
-      ciclo: "VI",
-      seccion: "A",
-      profesor: "Ing. Pedro Sánchez",
-      estudiantes: 22,
-      horario: "Viernes 08:00-12:00",
-      aula: "Lab 102",
-      codigo: "RC-2024-I",
-      descripcion: "Fundamentos de redes y protocolos de comunicación",
-      color: "#F59E0B"
-    },
-    {
-      id: 4,
-      nombre: "Electrónica Digital",
-      carrera: "Electrónica y Automatización",
-      ciclo: "III",
-      seccion: "A",
-      profesor: "Ing. Ana Rivera",
-      estudiantes: 30,
-      horario: "Lunes a Viernes 16:00-18:00",
-      aula: "Lab Electrónica",
-      codigo: "ED-2024-I",
-      descripcion: "Principios de electrónica digital y circuitos lógicos",
-      color: "#8B5CF6"
-    }
-  ];
 
   useEffect(() => {
     // Verificar autenticación
@@ -92,43 +37,60 @@ function Aulas() {
     }
 
     // Obtener datos del usuario
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch('http://localhost:8080/api/auth/user', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('No se pudo obtener la información del usuario');
-        }
-
-        const data = await response.json();
-        setUserData(data);
-      } catch (error) {
-        console.error("Error al obtener datos del usuario:", error);
-        setError(error.message);
-      }
-    };
-
-    // Simular carga de aulas (aquí iría la llamada al backend)
-    const fetchAulas = async () => {
-      try {
-        setIsLoading(true);
-        // Simular delay de API
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setAulas(mockAulas);
-      } catch (error) {
-        setError("Error al cargar las aulas");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchUserData();
+    // Obtener aulas del backend
     fetchAulas();
   }, [navigate]);
+
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/auth/user', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('No se pudo obtener la información del usuario');
+      }
+
+      const data = await response.json();
+      setUserData(data);
+    } catch (error) {
+      console.error("Error al obtener datos del usuario:", error);
+      setError(error.message);
+    }
+  };
+
+  const fetchAulas = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost:8080/api/aulas', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener las aulas');
+      }
+
+      const data = await response.json();
+      console.log('Aulas obtenidas del backend:', data);
+      
+      // El backend devuelve { aulas: [...], totalAulas: 5, rol: "PROFESOR" }
+      setAulas(data.aulas || []);
+      
+    } catch (error) {
+      console.error("Error al cargar las aulas:", error);
+      setError("Error al cargar las aulas: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -158,25 +120,42 @@ function Aulas() {
     }
   };
 
+  const handleInviteStudents = (aula) => {
+    setSelectedAula(aula);
+    setShowInviteModal(true);
+  };
+
+  const handleCreateAula = () => {
+    // Navegar a la página de crear aula en lugar de mostrar alert
+    navigate('/crear-aula');
+  };
+
   // Filtrar aulas según búsqueda y filtros
   const filteredAulas = aulas.filter(aula => {
-    const matchesSearch = aula.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         aula.profesor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         aula.codigo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (aula.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (aula.titulo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (aula.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCarrera = filterCarrera === '' || aula.carrera === filterCarrera;
+    // Por ahora no filtramos por carrera ya que no está en la estructura actual
+    // const matchesCarrera = filterCarrera === '' || aula.carrera === filterCarrera;
     
-    return matchesSearch && matchesCarrera;
+    return matchesSearch;
   });
-
-  // Obtener carreras únicas para el filtro
-  const carreras = [...new Set(aulas.map(aula => aula.carrera))];
 
   const getUserInitials = () => {
     if (userData?.nombre && userData?.apellidos) {
       return `${userData.nombre.charAt(0)}${userData.apellidos.charAt(0)}`.toUpperCase();
     }
     return 'GS';
+  };
+
+  const getAulaColor = (index) => {
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4'];
+    return colors[index % colors.length];
+  };
+
+  const isProfesor = () => {
+    return userData?.rol === 'PROFESOR' || userData?.rol === 'profesor';
   };
 
   if (isLoading) {
@@ -205,10 +184,12 @@ function Aulas() {
           <button className="aulas-nav-link aulas-active">
             Aulas
           </button>
-          <button onClick={() => navigate('/crear-aula')} className="aulas-nav-link aulas-create-btn">
-            <Plus size={16} style={{marginRight: '4px'}} />
-            Crear Aula
-          </button>
+          {isProfesor() && (
+            <button onClick={handleCreateAula} className="aulas-nav-link aulas-create-btn">
+              <Plus size={16} style={{marginRight: '4px'}} />
+              Crear Aula
+            </button>
+          )}
           <button onClick={handleLogout} className="aulas-logout">
             Cerrar sesión
           </button>
@@ -223,7 +204,10 @@ function Aulas() {
             <div className="aulas-title-section">
               <h2 className="aulas-title">Mis Aulas</h2>
               <p className="aulas-subtitle">
-                Aquí puedes ver todas las aulas a las que estás asignado como {userData?.rol?.toLowerCase() || 'estudiante'}
+                {isProfesor() 
+                  ? `Gestiona tus aulas como ${userData?.rol?.toLowerCase() || 'profesor'}` 
+                  : `Aulas en las que estás inscrito como ${userData?.rol?.toLowerCase() || 'estudiante'}`
+                }
               </p>
             </div>
             
@@ -232,25 +216,11 @@ function Aulas() {
                 <Search size={20} className="search-icon" />
                 <input
                   type="text"
-                  placeholder="Buscar aulas, profesores o códigos..."
+                  placeholder="Buscar aulas..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="search-input"
                 />
-              </div>
-              
-              <div className="aulas-filter">
-                <Filter size={20} className="filter-icon" />
-                <select
-                  value={filterCarrera}
-                  onChange={(e) => setFilterCarrera(e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">Todas las carreras</option>
-                  {carreras.map(carrera => (
-                    <option key={carrera} value={carrera}>{carrera}</option>
-                  ))}
-                </select>
               </div>
             </div>
           </div>
@@ -259,64 +229,94 @@ function Aulas() {
           {error ? (
             <div className="aulas-error">
               <p>Error: {error}</p>
+              <button onClick={fetchAulas} className="retry-button">
+                Intentar de nuevo
+              </button>
             </div>
           ) : (
             <div className="aulas-grid">
               {filteredAulas.length === 0 ? (
                 <div className="aulas-empty">
                   <BookOpen size={48} color="#94a3b8" />
-                  <h3>No se encontraron aulas</h3>
-                  <p>No hay aulas que coincidan con tu búsqueda</p>
+                  <h3>
+                    {aulas.length === 0 
+                      ? (isProfesor() ? 'No has creado aulas aún' : 'No estás inscrito en ningún aula')
+                      : 'No se encontraron aulas'
+                    }
+                  </h3>
+                  <p>
+                    {aulas.length === 0 
+                      ? (isProfesor() ? 'Crea tu primera aula para comenzar' : 'Espera a que un profesor te invite a un aula')
+                      : 'No hay aulas que coincidan con tu búsqueda'
+                    }
+                  </p>
+                  {isProfesor() && aulas.length === 0 && (
+                    <button onClick={handleCreateAula} className="create-first-aula-btn">
+                      <Plus size={20} style={{marginRight: '8px'}} />
+                      Crear mi primera aula
+                    </button>
+                  )}
                 </div>
               ) : (
-                filteredAulas.map(aula => (
-                  <div key={aula.id} className="aula-card" style={{'--aula-color': aula.color}}>
+                filteredAulas.map((aula, index) => (
+                  <div key={aula.id} className="aula-card" style={{'--aula-color': getAulaColor(index)}}>
                     <div className="aula-header">
                       <div className="aula-color-bar"></div>
                       <div className="aula-title-section">
-                        <h3 className="aula-name">{aula.nombre}</h3>
-                        <span className="aula-code">{aula.codigo}</span>
+                        <h3 className="aula-name">{aula.nombre || aula.titulo || 'Aula sin nombre'}</h3>
+                        {aula.codigoAcceso && (
+                          <span className="aula-code">{aula.codigoAcceso}</span>
+                        )}
                       </div>
-                      <button className="aula-menu">
-                        <MoreVertical size={20} />
-                      </button>
+                      <div className="aula-menu-container">
+                        {isProfesor() && (
+                          <button 
+                            onClick={() => handleInviteStudents(aula)}
+                            className="aula-invite-btn"
+                            title="Invitar estudiantes"
+                          >
+                            <UserPlus size={16} />
+                          </button>
+                        )}
+                        <button className="aula-menu">
+                          <MoreVertical size={20} />
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="aula-content">
-                      <p className="aula-description">{aula.descripcion}</p>
+                      <p className="aula-description">
+                        {aula.descripcion || 'Sin descripción disponible'}
+                      </p>
                       
                       <div className="aula-info">
                         <div className="info-item">
-                          <GraduationCap size={16} className="info-icon" />
-                          <span>{aula.carrera}</span>
-                        </div>
-                        
-                        <div className="info-item">
                           <BookOpen size={16} className="info-icon" />
-                          <span>Ciclo {aula.ciclo} - Sección {aula.seccion}</span>
+                          <span>Estado: {aula.estado || 'Activa'}</span>
                         </div>
                         
-                        <div className="info-item">
-                          <Users size={16} className="info-icon" />
-                          <span>{aula.estudiantes} estudiantes</span>
-                        </div>
+                        {aula.fechaInicio && (
+                          <div className="info-item">
+                            <Calendar size={16} className="info-icon" />
+                            <span>Inicio: {new Date(aula.fechaInicio).toLocaleDateString()}</span>
+                          </div>
+                        )}
                         
-                        <div className="info-item">
-                          <Clock size={16} className="info-icon" />
-                          <span>{aula.horario}</span>
-                        </div>
-                        
-                        <div className="info-item">
-                          <MapPin size={16} className="info-icon" />
-                          <span>{aula.aula}</span>
-                        </div>
+                        {aula.fechaFin && (
+                          <div className="info-item">
+                            <Calendar size={16} className="info-icon" />
+                            <span>Fin: {new Date(aula.fechaFin).toLocaleDateString()}</span>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="aula-professor">
                         <div className="professor-avatar">
-                          {aula.profesor.split(' ').map(n => n.charAt(0)).join('').toUpperCase()}
+                          {isProfesor() ? getUserInitials() : 'PR'}
                         </div>
-                        <span className="professor-name">{aula.profesor}</span>
+                        <span className="professor-name">
+                          {isProfesor() ? 'Mi aula' : 'Profesor asignado'}
+                        </span>
                       </div>
                     </div>
                     
@@ -335,6 +335,19 @@ function Aulas() {
           )}
         </div>
       </div>
+
+      {/* Modal de Invitar Estudiantes */}
+      {showInviteModal && selectedAula && (
+        <InvitarEstudiantesModal
+          isOpen={showInviteModal}
+          onClose={() => {
+            setShowInviteModal(false);
+            setSelectedAula(null);
+          }}
+          aulaId={selectedAula.id}
+          aulaNombre={selectedAula.nombre || selectedAula.titulo}
+        />
+      )}
     </div>
   );
 }

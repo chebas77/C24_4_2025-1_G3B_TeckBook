@@ -1,113 +1,172 @@
-/* CrearAula.css - Estilo inspirado en Perfil.css */
+/* CrearAula.css - Estilos mejorados con filtros en cascada */
 
-.crear-aula-container {
-  margin: 0;
-  padding: 40px 20px;
-  width: 100vw;
-  min-height: 100vh;
-  font-family: 'Segoe UI', 'Inter', sans-serif;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-.crear-aula-card {
-  background: white;
-  border-radius: 24px;
-  box-shadow: 0 20px 60px rgba(0, 93, 171, 0.08);
-  padding: 40px;
-  width: 100%;
-  max-width: 700px;
-}
-
-.crear-aula-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 24px;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 12px;
-}
-
-.crear-aula-form {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.crear-aula-label {
-  font-size: 14px;
+.form-section-title {
+  font-size: 16px;
   font-weight: 600;
-  color: #334155;
-  margin-bottom: 8px;
+  color: #1e293b;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
 }
 
-.crear-aula-input,
-.crear-aula-select {
-  padding: 14px 16px;
-  font-size: 15px;
+.textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 10px;
   outline: none;
-  background-color: #f8fafc;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  background: rgba(248, 250, 252, 0.6);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
 }
 
-.crear-aula-input:focus,
-.crear-aula-select:focus {
+.textarea:focus {
   border-color: #005DAB;
-  background-color: #ffffff;
+  background: #ffffff;
   box-shadow: 0 0 0 3px rgba(0, 93, 171, 0.1);
 }
 
-.crear-aula-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+.success-message-container {
   margin-top: 20px;
 }
 
-.crear-aula-cancel {
-  background-color: #e2e8f0;
-  color: #475569;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.success-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  justify-content: center;
 }
 
-.crear-aula-cancel:hover {
-  background-color: #cbd5e1;
-}
-
-.crear-aula-submit {
-  background: linear-gradient(135deg, #005DAB 0%, #0066c7 100%);
+.invite-button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
   padding: 12px 20px;
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 93, 171, 0.2);
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
-.crear-aula-submit:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 93, 171, 0.3);
+.invite-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
 }
 
+.continue-button {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.continue-button:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.cancel-button {
+  background: #f1f5f9;
+  color: #64748b;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-button:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.loading-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+.input:disabled,
+.textarea:disabled {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+/* Estilos para select */
+select.input {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+select.input:disabled {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* Animaciones */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.success-message-container {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-  .crear-aula-card {
-    padding: 24px;
+  .form-row {
+    grid-template-columns: 1fr;
   }
-
-  .crear-aula-title {
-    font-size: 24px;
+  
+  .success-actions {
+    flex-direction: column;
+  }
+  
+  .invite-button,
+  .continue-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .cancel-button,
+  .save-button {
+    width: 100%;
+    justify-content: center;
   }
 }

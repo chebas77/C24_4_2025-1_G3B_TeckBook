@@ -120,17 +120,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         newUser.setCorreoInstitucional(email);
         newUser.setNombre(name != null ? name : "");
         newUser.setApellidos(lastName != null ? lastName : "");
-        newUser.setRol("ESTUDIANTE");
+        newUser.setRol(Usuario.RolUsuario.ESTUDIANTE);
         
         // 🔧 Imagen de Google si está disponible
         if (pictureUrl != null && !pictureUrl.isEmpty()) {
             newUser.setProfileImageUrl(pictureUrl);
         }
-        
-        // 🔧 Código generado a partir del email
-        String codigo = email.split("@")[0];
-        newUser.setCodigo(codigo);
-        
+      
         // 🔧 Valores por defecto para campos requeridos por la BD
         newUser.setDepartamentoId(1L); // Tecnología Digital por defecto
         
