@@ -315,7 +315,27 @@ public class CarreraController {
                     ));
         }
     }
-
+   @GetMapping("/departamento/{departamentoId}/activas")
+public ResponseEntity<?> getCarrerasActivasByDepartamento(@PathVariable Long departamentoId) {
+    try {
+        logger.info("Solicitud para obtener carreras activas del departamento: {}", departamentoId);
+        
+        List<Carrera> carreras = carreraService.getCarrerasActivasByDepartamento(departamentoId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("carreras", carreras);
+        response.put("departamentoId", departamentoId);
+        response.put("count", carreras.size());
+        response.put("message", "Carreras del departamento obtenidas exitosamente");
+        
+        return ResponseEntity.ok(response);
+        
+    } catch (Exception e) {
+        logger.error("Error al obtener carreras del departamento {}: {}", departamentoId, e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al obtener carreras del departamento", "message", e.getMessage()));
+    }
+}
     /**
      * 🗑️ Desactiva una carrera (soft delete)
      */

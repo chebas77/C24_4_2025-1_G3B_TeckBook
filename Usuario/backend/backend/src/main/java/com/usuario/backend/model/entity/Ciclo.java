@@ -11,10 +11,10 @@ public class Ciclo {
     private Long id;
     
     @Column(name = "numero", nullable = false)
-    private Integer numero; // 1, 2, 3, 4, 5, 6
+    private Integer numero;
     
     @Column(name = "nombre", nullable = false)
-    private String nombre; // "Primer Ciclo", "Segundo Ciclo", etc.
+    private String nombre;
 
     // Constructores
     public Ciclo() {}

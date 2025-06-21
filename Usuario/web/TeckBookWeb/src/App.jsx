@@ -3,11 +3,10 @@ import Login from "./Login";
 import RecuperarCuenta from "./RecuperarCuenta";
 import Home from "./Home";
 import Register from "./Register";
-import Perfil from "./Perfil";
-import Aulas from "./Aula";
+import Perfil from "./Perfil"; 
+import Aulas from "./Aula"; // 🆕 IMPORTAR
+import CrearAula from "./CrearAula"; // 🆕 IMPORTAR
 import ProtectedRoute from "./ProtectedRoute";
-import CrearAula from './CrearAula';
-// ❌ NO importar CompletarPerfil aquí si es modal
 
 function App() {
   return (
@@ -18,24 +17,26 @@ function App() {
         <Route path="/recuperar" element={<RecuperarCuenta />} />
         <Route path="/register" element={<Register />} />
         
-        {/* ❌ NO agregar ruta para el modal */}
-        
-        {/* Rutas protegidas */}
+        {/* Rutas protegidas que requieren autenticación */}
         <Route path="/home" element={
           <ProtectedRoute>
             <Home />
           </ProtectedRoute>
         } />
+        
         <Route path="/perfil" element={
           <ProtectedRoute>
             <Perfil />
           </ProtectedRoute>
         } />
+        
+        {/* 🆕 NUEVAS RUTAS DE AULAS */}
         <Route path="/aulas" element={
           <ProtectedRoute>
             <Aulas />
           </ProtectedRoute>
         } />
+        
         <Route path="/crear-aula" element={
           <ProtectedRoute>
             <CrearAula />

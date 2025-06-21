@@ -146,4 +146,16 @@ public class CarreraService {
             throw new RuntimeException("Error al desactivar la carrera", e);
         }
     }
+    public List<Carrera> getCarrerasActivasByDepartamento(Long departamentoId) {
+    try {
+        List<Carrera> carreras = carreraRepository.findByDepartamentoIdAndActivoTrue(departamentoId);
+        logger.info("Se obtuvieron {} carreras activas para departamento {}", 
+                   carreras.size(), departamentoId);
+        return carreras;
+    } catch (Exception e) {
+        logger.error("Error al obtener carreras del departamento {}: {}", 
+                    departamentoId, e.getMessage(), e);
+        throw new RuntimeException("Error al obtener carreras del departamento", e);
+    }
+}
 }

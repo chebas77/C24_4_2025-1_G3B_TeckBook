@@ -1,5 +1,4 @@
 package com.usuario.backend.model.entity;
-
 import jakarta.persistence.*;
 
 @Entity
@@ -10,13 +9,13 @@ public class Departamento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "nombre", nullable = false, length = 100)
+    @Column(name = "nombre", nullable = false)
     private String nombre;
     
-    @Column(name = "codigo", nullable = false, unique = true, length = 10)
+    @Column(name = "codigo", unique = true)
     private String codigo;
     
-    @Column(name = "activo", nullable = false)
+    @Column(name = "activo")
     private Boolean activo = true;
 
     // Constructores
@@ -29,37 +28,14 @@ public class Departamento {
     }
 
     // Getters y Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public void setCodigo(String codigo) {
-        this.codigo = codigo;
-    }
-
-    public Boolean getActivo() {
-        return activo;
-    }
-
-    public void setActivo(Boolean activo) {
-        this.activo = activo;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getCodigo() { return codigo; }
+    public void setCodigo(String codigo) { this.codigo = codigo; }
+    public Boolean getActivo() { return activo; }
+    public void setActivo(Boolean activo) { this.activo = activo; }
 
     @Override
     public String toString() {

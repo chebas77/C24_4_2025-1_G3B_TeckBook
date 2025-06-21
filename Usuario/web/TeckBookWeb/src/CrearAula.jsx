@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
   Users, 
@@ -9,17 +10,16 @@ import {
   GraduationCap,
   UserPlus,
   Mail,
-  Calendar
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+  ChevronDown
 } from 'lucide-react';
 import InvitarEstudiantesModal from './InvitarEstudiantesModal';
 import './CrearAula.css';
 
 function CrearAula() {
-  // Simulación de navegación
-  const navigate = (path) => {
-    console.log('Navegando a:', path);
-    // Aquí implementarías la navegación real
-  };
+  const navigate = useNavigate();
   
   // Estados para el formulario
   const [formData, setFormData] = useState({
@@ -28,17 +28,23 @@ function CrearAula() {
     descripcion: '',
     departamentoId: '',
     carreraId: '',
-    ciclo: '',
+    cicloId: '',
     seccionId: '',
     fechaInicio: '',
     fechaFin: ''
   });
   
-  // Estados para los filtros en cascada
+  // Estados para los filtros en cascada conectados al backend
   const [departamentos, setDepartamentos] = useState([]);
   const [carreras, setCarreras] = useState([]);
-  const [ciclos] = useState([1, 2, 3, 4, 5, 6]); // Ciclos predefinidos
+  const [ciclos, setCiclos] = useState([]);
   const [secciones, setSecciones] = useState([]);
+  
+  // Estados de loading para cada filtro
+  const [loadingDepartamentos, setLoadingDepartamentos] = useState(false);
+  const [loadingCarreras, setLoadingCarreras] = useState(false);
+  const [loadingCiclos, setLoadingCiclos] = useState(false);
+  const [loadingSecciones, setLoadingSecciones] = useState(false);
   
   // Estados de UI
   const [isLoading, setIsLoading] = useState(false);
@@ -46,28 +52,82 @@ function CrearAula() {
   const [error, setError] = useState(null);
   const [aulaCreada, setAulaCreada] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [userData, setUserData] = useState(null);
 
+  // 🔥 EFECTO: Verificar autenticación y cargar datos iniciales
   useEffect(() => {
-    fetchDepartamentos();
-  }, []);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
 
-  // Cargar departamentos
-  const fetchDepartamentos = async () => {
+    fetchUserData();
+    fetchDepartamentos();
+  }, [navigate]);
+
+  // 🔥 FUNCIÓN: Obtener datos del usuario
+  const fetchUserData = async () => {
     try {
-      // Por ahora usamos datos mock, luego conectar al backend
-      const mockDepartamentos = [
-        { id: 1, nombre: 'Tecnología Digital' },
-        { id: 2, nombre: 'Mecánica y Producción' },
-        { id: 3, nombre: 'Electrónica y Automatización' },
-        { id: 4, nombre: 'Administración' }
-      ];
-      setDepartamentos(mockDepartamentos);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/auth/user', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        throw new Error('No se pudo obtener la información del usuario');
+      }
+
+      const data = await response.json();
+      console.log('🔍 Datos del usuario obtenidos:', data);
+      console.log('🔍 Rol específico:', data.rol, 'Tipo:', typeof data.rol);
+      setUserData(data);
+      
+      // Verificar que sea profesor
+      if (data.rol !== 'PROFESOR' && data.rol !== 'profesor') {
+        console.log('❌ Rol detectado:', data.rol, 'Tipo:', typeof data.rol);
+        setError('Solo los profesores pueden crear aulas. Tu rol actual es: ' + data.rol);
+        setTimeout(() => navigate('/aulas'), 3000);
+        return;
+      }
+      
+      console.log('✅ Usuario es profesor:', data.rol);
+      
     } catch (error) {
-      console.error('Error al cargar departamentos:', error);
+      console.error("Error al obtener datos del usuario:", error);
+      setError(error.message);
+      setTimeout(() => navigate('/'), 3000);
     }
   };
 
-  // Cargar carreras cuando cambia el departamento
+  // 🔥 FUNCIÓN: Cargar departamentos desde el backend
+  const fetchDepartamentos = async () => {
+    try {
+      setLoadingDepartamentos(true);
+      setError(null);
+      
+      console.log('🏢 Cargando departamentos...');
+      const response = await fetch('http://localhost:8080/api/departamentos/activos');
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('🏢 Departamentos obtenidos:', data.departamentos);
+      
+      setDepartamentos(data.departamentos || []);
+      
+    } catch (error) {
+      console.error('❌ Error al cargar departamentos:', error);
+      setError('Error al cargar departamentos: ' + error.message);
+      setDepartamentos([]);
+    } finally {
+      setLoadingDepartamentos(false);
+    }
+  };
+
+  // 🔥 FUNCIÓN: Cargar carreras por departamento
   const fetchCarreras = async (departamentoId) => {
     if (!departamentoId) {
       setCarreras([]);
@@ -75,103 +135,217 @@ function CrearAula() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/carreras/departamento/${departamentoId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCarreras(data.carreras || []);
-      } else {
-        // Fallback con datos mock
-        const mockCarreras = {
-          1: [ // Tecnología Digital
-            { id: 1, nombre: 'Desarrollo de Software' },
-            { id: 2, nombre: 'Administración de Redes y Comunicaciones' }
-          ],
-          2: [ // Mecánica y Producción
-            { id: 3, nombre: 'Mecánica Automotriz' },
-            { id: 4, nombre: 'Producción Industrial' }
-          ],
-          3: [ // Electrónica y Automatización
-            { id: 5, nombre: 'Electrónica Industrial' },
-            { id: 6, nombre: 'Automatización Industrial' }
-          ]
-        };
-        setCarreras(mockCarreras[departamentoId] || []);
+      setLoadingCarreras(true);
+      setError(null);
+      
+      console.log(`🎓 Cargando carreras del departamento ${departamentoId}...`);
+      const response = await fetch(`http://localhost:8080/api/carreras/departamento/${departamentoId}/activas`);
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
       }
+      
+      const data = await response.json();
+      console.log(`🎓 Carreras obtenidas:`, data.carreras);
+      
+      setCarreras(data.carreras || []);
+      
     } catch (error) {
-      console.error('Error al cargar carreras:', error);
+      console.error(`❌ Error al cargar carreras del departamento ${departamentoId}:`, error);
+      setError('Error al cargar carreras: ' + error.message);
       setCarreras([]);
+    } finally {
+      setLoadingCarreras(false);
     }
   };
 
-  // Cargar secciones cuando cambian carrera y ciclo
-  const fetchSecciones = async (carreraId, ciclo) => {
-    if (!carreraId || !ciclo) {
+  // 🔥 FUNCIÓN: Cargar ciclos por carrera
+  const fetchCiclos = async (carreraId) => {
+    if (!carreraId) {
+      setCiclos([]);
+      return;
+    }
+
+    try {
+      setLoadingCiclos(true);
+      setError(null);
+      
+      console.log(`📚 Cargando ciclos de la carrera ${carreraId}...`);
+      const response = await fetch(`http://localhost:8080/api/ciclos/carrera/${carreraId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log(`📚 Ciclos obtenidos:`, data.ciclos);
+      
+      setCiclos(data.ciclos || []);
+      
+    } catch (error) {
+      console.error(`❌ Error al cargar ciclos de la carrera ${carreraId}:`, error);
+      setError('Error al cargar ciclos: ' + error.message);
+      setCiclos([]);
+    } finally {
+      setLoadingCiclos(false);
+    }
+  };
+
+  // 🔥 FUNCIÓN: Cargar secciones por carrera y ciclo
+  const fetchSecciones = async (carreraId, cicloId) => {
+    if (!carreraId || !cicloId) {
       setSecciones([]);
       return;
     }
 
     try {
-      // Por ahora usamos datos mock, luego conectar al backend
-      const mockSecciones = [
-        { id: 1, nombre: 'A' },
-        { id: 2, nombre: 'B' },
-        { id: 3, nombre: 'C' }
-      ];
-      setSecciones(mockSecciones);
+      setLoadingSecciones(true);
+      setError(null);
+      
+      console.log(`🏫 Cargando secciones de carrera ${carreraId} y ciclo ${cicloId}...`);
+      const response = await fetch(`http://localhost:8080/api/secciones/carrera/${carreraId}/ciclo/${cicloId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log(`🏫 Secciones obtenidas:`, data.secciones);
+      
+      setSecciones(data.secciones || []);
+      
     } catch (error) {
-      console.error('Error al cargar secciones:', error);
+      console.error(`❌ Error al cargar secciones:`, error);
+      setError('Error al cargar secciones: ' + error.message);
       setSecciones([]);
+    } finally {
+      setLoadingSecciones(false);
     }
   };
 
+  // 🔥 FUNCIÓN: Manejar cambios en el formulario con lógica de cascada
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-
-    // Manejar filtros en cascada
+    
+    console.log(`🔄 Cambio en ${name}:`, value);
+    
+    // Limpiar errores cuando el usuario empiece a escribir
+    if (error) setError(null);
+    
     if (name === 'departamentoId') {
+      console.log('🔄 Reseteando cascada desde departamento');
       setFormData({
         ...formData,
         departamentoId: value,
         carreraId: '',
-        ciclo: '',
+        cicloId: '',
         seccionId: ''
       });
+      
+      // Limpiar dependientes
       setCarreras([]);
+      setCiclos([]);
       setSecciones([]);
-      if (value) fetchCarreras(value);
-    }
-    
-    if (name === 'carreraId') {
+      
+      // Cargar carreras si se seleccionó un departamento
+      if (value) {
+        fetchCarreras(value);
+      }
+      
+    } else if (name === 'carreraId') {
+      console.log('🔄 Reseteando cascada desde carrera');
       setFormData({
         ...formData,
         carreraId: value,
-        ciclo: '',
+        cicloId: '',
         seccionId: ''
       });
+      
+      // Limpiar dependientes
+      setCiclos([]);
       setSecciones([]);
-    }
-    
-    if (name === 'ciclo') {
+      
+      // Cargar ciclos si se seleccionó una carrera
+      if (value) {
+        fetchCiclos(value);
+      }
+      
+    } else if (name === 'cicloId') {
+      console.log('🔄 Reseteando cascada desde ciclo');
       setFormData({
         ...formData,
-        ciclo: value,
+        cicloId: value,
         seccionId: ''
       });
-      if (formData.carreraId && value) {
+      
+      // Limpiar dependientes
+      setSecciones([]);
+      
+      // Cargar secciones si se seleccionó un ciclo
+      if (value && formData.carreraId) {
         fetchSecciones(formData.carreraId, value);
       }
+      
+    } else {
+      // Para otros campos, actualizar normalmente
+      setFormData({ ...formData, [name]: value });
     }
   };
 
+  // 🔥 FUNCIÓN: Validar formulario
+  const validateForm = () => {
+    if (!formData.nombre.trim()) {
+      return 'El nombre del aula es requerido';
+    }
+    
+    if (!formData.titulo.trim()) {
+      return 'El título del aula es requerido';
+    }
+    
+    if (!formData.departamentoId) {
+      return 'Debe seleccionar un departamento';
+    }
+    
+    if (!formData.carreraId) {
+      return 'Debe seleccionar una carrera';
+    }
+    
+    if (!formData.cicloId) {
+      return 'Debe seleccionar un ciclo';
+    }
+    
+    if (formData.fechaInicio && formData.fechaFin) {
+      if (new Date(formData.fechaInicio) >= new Date(formData.fechaFin)) {
+        return 'La fecha de fin debe ser posterior a la fecha de inicio';
+      }
+    }
+    
+    return null;
+  };
+
+  // 🔥 FUNCIÓN: Generar código de acceso único
+  const generateCodigoAcceso = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  // 🔥 FUNCIÓN: Enviar formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    
+    // Validar formulario
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -179,13 +353,22 @@ function CrearAula() {
       
       // Preparar datos para el backend
       const aulaData = {
-        nombre: formData.nombre,
-        titulo: formData.titulo,
-        descripcion: formData.descripcion,
+        nombre: formData.nombre.trim(),
+        titulo: formData.titulo.trim(),
+        descripcion: formData.descripcion.trim(),
+        codigoAcceso: generateCodigoAcceso(),
+        profesorId: userData.id,
         seccionId: formData.seccionId ? parseInt(formData.seccionId) : null,
+        estado: 'activa',
         fechaInicio: formData.fechaInicio || null,
-        fechaFin: formData.fechaFin || null
+        fechaFin: formData.fechaFin || null,
+        // Datos académicos adicionales
+        departamentoId: parseInt(formData.departamentoId),
+        carreraId: parseInt(formData.carreraId),
+        cicloId: parseInt(formData.cicloId)
       };
+
+      console.log('📤 Enviando datos del aula:', aulaData);
 
       const response = await fetch('http://localhost:8080/api/aulas', {
         method: 'POST',
@@ -197,15 +380,15 @@ function CrearAula() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al crear aula');
+        const errorData = await response.text();
+        throw new Error(errorData || 'Error al crear aula');
       }
 
       const result = await response.json();
-      console.log('Aula creada:', result);
+      console.log('✅ Aula creada exitosamente:', result);
       
-      setAulaCreada(result.aula);
-      setSuccess('¡Aula creada exitosamente! ¿Quieres invitar estudiantes ahora?');
+      setAulaCreada(result.aula || result);
+      setSuccess(`¡Aula "${formData.nombre}" creada exitosamente! Código de acceso: ${aulaData.codigoAcceso}`);
       
       // Limpiar formulario
       setFormData({
@@ -214,15 +397,20 @@ function CrearAula() {
         descripcion: '',
         departamentoId: '',
         carreraId: '',
-        ciclo: '',
+        cicloId: '',
         seccionId: '',
         fechaInicio: '',
         fechaFin: ''
       });
       
+      // Limpiar filtros
+      setCarreras([]);
+      setCiclos([]);
+      setSecciones([]);
+      
     } catch (err) {
-      console.error('Error al crear aula:', err);
-      setError(err.message);
+      console.error('❌ Error al crear aula:', err);
+      setError('Error al crear el aula: ' + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -241,6 +429,30 @@ function CrearAula() {
     navigate('/aulas');
   };
 
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        await fetch('http://localhost:8080/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+      
+      localStorage.removeItem('token');
+      navigate('/');
+      
+    } catch (error) {
+      console.error("❌ Error durante logout:", error);
+      localStorage.removeItem('token');
+      navigate('/');
+    }
+  };
+
   return (
     <div className="full-page">
       <header className="header">
@@ -250,7 +462,7 @@ function CrearAula() {
             <button onClick={() => navigate('/home')} className="nav-link">Inicio</button>
             <button onClick={() => navigate('/perfil')} className="nav-link">Perfil</button>
             <button onClick={() => navigate('/aulas')} className="nav-link">Aulas</button>
-            <button onClick={() => navigate('/')} className="nav-link">Cerrar sesión</button>
+            <button onClick={handleLogout} className="nav-link">Cerrar sesión</button>
           </nav>
         </div>
       </header>
@@ -280,7 +492,7 @@ function CrearAula() {
                     <input
                       type="text"
                       name="nombre"
-                      placeholder="Ej: Algoritmos y Estructuras de Datos"
+                      placeholder="Ej: PROGRAMACIÓN BÁSICA"
                       value={formData.nombre}
                       onChange={handleChange}
                       className="input"
@@ -290,16 +502,17 @@ function CrearAula() {
                 </div>
 
                 <div className="input-container">
-                  <label className="label">Título (opcional)</label>
+                  <label className="label">Título/Código *</label>
                   <div className="input-wrapper">
                     <Book size={18} className="input-icon" />
                     <input
                       type="text"
                       name="titulo"
-                      placeholder="Ej: AED-2024-I"
+                      placeholder="Ej: PROG-2025-1"
                       value={formData.titulo}
                       onChange={handleChange}
                       className="input"
+                      required
                     />
                   </div>
                 </div>
@@ -318,11 +531,12 @@ function CrearAula() {
               </div>
             </div>
 
-            {/* Filtros en Cascada */}
+            {/* 🔥 FILTROS EN CASCADA CONECTADOS AL BACKEND */}
             <div className="form-section">
               <h4 className="form-section-title">Clasificación Académica</h4>
               
               <div className="form-row">
+                {/* 🏢 DEPARTAMENTO */}
                 <div className="input-container">
                   <label className="label">Departamento *</label>
                   <div className="input-wrapper">
@@ -331,19 +545,25 @@ function CrearAula() {
                       name="departamentoId"
                       value={formData.departamentoId}
                       onChange={handleChange}
-                      className="input"
+                      className={`input ${loadingDepartamentos ? 'loading' : ''}`}
+                      disabled={loadingDepartamentos}
                       required
                     >
-                      <option value="">Seleccionar departamento</option>
+                      <option value="">
+                        {loadingDepartamentos ? 'Cargando departamentos...' : 'Seleccionar departamento'}
+                      </option>
                       {departamentos.map(dept => (
                         <option key={dept.id} value={dept.id}>
                           {dept.nombre}
                         </option>
                       ))}
                     </select>
+                    <ChevronDown size={16} className="select-arrow" />
+                    {loadingDepartamentos && <div className="loading-spinner-small" />}
                   </div>
                 </div>
 
+                {/* 🎓 CARRERA */}
                 <div className="input-container">
                   <label className="label">Carrera *</label>
                   <div className="input-wrapper">
@@ -352,12 +572,17 @@ function CrearAula() {
                       name="carreraId"
                       value={formData.carreraId}
                       onChange={handleChange}
-                      className="input"
-                      disabled={!formData.departamentoId}
+                      className={`input ${loadingCarreras ? 'loading' : ''}`}
+                      disabled={!formData.departamentoId || loadingCarreras}
                       required
                     >
                       <option value="">
-                        {formData.departamentoId ? 'Seleccionar carrera' : 'Primero selecciona departamento'}
+                        {!formData.departamentoId 
+                          ? 'Primero selecciona departamento'
+                          : loadingCarreras 
+                            ? 'Cargando carreras...' 
+                            : 'Seleccionar carrera'
+                        }
                       </option>
                       {carreras.map(carrera => (
                         <option key={carrera.id} value={carrera.id}>
@@ -365,55 +590,73 @@ function CrearAula() {
                         </option>
                       ))}
                     </select>
+                    <ChevronDown size={16} className="select-arrow" />
+                    {loadingCarreras && <div className="loading-spinner-small" />}
                   </div>
                 </div>
               </div>
 
               <div className="form-row">
+                {/* 📚 CICLO */}
                 <div className="input-container">
                   <label className="label">Ciclo *</label>
                   <div className="input-wrapper">
                     <BookOpen size={18} className="input-icon" />
                     <select
-                      name="ciclo"
-                      value={formData.ciclo}
+                      name="cicloId"
+                      value={formData.cicloId}
                       onChange={handleChange}
-                      className="input"
-                      disabled={!formData.carreraId}
+                      className={`input ${loadingCiclos ? 'loading' : ''}`}
+                      disabled={!formData.carreraId || loadingCiclos}
                       required
                     >
                       <option value="">
-                        {formData.carreraId ? 'Seleccionar ciclo' : 'Primero selecciona carrera'}
+                        {!formData.carreraId 
+                          ? 'Primero selecciona carrera'
+                          : loadingCiclos 
+                            ? 'Cargando ciclos...' 
+                            : 'Seleccionar ciclo'
+                        }
                       </option>
                       {ciclos.map(ciclo => (
-                        <option key={ciclo} value={ciclo}>
-                          Ciclo {ciclo}
+                        <option key={ciclo.id} value={ciclo.id}>
+                          {ciclo.nombre}
                         </option>
                       ))}
                     </select>
+                    <ChevronDown size={16} className="select-arrow" />
+                    {loadingCiclos && <div className="loading-spinner-small" />}
                   </div>
                 </div>
 
+                {/* 🏫 SECCIÓN */}
                 <div className="input-container">
-                  <label className="label">Sección</label>
+                  <label className="label">Sección (Opcional)</label>
                   <div className="input-wrapper">
                     <Users size={18} className="input-icon" />
                     <select
                       name="seccionId"
                       value={formData.seccionId}
                       onChange={handleChange}
-                      className="input"
-                      disabled={!formData.ciclo}
+                      className={`input ${loadingSecciones ? 'loading' : ''}`}
+                      disabled={!formData.carreraId || !formData.cicloId || loadingSecciones}
                     >
                       <option value="">
-                        {formData.ciclo ? 'Seleccionar sección (opcional)' : 'Primero selecciona ciclo'}
+                        {!formData.carreraId || !formData.cicloId
+                          ? 'Primero selecciona ciclo'
+                          : loadingSecciones 
+                            ? 'Cargando secciones...' 
+                            : 'Seleccionar sección (opcional)'
+                        }
                       </option>
                       {secciones.map(seccion => (
                         <option key={seccion.id} value={seccion.id}>
-                          Sección {seccion.nombre}
+                          Sección {seccion.nombre} - {seccion.codigo}
                         </option>
                       ))}
                     </select>
+                    <ChevronDown size={16} className="select-arrow" />
+                    {loadingSecciones && <div className="loading-spinner-small" />}
                   </div>
                 </div>
               </div>
@@ -484,9 +727,10 @@ function CrearAula() {
               </button>
             </div>
 
-            {/* Mensajes */}
+            {/* 🔥 MENSAJES DE ESTADO MEJORADOS */}
             {error && (
               <div className="error-message">
+                <AlertCircle size={16} style={{ marginRight: '8px' }} />
                 {error}
               </div>
             )}
@@ -494,6 +738,7 @@ function CrearAula() {
             {success && (
               <div className="success-message-container">
                 <div className="success-message">
+                  <CheckCircle size={16} style={{ marginRight: '8px' }} />
                   {success}
                 </div>
                 <div className="success-actions">

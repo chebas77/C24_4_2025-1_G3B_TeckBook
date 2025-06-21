@@ -24,7 +24,7 @@ public class DepartamentoService {
             return departamentos;
         } catch (Exception e) {
             logger.error("Error al obtener departamentos activos: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al obtener los departamentos activos", e);
+            throw new RuntimeException("Error al obtener los departamentos", e);
         }
     }
 
