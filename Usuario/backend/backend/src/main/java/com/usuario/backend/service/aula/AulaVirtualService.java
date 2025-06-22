@@ -1,4 +1,3 @@
-
 package com.usuario.backend.service.aula;
 
 import com.usuario.backend.model.entity.AulaVirtual;
@@ -8,7 +7,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -20,7 +21,7 @@ public class AulaVirtualService {
     private AulaVirtualRepository aulaVirtualRepository;
 
     /**
-     * 🎓 OBTENER AULAS POR PROFESOR (Solo las que él creó)
+     * 🎓 OBTENER AULAS POR PROFESOR
      */
     public List<AulaVirtual> getAulasByProfesor(Long profesorId) {
         try {
@@ -34,57 +35,36 @@ public class AulaVirtualService {
     }
 
     /**
-     * 👨‍🎓 OBTENER AULAS POR ESTUDIANTE (Solo donde está inscrito)
-     */
-    public List<AulaVirtual> getAulasByEstudiante(Long estudianteId) {
-        try {
-            List<AulaVirtual> aulas = aulaVirtualRepository.findAulasByEstudianteId(estudianteId);
-            logger.info("Estudiante {} está inscrito en {} aulas", estudianteId, aulas.size());
-            return aulas;
-        } catch (Exception e) {
-            logger.error("Error al obtener aulas del estudiante {}: {}", estudianteId, e.getMessage(), e);
-            throw new RuntimeException("Error al obtener aulas del estudiante", e);
-        }
-    }
-
-    /**
-     * 🔍 VERIFICAR SI ESTUDIANTE ESTÁ INSCRITO EN AULA
-     */
-    public boolean isEstudianteInscritoEnAula(Long estudianteId, Long aulaId) {
-        try {
-            return aulaVirtualRepository.existsEstudianteInAula(estudianteId, aulaId);
-        } catch (Exception e) {
-            logger.error("Error al verificar inscripción del estudiante {} en aula {}: {}", 
-                        estudianteId, aulaId, e.getMessage(), e);
-            return false;
-        }
-    }
-
-    /**
-     * 📊 OBTENER TOTAL DE ESTUDIANTES POR PROFESOR
-     */
-    public int getTotalEstudiantesByProfesor(Long profesorId) {
-        try {
-            return aulaVirtualRepository.countEstudiantesByProfesor(profesorId);
-        } catch (Exception e) {
-            logger.error("Error al contar estudiantes del profesor {}: {}", profesorId, e.getMessage(), e);
-            return 0;
-        }
-    }
-
-    /**
      * ➕ CREAR AULA
      */
     public AulaVirtual crearAula(AulaVirtual aula) {
         try {
-            // 🔧 GENERAR CÓDIGO DE ACCESO SI NO EXISTE
+            // Validaciones básicas
+            if (aula.getNombre() == null || aula.getNombre().trim().isEmpty()) {
+                throw new IllegalArgumentException("El nombre del aula es requerido");
+            }
+            
+            if (aula.getProfesorId() == null) {
+                throw new IllegalArgumentException("El ID del profesor es requerido");
+            }
+
+            // Generar código de acceso si no existe
             if (aula.getCodigoAcceso() == null || aula.getCodigoAcceso().isEmpty()) {
                 aula.setCodigoAcceso(generateCodigoAcceso());
             }
 
-            // 🔧 ESTABLECER ESTADO POR DEFECTO
+            // Establecer estado por defecto
             if (aula.getEstado() == null || aula.getEstado().isEmpty()) {
                 aula.setEstado("activa");
+            }
+
+            // Limpiar datos
+            aula.setNombre(aula.getNombre().trim());
+            if (aula.getTitulo() != null) {
+                aula.setTitulo(aula.getTitulo().trim());
+            }
+            if (aula.getDescripcion() != null) {
+                aula.setDescripcion(aula.getDescripcion().trim());
             }
 
             AulaVirtual aulaGuardada = aulaVirtualRepository.save(aula);
@@ -92,6 +72,9 @@ public class AulaVirtualService {
                        aulaGuardada.getNombre(), aulaGuardada.getId(), aulaGuardada.getCodigoAcceso());
             return aulaGuardada;
 
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error de validación al crear aula: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Error al crear aula '{}': {}", aula.getNombre(), e.getMessage(), e);
             throw new RuntimeException("Error al crear el aula", e);
@@ -103,9 +86,25 @@ public class AulaVirtualService {
      */
     public AulaVirtual actualizarAula(AulaVirtual aula) {
         try {
+            if (aula.getId() == null) {
+                throw new IllegalArgumentException("ID del aula es requerido para actualizar");
+            }
+
+            Optional<AulaVirtual> aulaExistente = aulaVirtualRepository.findById(aula.getId());
+            if (aulaExistente.isEmpty()) {
+                throw new IllegalArgumentException("Aula no encontrada con ID: " + aula.getId());
+            }
+
+            if (aula.getNombre() == null || aula.getNombre().trim().isEmpty()) {
+                throw new IllegalArgumentException("El nombre del aula es requerido");
+            }
+
             AulaVirtual aulaActualizada = aulaVirtualRepository.save(aula);
             logger.info("Aula actualizada: {} (ID: {})", aulaActualizada.getNombre(), aulaActualizada.getId());
             return aulaActualizada;
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error de validación al actualizar aula: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Error al actualizar aula ID {}: {}", aula.getId(), e.getMessage(), e);
             throw new RuntimeException("Error al actualizar el aula", e);
@@ -158,7 +157,7 @@ public class AulaVirtualService {
     }
 
     /**
-     * 📋 OBTENER TODAS LAS AULAS (Solo para admin)
+     * 📋 OBTENER TODAS LAS AULAS ACTIVAS
      */
     public List<AulaVirtual> getAllAulas() {
         try {
@@ -172,29 +171,7 @@ public class AulaVirtualService {
     }
 
     /**
-     * 🔧 GENERAR CÓDIGO DE ACCESO ÚNICO
-     */
-    private String generateCodigoAcceso() {
-        final String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        StringBuilder codigo = new StringBuilder();
-        
-        // 🔄 GENERAR HASTA ENCONTRAR UNO ÚNICO
-        boolean exists = true;
-        while (exists) {
-            codigo.setLength(0);
-            for (int i = 0; i < 8; i++) {
-                codigo.append(chars.charAt((int) (Math.random() * chars.length())));
-            }
-            
-            // 🔍 VERIFICAR QUE NO EXISTA
-            exists = aulaVirtualRepository.existsByCodigoAcceso(codigo.toString());
-        }
-        
-        return codigo.toString();
-    }
-
-    /**
-     * 🔍 BUSCAR AULAS POR NOMBRE (Para búsquedas)
+     * 🔍 BUSCAR AULAS POR NOMBRE
      */
     public List<AulaVirtual> searchAulasByNombre(String nombre, Long profesorId) {
         try {
@@ -232,5 +209,27 @@ public class AulaVirtualService {
             logger.error("Error al obtener estadísticas generales: {}", e.getMessage(), e);
             throw new RuntimeException("Error al obtener estadísticas", e);
         }
+    }
+
+    /**
+     * 🔧 GENERAR CÓDIGO DE ACCESO ÚNICO
+     */
+    private String generateCodigoAcceso() {
+        final String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder codigo = new StringBuilder();
+        
+        // Generar hasta encontrar uno único
+        boolean exists = true;
+        while (exists) {
+            codigo.setLength(0);
+            for (int i = 0; i < 8; i++) {
+                codigo.append(chars.charAt((int) (Math.random() * chars.length())));
+            }
+            
+            // Verificar que no exista
+            exists = aulaVirtualRepository.existsByCodigoAcceso(codigo.toString());
+        }
+        
+        return codigo.toString();
     }
 }

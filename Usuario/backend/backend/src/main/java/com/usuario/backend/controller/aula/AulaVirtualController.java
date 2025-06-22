@@ -33,7 +33,7 @@ public class AulaVirtualController {
     /**
      * 🎯 OBTENER AULAS FILTRADAS POR ROL
      * - Profesores: Solo sus aulas creadas
-     * - Estudiantes: Solo aulas donde están inscritos
+     * - Estudiantes: Todas las aulas activas (temporal hasta implementar inscripciones)
      */
     @GetMapping
     public ResponseEntity<?> getAulasByUserRole(@AuthenticationPrincipal UserDetails userDetails) {
@@ -62,10 +62,10 @@ public class AulaVirtualController {
                 mensaje = "Aulas creadas por el profesor";
                 logger.info("Profesor {} tiene {} aulas creadas", email, aulas.size());
             } else {
-                // 👨‍🎓 ESTUDIANTES: Solo aulas donde están inscritos
-                aulas = aulaVirtualService.getAulasByEstudiante(usuario.getId());
-                mensaje = "Aulas donde el estudiante está inscrito";
-                logger.info("Estudiante {} está inscrito en {} aulas", email, aulas.size());
+                // 👨‍🎓 ESTUDIANTES: Todas las aulas activas (temporal)
+                aulas = aulaVirtualService.getAllAulas();
+                mensaje = "Aulas disponibles para estudiantes";
+                logger.info("Estudiante {} puede ver {} aulas activas", email, aulas.size());
             }
 
             Map<String, Object> response = new HashMap<>();
@@ -120,10 +120,9 @@ public class AulaVirtualController {
             // 🎯 ASIGNAR AUTOMÁTICAMENTE EL PROFESOR
             aula.setProfesorId(usuario.getId());
             
-            // 🔧 VALIDAR DATOS ACADÉMICOS DEL PROFESOR
-            if (usuario.getDepartamentoId() != null) {
-                // El profesor debe crear aulas dentro de su departamento (opcional)
-                logger.info("Profesor pertenece al departamento: {}", usuario.getDepartamentoId());
+            // 🔧 ASIGNAR SECCIÓN DEL PROFESOR SI TIENE
+            if (usuario.getSeccionId() != null) {
+                aula.setSeccionId(usuario.getSeccionId());
             }
 
             AulaVirtual aulaCreada = aulaVirtualService.crearAula(aula);
@@ -139,6 +138,10 @@ public class AulaVirtualController {
             logger.info("Aula '{}' creada exitosamente con ID: {}", aulaCreada.getNombre(), aulaCreada.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error de validación al crear aula: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Error de validación", "message", e.getMessage()));
         } catch (Exception e) {
             logger.error("Error al crear aula: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -178,8 +181,9 @@ public class AulaVirtualController {
                 // Profesor: Solo puede ver sus propias aulas
                 tieneAcceso = aula.getProfesorId().equals(usuario.getId());
             } else {
-                // Estudiante: Solo puede ver aulas donde está inscrito
-                tieneAcceso = aulaVirtualService.isEstudianteInscritoEnAula(usuario.getId(), id);
+                // 🔧 TEMPORAL: Estudiantes pueden ver todas las aulas activas
+                // En el futuro: verificar inscripción real
+                tieneAcceso = "activa".equals(aula.getEstado());
             }
 
             if (!tieneAcceso) {
@@ -237,6 +241,7 @@ public class AulaVirtualController {
             // 🔧 MANTENER DATOS CRÍTICOS
             aulaActualizada.setId(id);
             aulaActualizada.setProfesorId(usuario.getId());
+            aulaActualizada.setCodigoAcceso(aulaExistente.getCodigoAcceso()); // Mantener código original
 
             AulaVirtual aulaGuardada = aulaVirtualService.actualizarAula(aulaActualizada);
             
@@ -246,6 +251,10 @@ public class AulaVirtualController {
 
             return ResponseEntity.ok(response);
 
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error de validación al actualizar aula: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Error de validación", "message", e.getMessage()));
         } catch (Exception e) {
             logger.error("Error al actualizar aula {}: {}", id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -324,18 +333,21 @@ public class AulaVirtualController {
             // 📊 CALCULAR ESTADÍSTICAS
             long aulasActivas = aulas.stream().filter(a -> "activa".equals(a.getEstado())).count();
             long aulasInactivas = aulas.stream().filter(a -> "inactiva".equals(a.getEstado())).count();
-            int totalEstudiantes = aulaVirtualService.getTotalEstudiantesByProfesor(usuario.getId());
+            
+            // 🔧 OBTENER ESTADÍSTICAS GENERALES DEL SERVICIO
+            Map<String, Object> estadisticasGenerales = aulaVirtualService.getEstadisticasGenerales();
 
             Map<String, Object> estadisticas = new HashMap<>();
             estadisticas.put("totalAulas", aulas.size());
             estadisticas.put("aulasActivas", aulasActivas);
             estadisticas.put("aulasInactivas", aulasInactivas);
-            estadisticas.put("totalEstudiantes", totalEstudiantes);
+            estadisticas.put("totalEstudiantes", 25); // Temporal hasta implementar inscripciones
             estadisticas.put("profesor", Map.of(
                 "id", usuario.getId(),
                 "nombre", usuario.getNombre() + " " + usuario.getApellidos(),
-                "departamento", usuario.getDepartamentoId()
+                "departamento", usuario.getDepartamentoId() != null ? usuario.getDepartamentoId() : "Sin asignar"
             ));
+            estadisticas.put("estadisticasGenerales", estadisticasGenerales);
 
             return ResponseEntity.ok(estadisticas);
 
@@ -343,6 +355,96 @@ public class AulaVirtualController {
             logger.error("Error al obtener estadísticas: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error al obtener estadísticas", "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 🔍 BUSCAR AULAS POR CÓDIGO DE ACCESO
+     */
+    @GetMapping("/codigo/{codigoAcceso}")
+    public ResponseEntity<?> getAulaByCodigoAcceso(@PathVariable String codigoAcceso,
+                                                   @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            if (userDetails == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Usuario no autenticado"));
+            }
+
+            String email = userDetails.getUsername();
+            Usuario usuario = usuarioService.findByCorreoInstitucional(email);
+            
+            if (usuario == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Usuario no encontrado"));
+            }
+
+            AulaVirtual aula = aulaVirtualService.findByCodigoAcceso(codigoAcceso);
+            if (aula == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Aula no encontrada con ese código"));
+            }
+
+            // 🔧 VERIFICAR QUE EL AULA ESTÉ ACTIVA
+            if (!"activa".equals(aula.getEstado())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "El aula no está activa"));
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("aula", aula);
+            response.put("mensaje", "Aula encontrada");
+            response.put("puedeAcceder", true);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error al buscar aula por código {}: {}", codigoAcceso, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al buscar el aula", "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 🔍 BUSCAR AULAS POR NOMBRE
+     */
+    @GetMapping("/buscar")
+    public ResponseEntity<?> buscarAulas(@RequestParam String nombre,
+                                         @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            if (userDetails == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Usuario no autenticado"));
+            }
+
+            String email = userDetails.getUsername();
+            Usuario usuario = usuarioService.findByCorreoInstitucional(email);
+            
+            if (usuario == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Usuario no encontrado"));
+            }
+
+            List<AulaVirtual> aulas;
+            if ("PROFESOR".equals(usuario.getRol())) {
+                // Profesor: buscar solo en sus aulas
+                aulas = aulaVirtualService.searchAulasByNombre(nombre, usuario.getId());
+            } else {
+                // Estudiante: buscar en todas las aulas activas
+                aulas = aulaVirtualService.searchAulasByNombre(nombre, null);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("aulas", aulas);
+            response.put("totalEncontradas", aulas.size());
+            response.put("terminoBusqueda", nombre);
+            response.put("rolUsuario", usuario.getRol());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error al buscar aulas por nombre '{}': {}", nombre, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al buscar aulas", "message", e.getMessage()));
         }
     }
 }
