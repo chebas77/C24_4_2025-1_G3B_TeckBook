@@ -1,16 +1,15 @@
 package com.usuario.backend.service.aula;
 
 import com.usuario.backend.model.entity.AulaVirtual;
+import com.usuario.backend.model.entity.AulaEstudiante;
 import com.usuario.backend.repository.AulaVirtualRepository;
+import com.usuario.backend.repository.AulaEstudianteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class AulaVirtualService {
@@ -19,217 +18,155 @@ public class AulaVirtualService {
 
     @Autowired
     private AulaVirtualRepository aulaVirtualRepository;
+    
+    @Autowired
+    private AulaEstudianteRepository aulaEstudianteRepository;
 
     /**
-     * 🎓 OBTENER AULAS POR PROFESOR
+     * 🔥 MÉTODO PRINCIPAL: Obtiene aulas según el rol del usuario
      */
-    public List<AulaVirtual> getAulasByProfesor(Long profesorId) {
+    public List<AulaVirtual> getAulasByUsuario(Long usuarioId, String rol) {
         try {
-            List<AulaVirtual> aulas = aulaVirtualRepository.findByProfesorIdOrderByFechaInicioDesc(profesorId);
-            logger.info("Profesor {} tiene {} aulas creadas", profesorId, aulas.size());
-            return aulas;
-        } catch (Exception e) {
-            logger.error("Error al obtener aulas del profesor {}: {}", profesorId, e.getMessage(), e);
-            throw new RuntimeException("Error al obtener aulas del profesor", e);
-        }
-    }
-
-    /**
-     * ➕ CREAR AULA
-     */
-    public AulaVirtual crearAula(AulaVirtual aula) {
-        try {
-            // Validaciones básicas
-            if (aula.getNombre() == null || aula.getNombre().trim().isEmpty()) {
-                throw new IllegalArgumentException("El nombre del aula es requerido");
+            logger.info("Obteniendo aulas para usuario {} con rol {}", usuarioId, rol);
+            
+            if ("PROFESOR".equalsIgnoreCase(rol)) {
+                // Profesores ven sus aulas activas
+                List<AulaVirtual> aulas = aulaVirtualRepository.findByProfesorIdAndEstadoOrderByFechaInicioDesc(usuarioId, "activa");
+                logger.info("Profesor {} tiene {} aulas activas", usuarioId, aulas.size());
+                return aulas;
+                
+            } else if ("ESTUDIANTE".equalsIgnoreCase(rol)) {
+                // Estudiantes ven aulas donde están inscritos (solo activas)
+                List<Long> aulaIds = aulaEstudianteRepository.findAulaIdsByEstudianteId(usuarioId);
+                
+                if (aulaIds.isEmpty()) {
+                    logger.info("Estudiante {} no está inscrito en ningún aula", usuarioId);
+                    return List.of();
+                }
+                
+                List<AulaVirtual> aulas = aulaVirtualRepository.findByIdInAndEstadoOrderByFechaInicioDesc(aulaIds, "activa");
+                logger.info("Estudiante {} está inscrito en {} aulas activas", usuarioId, aulas.size());
+                return aulas;
+                
+            } else {
+                logger.warn("Rol no reconocido: {}", rol);
+                return List.of();
             }
             
-            if (aula.getProfesorId() == null) {
-                throw new IllegalArgumentException("El ID del profesor es requerido");
-            }
-
-            // Generar código de acceso si no existe
-            if (aula.getCodigoAcceso() == null || aula.getCodigoAcceso().isEmpty()) {
-                aula.setCodigoAcceso(generateCodigoAcceso());
-            }
-
-            // Establecer estado por defecto
-            if (aula.getEstado() == null || aula.getEstado().isEmpty()) {
-                aula.setEstado("activa");
-            }
-
-            // Limpiar datos
-            aula.setNombre(aula.getNombre().trim());
-            if (aula.getTitulo() != null) {
-                aula.setTitulo(aula.getTitulo().trim());
-            }
-            if (aula.getDescripcion() != null) {
-                aula.setDescripcion(aula.getDescripcion().trim());
-            }
-
-            AulaVirtual aulaGuardada = aulaVirtualRepository.save(aula);
-            logger.info("Aula creada: {} (ID: {}, Código: {})", 
-                       aulaGuardada.getNombre(), aulaGuardada.getId(), aulaGuardada.getCodigoAcceso());
-            return aulaGuardada;
-
-        } catch (IllegalArgumentException e) {
-            logger.warn("Error de validación al crear aula: {}", e.getMessage());
-            throw e;
         } catch (Exception e) {
-            logger.error("Error al crear aula '{}': {}", aula.getNombre(), e.getMessage(), e);
-            throw new RuntimeException("Error al crear el aula", e);
+            logger.error("Error al obtener aulas para usuario {}: {}", usuarioId, e.getMessage(), e);
+            throw new RuntimeException("Error al obtener las aulas del usuario", e);
         }
     }
 
     /**
-     * 🔄 ACTUALIZAR AULA
-     */
-    public AulaVirtual actualizarAula(AulaVirtual aula) {
-        try {
-            if (aula.getId() == null) {
-                throw new IllegalArgumentException("ID del aula es requerido para actualizar");
-            }
-
-            Optional<AulaVirtual> aulaExistente = aulaVirtualRepository.findById(aula.getId());
-            if (aulaExistente.isEmpty()) {
-                throw new IllegalArgumentException("Aula no encontrada con ID: " + aula.getId());
-            }
-
-            if (aula.getNombre() == null || aula.getNombre().trim().isEmpty()) {
-                throw new IllegalArgumentException("El nombre del aula es requerido");
-            }
-
-            AulaVirtual aulaActualizada = aulaVirtualRepository.save(aula);
-            logger.info("Aula actualizada: {} (ID: {})", aulaActualizada.getNombre(), aulaActualizada.getId());
-            return aulaActualizada;
-        } catch (IllegalArgumentException e) {
-            logger.warn("Error de validación al actualizar aula: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.error("Error al actualizar aula ID {}: {}", aula.getId(), e.getMessage(), e);
-            throw new RuntimeException("Error al actualizar el aula", e);
-        }
-    }
-
-    /**
-     * 🗑️ ELIMINAR AULA (Soft delete)
-     */
-    public void eliminarAula(Long aulaId) {
-        try {
-            Optional<AulaVirtual> aulaOpt = aulaVirtualRepository.findById(aulaId);
-            if (aulaOpt.isPresent()) {
-                AulaVirtual aula = aulaOpt.get();
-                aula.setEstado("eliminada");
-                aulaVirtualRepository.save(aula);
-                logger.info("Aula eliminada (soft delete): {} (ID: {})", aula.getNombre(), aulaId);
-            } else {
-                throw new IllegalArgumentException("Aula no encontrada con ID: " + aulaId);
-            }
-        } catch (Exception e) {
-            logger.error("Error al eliminar aula ID {}: {}", aulaId, e.getMessage(), e);
-            throw new RuntimeException("Error al eliminar el aula", e);
-        }
-    }
-
-    /**
-     * 🔍 BUSCAR AULA POR ID
+     * 🔥 OBTENER AULA POR ID
      */
     public AulaVirtual findById(Long id) {
         try {
-            Optional<AulaVirtual> aula = aulaVirtualRepository.findById(id);
-            return aula.orElse(null);
+            return aulaVirtualRepository.findById(id).orElse(null);
         } catch (Exception e) {
-            logger.error("Error al buscar aula por ID {}: {}", id, e.getMessage(), e);
+            logger.error("Error al buscar aula por ID {}: {}", id, e.getMessage());
             return null;
         }
     }
 
     /**
-     * 🔍 BUSCAR AULA POR CÓDIGO DE ACCESO
+     * 🔥 AGREGAR ESTUDIANTE A AULA
      */
-    public AulaVirtual findByCodigoAcceso(String codigoAcceso) {
+    public void agregarEstudianteAAula(Long aulaId, Long estudianteId) {
         try {
-            return aulaVirtualRepository.findByCodigoAcceso(codigoAcceso);
+            // Verificar que el aula existe
+            AulaVirtual aula = findById(aulaId);
+            if (aula == null) {
+                throw new IllegalArgumentException("El aula con ID " + aulaId + " no existe");
+            }
+
+            // Verificar si ya está inscrito
+            boolean yaInscrito = aulaEstudianteRepository.existsByAulaIdAndEstudianteIdAndEstado(
+                aulaId, estudianteId, AulaEstudiante.EstadoEstudiante.activo);
+            
+            if (yaInscrito) {
+                throw new IllegalArgumentException("El estudiante ya está inscrito en esta aula");
+            }
+
+            // Crear nueva inscripción
+            AulaEstudiante aulaEstudiante = new AulaEstudiante(aulaId, estudianteId);
+            aulaEstudianteRepository.save(aulaEstudiante);
+            
+            logger.info("Estudiante {} agregado al aula {} exitosamente", estudianteId, aulaId);
+            
         } catch (Exception e) {
-            logger.error("Error al buscar aula por código {}: {}", codigoAcceso, e.getMessage(), e);
-            return null;
+            logger.error("Error al agregar estudiante {} al aula {}: {}", estudianteId, aulaId, e.getMessage());
+            throw e;
         }
     }
 
     /**
-     * 📋 OBTENER TODAS LAS AULAS ACTIVAS
+     * 🔥 OBTENER ESTUDIANTES DE UN AULA
      */
-    public List<AulaVirtual> getAllAulas() {
+    public List<AulaEstudiante> getEstudiantesDeAula(Long aulaId) {
         try {
-            List<AulaVirtual> aulas = aulaVirtualRepository.findByEstadoOrderByFechaInicioDesc("activa");
-            logger.info("Se obtuvieron {} aulas activas en total", aulas.size());
-            return aulas;
+            return aulaEstudianteRepository.findByAulaIdAndEstado(aulaId, AulaEstudiante.EstadoEstudiante.activo);
         } catch (Exception e) {
-            logger.error("Error al obtener todas las aulas: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al obtener las aulas", e);
+            logger.error("Error al obtener estudiantes del aula {}: {}", aulaId, e.getMessage());
+            return List.of();
         }
     }
 
     /**
-     * 🔍 BUSCAR AULAS POR NOMBRE
+     * 🔥 CONTAR ESTUDIANTES EN AULA
      */
-    public List<AulaVirtual> searchAulasByNombre(String nombre, Long profesorId) {
+    public long contarEstudiantesEnAula(Long aulaId) {
         try {
-            if (profesorId != null) {
-                // Buscar solo en las aulas del profesor
-                return aulaVirtualRepository.findByNombreContainingIgnoreCaseAndProfesorId(nombre, profesorId);
+            return aulaEstudianteRepository.countByAulaIdAndEstado(aulaId, AulaEstudiante.EstadoEstudiante.activo);
+        } catch (Exception e) {
+            logger.error("Error al contar estudiantes en aula {}: {}", aulaId, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 🔥 VERIFICAR SI USUARIO PUEDE ACCEDER AL AULA
+     */
+    public boolean puedeAccederAAula(Long usuarioId, String rol, Long aulaId) {
+        try {
+            if ("PROFESOR".equalsIgnoreCase(rol)) {
+                // Verificar si es el profesor del aula
+                AulaVirtual aula = findById(aulaId);
+                return aula != null && usuarioId.equals(aula.getProfesorId());
+                
+            } else if ("ESTUDIANTE".equalsIgnoreCase(rol)) {
+                // Verificar si está inscrito en el aula
+                return aulaEstudianteRepository.existsByAulaIdAndEstudianteIdAndEstado(
+                    aulaId, usuarioId, AulaEstudiante.EstadoEstudiante.activo);
+            }
+            
+            return false;
+        } catch (Exception e) {
+            logger.error("Error al verificar acceso del usuario {} al aula {}: {}", usuarioId, aulaId, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 🔥 BUSCAR AULAS POR NOMBRE (para el usuario específico)
+     */
+    public List<AulaVirtual> buscarAulasPorNombre(Long usuarioId, String rol, String nombre) {
+        try {
+            if ("PROFESOR".equalsIgnoreCase(rol)) {
+                return aulaVirtualRepository.findByNombreContainingIgnoreCaseAndProfesorId(nombre, usuarioId);
             } else {
-                // Buscar en todas las aulas activas
-                return aulaVirtualRepository.findByNombreContainingIgnoreCaseAndEstado(nombre, "activa");
+                // Para estudiantes, buscar entre sus aulas
+                List<AulaVirtual> aulasDelEstudiante = getAulasByUsuario(usuarioId, rol);
+                return aulasDelEstudiante.stream()
+                    .filter(aula -> aula.getNombre().toLowerCase().contains(nombre.toLowerCase()) ||
+                                   (aula.getTitulo() != null && aula.getTitulo().toLowerCase().contains(nombre.toLowerCase())))
+                    .toList();
             }
         } catch (Exception e) {
-            logger.error("Error al buscar aulas por nombre '{}': {}", nombre, e.getMessage(), e);
-            throw new RuntimeException("Error al buscar aulas", e);
+            logger.error("Error al buscar aulas por nombre para usuario {}: {}", usuarioId, e.getMessage());
+            return List.of();
         }
-    }
-
-    /**
-     * 📈 OBTENER ESTADÍSTICAS GENERALES
-     */
-    public Map<String, Object> getEstadisticasGenerales() {
-        try {
-            long totalAulas = aulaVirtualRepository.count();
-            long aulasActivas = aulaVirtualRepository.countByEstado("activa");
-            long aulasInactivas = aulaVirtualRepository.countByEstado("inactiva");
-            
-            Map<String, Object> estadisticas = new HashMap<>();
-            estadisticas.put("totalAulas", totalAulas);
-            estadisticas.put("aulasActivas", aulasActivas);
-            estadisticas.put("aulasInactivas", aulasInactivas);
-            estadisticas.put("timestamp", System.currentTimeMillis());
-            
-            return estadisticas;
-            
-        } catch (Exception e) {
-            logger.error("Error al obtener estadísticas generales: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al obtener estadísticas", e);
-        }
-    }
-
-    /**
-     * 🔧 GENERAR CÓDIGO DE ACCESO ÚNICO
-     */
-    private String generateCodigoAcceso() {
-        final String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        StringBuilder codigo = new StringBuilder();
-        
-        // Generar hasta encontrar uno único
-        boolean exists = true;
-        while (exists) {
-            codigo.setLength(0);
-            for (int i = 0; i < 8; i++) {
-                codigo.append(chars.charAt((int) (Math.random() * chars.length())));
-            }
-            
-            // Verificar que no exista
-            exists = aulaVirtualRepository.existsByCodigoAcceso(codigo.toString());
-        }
-        
-        return codigo.toString();
     }
 }

@@ -17,126 +17,52 @@ public class AulaEstudiante {
     @Column(name = "estudiante_id", nullable = false)
     private Long estudianteId;
     
-    @Column(name = "profesor_id")
-    private Long profesorId;
-    
-    @Column(name = "fecha_inscripcion")
-    private LocalDateTime fechaInscripcion;
-    
+    @Enumerated(EnumType.STRING)
     @Column(name = "estado")
-    private String estado; // ACTIVO, INACTIVO, COMPLETADO
+    private EstadoEstudiante estado = EstadoEstudiante.activo;
     
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "fecha_union")
+    private LocalDateTime fechaUnion;
     
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Column(name = "fecha_salida")
+    private LocalDateTime fechaSalida;
+
+    public enum EstadoEstudiante {
+        invitado, activo, inactivo
+    }
 
     // Constructores
     public AulaEstudiante() {}
 
-    public AulaEstudiante(Long aulaId, Long estudianteId, Long profesorId) {
+    public AulaEstudiante(Long aulaId, Long estudianteId) {
         this.aulaId = aulaId;
         this.estudianteId = estudianteId;
-        this.profesorId = profesorId;
-        this.estado = "ACTIVO";
-        this.fechaInscripcion = LocalDateTime.now();
+        this.estado = EstadoEstudiante.activo;
     }
 
-    // Timestamps automáticos
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-        if (fechaInscripcion == null) {
-            fechaInscripcion = LocalDateTime.now();
+        if (fechaUnion == null) {
+            fechaUnion = LocalDateTime.now();
         }
-        if (estado == null) {
-            estado = "ACTIVO";
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 
     // Getters y Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Long getAulaId() { return aulaId; }
+    public void setAulaId(Long aulaId) { this.aulaId = aulaId; }
 
-    public Long getAulaId() {
-        return aulaId;
-    }
+    public Long getEstudianteId() { return estudianteId; }
+    public void setEstudianteId(Long estudianteId) { this.estudianteId = estudianteId; }
 
-    public void setAulaId(Long aulaId) {
-        this.aulaId = aulaId;
-    }
+    public EstadoEstudiante getEstado() { return estado; }
+    public void setEstado(EstadoEstudiante estado) { this.estado = estado; }
 
-    public Long getEstudianteId() {
-        return estudianteId;
-    }
+    public LocalDateTime getFechaUnion() { return fechaUnion; }
+    public void setFechaUnion(LocalDateTime fechaUnion) { this.fechaUnion = fechaUnion; }
 
-    public void setEstudianteId(Long estudianteId) {
-        this.estudianteId = estudianteId;
-    }
-
-    public Long getProfesorId() {
-        return profesorId;
-    }
-
-    public void setProfesorId(Long profesorId) {
-        this.profesorId = profesorId;
-    }
-
-    public LocalDateTime getFechaInscripcion() {
-        return fechaInscripcion;
-    }
-
-    public void setFechaInscripcion(LocalDateTime fechaInscripcion) {
-        this.fechaInscripcion = fechaInscripcion;
-    }
-
-    public String getEstado() {
-        return estado;
-    }
-
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    @Override
-    public String toString() {
-        return "AulaEstudiante{" +
-                "id=" + id +
-                ", aulaId=" + aulaId +
-                ", estudianteId=" + estudianteId +
-                ", profesorId=" + profesorId +
-                ", fechaInscripcion=" + fechaInscripcion +
-                ", estado='" + estado + '\'' +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                '}';
-    }
+    public LocalDateTime getFechaSalida() { return fechaSalida; }
+    public void setFechaSalida(LocalDateTime fechaSalida) { this.fechaSalida = fechaSalida; }
 }
