@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import InvitarEstudiantesModal from '../components/InvitarEstudiantesModal';
 import "../css/CrearAula.css";
+import Header from '../components/Header';
 
 
 function CrearAula() {
@@ -456,18 +457,7 @@ function CrearAula() {
 
   return (
     <div className="full-page">
-      <header className="header">
-        <div className="header-content">
-          <h1 className="logo">TecBook</h1>
-          <nav className="nav">
-            <button onClick={() => navigate('/home')} className="nav-link">Inicio</button>
-            <button onClick={() => navigate('/perfil')} className="nav-link">Perfil</button>
-            <button onClick={() => navigate('/aulas')} className="nav-link">Aulas</button>
-            <button onClick={handleLogout} className="nav-link">Cerrar sesión</button>
-          </nav>
-        </div>
-      </header>
-
+      <Header active="Crear Aula" />
       <div className="main-content">
         <div className="modal-content">
           <div className="modal-header">
