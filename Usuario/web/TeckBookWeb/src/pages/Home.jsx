@@ -15,8 +15,8 @@ import {
   Calendar,
   BarChart3
 } from 'lucide-react';
-import './Home.css';
-import CompletarPerfil from './CompletarPerfil'; // ✅ IMPORTAR EL MODAL
+import "../css/Home.css";
+import CompletarPerfil from '../components/CompletarPerfil'; // ✅ IMPORTAR EL MODAL
 
 function Home() {
   const [userData, setUserData] = useState(null);

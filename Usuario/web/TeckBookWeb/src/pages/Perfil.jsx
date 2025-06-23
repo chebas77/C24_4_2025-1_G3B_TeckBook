@@ -14,7 +14,7 @@ import {
   Upload,
   Camera
 } from 'lucide-react';
-import './Perfil.css';
+import "../css/Perfil.css";
 
 function Perfil() {
   const [usuario, setUsuario] = useState({

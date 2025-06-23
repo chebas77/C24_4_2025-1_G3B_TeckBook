@@ -15,8 +15,9 @@ import {
   CheckCircle,
   ChevronDown
 } from 'lucide-react';
-import InvitarEstudiantesModal from './InvitarEstudiantesModal';
-import './CrearAula.css';
+import InvitarEstudiantesModal from '../components/InvitarEstudiantesModal';
+import "../css/CrearAula.css";
+
 
 function CrearAula() {
   const navigate = useNavigate();

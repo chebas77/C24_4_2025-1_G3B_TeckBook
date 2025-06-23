@@ -9,7 +9,7 @@ import {
   AlertCircle,
   Phone 
 } from 'lucide-react';
-import './CompletarPerfil.css';
+import "../css/CompletarPerfil.css";
 
 function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUser = false }) {
   const navigate = useNavigate();

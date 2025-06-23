@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import './ProtectedRoute.css';
+import "../css/ProtectedRoute.css";
+
 
 function ProtectedRoute({ children }) {
   const [isLoading, setIsLoading] = useState(true);
