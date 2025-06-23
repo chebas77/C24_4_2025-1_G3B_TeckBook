@@ -1,12 +1,14 @@
 package com.usuario.backend.service.upload;
-import com.usuario.backend.model.entity.Usuario;
+
+import com.usuario.backend.model.entity.core.Usuario;
+import com.usuario.backend.service.core.UsuarioService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
-import com.usuario.backend.service.user.UsuarioService;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,25 +31,29 @@ public class ProfileImageService {
     public Map<String, Object> uploadAndSaveProfileImage(MultipartFile file, String userEmail) {
         logger.info("Iniciando subida de imagen de perfil para usuario: {}", userEmail);
         try {
-            // 1. Buscar usuario
-            Usuario usuario = usuarioService.findByCorreoInstitucional(userEmail);
-            if (usuario == null) {
-                throw new RuntimeException("Usuario no encontrado: " + userEmail);
-            }
+            // 1. Buscar usuario por email
+            Usuario usuario = usuarioService.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + userEmail));
+            
             // 2. Subir imagen a Cloudinary
             String imageUrl = cloudinaryService.uploadImage(file, String.valueOf(usuario.getId()));
             logger.info("Imagen subida a Cloudinary exitosamente: {}", imageUrl);
+            
             // 3. CRÍTICO: Guardar URL en base de datos INMEDIATAMENTE
             String previousImageUrl = usuario.getProfileImageUrl();
             usuario.setProfileImageUrl(imageUrl);
-            // Usar actualizarUsuario para garantizar persistencia
-            Usuario usuarioActualizado = usuarioService.actualizarUsuario(usuario);
+            
+            // Usar el método save del service para garantizar persistencia
+            Usuario usuarioActualizado = usuarioService.save(usuario);
+            
             // 4. Verificar que se guardó correctamente
             if (usuarioActualizado.getProfileImageUrl() == null || 
                 !usuarioActualizado.getProfileImageUrl().equals(imageUrl)) {
                 throw new RuntimeException("Error: La imagen no se guardó correctamente en la base de datos");
             }
+            
             logger.info("URL de imagen guardada exitosamente en BD para usuario: {}", userEmail);
+            
             // 5. Preparar respuesta completa
             Map<String, Object> response = new HashMap<>();
             response.put("imageUrl", imageUrl);
@@ -71,10 +77,8 @@ public class ProfileImageService {
         logger.debug("Obteniendo imagen de perfil actual para: {}", userEmail);
         
         try {
-            Usuario usuario = usuarioService.findByCorreoInstitucional(userEmail);
-            if (usuario == null) {
-                throw new RuntimeException("Usuario no encontrado: " + userEmail);
-            }
+            Usuario usuario = usuarioService.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + userEmail));
             
             String imageUrl = usuario.getProfileImageUrl();
             logger.debug("URL de imagen obtenida desde BD: {}", imageUrl);
@@ -99,11 +103,11 @@ public class ProfileImageService {
     public Map<String, Object> removeProfileImage(String userEmail) {
         logger.info("Eliminando imagen de perfil para usuario: {}", userEmail);
         try {
-            Usuario usuario = usuarioService.findByCorreoInstitucional(userEmail);
-            if (usuario == null) {
-                throw new RuntimeException("Usuario no encontrado: " + userEmail);
-            }
+            Usuario usuario = usuarioService.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + userEmail));
+                
             String currentImageUrl = usuario.getProfileImageUrl();
+            
             // Si no hay imagen, no hacer nada
             if (currentImageUrl == null || currentImageUrl.isEmpty()) {
                 Map<String, Object> response = new HashMap<>();
@@ -111,6 +115,7 @@ public class ProfileImageService {
                 response.put("imageUrl", "");
                 return response;
             }
+            
             // Extraer public_id de la URL de Cloudinary para eliminar
             try {
                 // Formato típico: https://res.cloudinary.com/cloud/image/upload/v123456/folder/public_id.jpg
@@ -125,9 +130,10 @@ public class ProfileImageService {
                 logger.warn("Error al eliminar imagen de Cloudinary (continuando): {}", e.getMessage());
                 // Continuar aunque falle Cloudinary
             }
+            
             // Eliminar URL de la base de datos
             usuario.setProfileImageUrl(null);
-            usuarioService.actualizarUsuario(usuario);
+            usuarioService.save(usuario);
             
             logger.info("Imagen de perfil eliminada exitosamente para: {}", userEmail);
             

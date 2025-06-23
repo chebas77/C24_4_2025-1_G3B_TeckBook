@@ -1,7 +1,8 @@
 package com.usuario.backend.security.oauth2;
 
-import com.usuario.backend.model.entity.Usuario;
-import com.usuario.backend.service.user.UsuarioService;
+import com.usuario.backend.model.entity.core.Usuario;
+import com.usuario.backend.security.jwt.JwtTokenProvider;
+import com.usuario.backend.service.core.UsuarioService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,7 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import com.usuario.backend.security.jwt.JwtTokenProvider;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -38,124 +38,105 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
             throws IOException, ServletException {
 
-        logger.info("🎯 OAuth2 Authentication Success iniciado");
+        logger.info("OAuth2 Authentication Success iniciado");
 
         try {
             // Obtener datos del usuario OAuth2
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
             Map<String, Object> attributes = oAuth2User.getAttributes();
 
-            logger.info("📧 Atributos OAuth2: {}", attributes);
-
             String email = (String) attributes.get("email");
             String name = (String) attributes.get("given_name");
             String lastName = (String) attributes.get("family_name");
             String pictureUrl = (String) attributes.get("picture");
 
-            logger.info("👤 Usuario OAuth2: {} {} - {}", name, lastName, email);
+            logger.info("Usuario OAuth2: {} - {}", name, email);
 
-            // 🔥 VALIDAR DOMINIO INSTITUCIONAL
+            // Validar dominio institucional
             if (!email.endsWith("@tecsup.edu.pe")) {
-                logger.error("❌ Dominio no permitido: {}", email);
+                logger.error("Dominio no permitido: {}", email);
                 String errorMsg = URLEncoder.encode("Solo se permiten correos con dominio @tecsup.edu.pe", StandardCharsets.UTF_8);
                 response.sendRedirect(frontendUrl + "/?error=" + errorMsg);
                 return;
             }
 
             try {
-                Usuario usuario = usuarioService.findByCorreoInstitucional(email);
+                Usuario usuario = usuarioService.findByEmail(email).orElse(null);
                 boolean isNewUser = (usuario == null);
                 
                 if (isNewUser) {
-                    // 🆕 CREAR NUEVO USUARIO
-                    logger.info("🆕 Creando nuevo usuario OAuth2: {}", email);
+                    // Crear nuevo usuario
+                    logger.info("Creando nuevo usuario OAuth2: {}", email);
                     usuario = crearUsuarioOAuth2(email, name, lastName, pictureUrl);
                 } else {
-                    // 🔄 ACTUALIZAR USUARIO EXISTENTE
-                    logger.info("🔄 Actualizando usuario existente: {}", email);
+                    // Actualizar usuario existente
+                    logger.info("Actualizando usuario existente: {}", email);
                     usuario = actualizarUsuarioOAuth2(usuario, name, lastName, pictureUrl);
                 }
 
-                // ✅ GENERAR TOKEN Y REDIRIGIR SIEMPRE A HOME
+                // Generar token y redirigir
                 String token = tokenProvider.generateToken(email);
-                
-                // 🔧 CONSTRUIR URL CON PARÁMETROS PARA EL FRONTEND
                 StringBuilder redirectUrl = new StringBuilder(frontendUrl + "/home?token=" + token);
                 
-                // Agregar parámetros adicionales para el frontend
                 if (isNewUser) {
                     redirectUrl.append("&new=true");
                 }
                 
-                // 🔍 Verificar si necesita completar datos y agregar parámetro
-                if (usuario.requiereCompletarDatos()) {
+                if (requiereCompletarDatos(usuario)) {
                     redirectUrl.append("&incomplete=true");
-                    logger.info("📝 Usuario requiere completar datos: {}", email);
-                } else {
-                    logger.info("✅ Usuario con perfil completo: {}", email);
                 }
 
-                logger.info("🔀 Redirigiendo a: {}", redirectUrl.toString());
+                logger.info("Redirigiendo a: {}", redirectUrl.toString());
                 response.sendRedirect(redirectUrl.toString());
 
             } catch (Exception e) {
-                logger.error("❌ Error procesando usuario OAuth2: {}", e.getMessage(), e);
+                logger.error("Error procesando usuario OAuth2: {}", e.getMessage(), e);
                 String errorMsg = URLEncoder.encode("Error al procesar usuario: " + e.getMessage(), StandardCharsets.UTF_8);
                 response.sendRedirect(frontendUrl + "/?error=" + errorMsg);
-                return;
             }
 
         } catch (Exception e) {
-            logger.error("❌ Error general en OAuth2 Success Handler", e);
+            logger.error("Error general en OAuth2 Success Handler", e);
             String errorMsg = URLEncoder.encode("Error general: " + e.getMessage(), StandardCharsets.UTF_8);
             response.sendRedirect(frontendUrl + "/?error=" + errorMsg);
         }
     }
 
     /**
-     * 🆕 Crea un nuevo usuario OAuth2 con datos mínimos
+     * Crea un nuevo usuario OAuth2
      */
     private Usuario crearUsuarioOAuth2(String email, String name, String lastName, String pictureUrl) {
         Usuario newUser = new Usuario();
-        newUser.setCorreoInstitucional(email);
-        newUser.setNombre(name != null ? name : "");
-        newUser.setApellidos(lastName != null ? lastName : "");
-        newUser.setRol(Usuario.RolUsuario.ESTUDIANTE);
+        newUser.setEmail(email);
+        newUser.setNombres(name != null ? name : "");
+        newUser.setApellido(lastName != null ? lastName : "");
+        newUser.setRol(Usuario.Rol.ALUMNO);
         
-        // 🔧 Imagen de Google si está disponible
+        // Imagen de Google si está disponible
         if (pictureUrl != null && !pictureUrl.isEmpty()) {
             newUser.setProfileImageUrl(pictureUrl);
         }
       
-        // 🔧 Valores por defecto para campos requeridos por la BD
+        // Valores por defecto
         newUser.setDepartamentoId(1L); // Tecnología Digital por defecto
+        newUser.setActivo(true);
         
-        // 🚨 CAMPOS QUE QUEDARÁN NULL PARA FORZAR COMPLETAR DATOS:
-        // carreraId = null (se completa en el modal)
-        // cicloActual = null (se completa en el modal)
-        
-        // ✅ CAMPOS QUE NO REQUIEREN COMPLETAR (se asignan después):
-        // seccionId = null (se asigna por admin más tarde)
-        // telefono = null (opcional, se puede completar en el modal)
-        // direccion = null (opcional)
-        // fechaNacimiento = null (opcional)
-        
-        return usuarioService.registrarUsuarioOAuth(newUser);
+        return usuarioService.save(newUser);
     }
 
     /**
-     * 🔄 Actualiza usuario existente con datos de Google
+     * Actualiza usuario existente con datos de Google
      */
     private Usuario actualizarUsuarioOAuth2(Usuario usuario, String name, String lastName, String pictureUrl) {
-        // Actualizar nombre y apellidos si están vacíos o han cambiado
+        // Actualizar nombre y apellidos si han cambiado
         if (name != null && !name.isEmpty()) {
-            usuario.setNombre(name);
+            usuario.setNombres(name);
         }
         if (lastName != null && !lastName.isEmpty()) {
-            usuario.setApellidos(lastName);
+            usuario.setApellido(lastName);
         }
         
-        // 🔧 Actualizar imagen solo si no tiene una personalizada
+        // Actualizar imagen solo si no tiene una personalizada
         if (pictureUrl != null && !pictureUrl.isEmpty()) {
             if (usuario.getProfileImageUrl() == null || 
                 usuario.getProfileImageUrl().isEmpty() || 
@@ -164,6 +145,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             }
         }
         
-        return usuarioService.actualizarUsuario(usuario);
+        return usuarioService.save(usuario);
+    }
+
+    /**
+     * Verifica si el usuario requiere completar datos
+     */
+    private boolean requiereCompletarDatos(Usuario usuario) {
+        return usuario.getCarreraId() == null;
     }
 }

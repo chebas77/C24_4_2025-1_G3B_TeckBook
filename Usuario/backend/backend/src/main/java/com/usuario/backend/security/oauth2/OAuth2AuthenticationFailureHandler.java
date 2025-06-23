@@ -1,5 +1,6 @@
 package com.usuario.backend.security.oauth2;
 
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,28 +24,21 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
     private String frontendUrl;
 
     @Override
-    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
-            throws IOException, ServletException {
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, 
+                                      AuthenticationException exception) throws IOException, ServletException {
 
-        logger.error("❌ OAuth2 Authentication Failed: {}", exception.getMessage(), exception);
+        logger.error("OAuth2 Authentication Failed: {}", exception.getMessage());
 
-        // Determinar el tipo de error
         String errorMessage = determineErrorMessage(exception);
-        
-        // Codificar el mensaje de error para la URL
         String encodedError = URLEncoder.encode(errorMessage, StandardCharsets.UTF_8);
-        
-        // Construir URL de redirección con error
         String targetUrl = frontendUrl + "/?error=" + encodedError;
         
-        logger.info("🔀 Redirigiendo después de error OAuth2 a: {}", targetUrl);
-        
-        // Redirigir al frontend con el error
+        logger.info("Redirigiendo después de error OAuth2 a: {}", targetUrl);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
     /**
-     * 🔍 Determina el mensaje de error apropiado según la excepción
+     * Determina el mensaje de error apropiado
      */
     private String determineErrorMessage(AuthenticationException exception) {
         String message = exception.getMessage();
@@ -53,7 +47,6 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
             return "Error de autenticación OAuth2";
         }
         
-        // Mensajes específicos según el tipo de error
         if (message.contains("invalid_domain")) {
             return "Solo se permiten correos con dominio @tecsup.edu.pe";
         }
@@ -74,7 +67,6 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
             return "Servicio de Google temporalmente no disponible. Intenta más tarde.";
         }
         
-        // Error genérico
         return "Error de autenticación con Google. Por favor, intenta nuevamente.";
     }
 }

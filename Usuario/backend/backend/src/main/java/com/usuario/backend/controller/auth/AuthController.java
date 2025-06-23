@@ -1,9 +1,9 @@
 package com.usuario.backend.controller.auth;
 
-import com.usuario.backend.model.entity.Usuario;
 import com.usuario.backend.security.jwt.JwtTokenProvider;
+import com.usuario.backend.model.entity.core.Usuario;
 import com.usuario.backend.security.jwt.JwtTokenManager;
-import com.usuario.backend.service.user.UsuarioService;
+import com.usuario.backend.service.core.UsuarioService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,56 +35,58 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
+        String email = loginRequest.get("email");
         String correoInstitucional = loginRequest.get("correoInstitucional");
         String password = loginRequest.get("password");
         
-        logger.info("🔐 Intento de login para: {}", correoInstitucional);
+        // 🔧 COMPATIBILIDAD: Aceptar tanto 'email' como 'correoInstitucional'
+        String userEmail = email != null ? email : correoInstitucional;
         
-        if (correoInstitucional == null || password == null) {
+        logger.info("🔐 Intento de login para: {}", userEmail);
+        
+        if (userEmail == null || password == null) {
             logger.warn("❌ Login fallido: faltan credenciales");
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Credenciales requeridas",
-                "message", "Correo institucional y contraseña son requeridos"
+                "message", "Email y contraseña son requeridos"
             ));
         }
         
-        boolean isAuthenticated = usuarioService.autenticarUsuario(correoInstitucional, password);
+        // 🔧 ACTUALIZADO: Usar findByEmail() del UsuarioService nuevo
+        boolean isAuthenticated = usuarioService.autenticarUsuario(userEmail, password);
 
         if (isAuthenticated) {
-            logger.info("✅ Login exitoso para: {}", correoInstitucional);
+            logger.info("✅ Login exitoso para: {}", userEmail);
             
-            // Obtener información del usuario
-            Usuario user = usuarioService.findByCorreoInstitucional(correoInstitucional);
+            // 🔧 ACTUALIZADO: Usar findByEmail() en lugar de findByCorreoInstitucional()
+            Usuario user = usuarioService.findByEmail(userEmail);
             
-            // 🔍 VERIFICAR SI PERFIL ESTÁ COMPLETO
-            if (user.requiereCompletarDatos()) {
-                logger.info("📝 Usuario requiere completar datos: {}", correoInstitucional);
-                
-                // Generar token temporal para completar datos
-                String token = jwtTokenProvider.generateToken(correoInstitucional);
-                
-                return ResponseEntity.ok(Map.of(
-                    "token", token,
-                    "type", "Bearer",
-                    "requiresCompletion", true,
-                    "redirectTo", "/completar-perfil",
-                    "message", "Perfil incompleto. Redirigiendo para completar datos."
-                ));
+            if (user == null) {
+                logger.error("❌ Usuario no encontrado después de autenticación exitosa: {}", userEmail);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Error interno", "message", "Usuario no encontrado"));
             }
             
-            // Generar JWT token normal
-            String token = jwtTokenProvider.generateToken(correoInstitucional);
+            // 🔍 VERIFICAR SI USUARIO ESTÁ ACTIVO
+            if (!user.getActivo()) {
+                logger.warn("❌ Usuario desactivado: {}", userEmail);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Cuenta desactivada", "message", "Tu cuenta ha sido desactivada"));
+            }
+            
+            // Generar JWT token
+            String token = jwtTokenProvider.generateToken(userEmail);
             
             // Devolver respuesta completa
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
             response.put("type", "Bearer");
-            response.put("requiresCompletion", false);
             response.put("user", buildUserResponse(user));
+            response.put("timestamp", System.currentTimeMillis());
 
             return ResponseEntity.ok(response);
         } else {
-            logger.warn("❌ Login fallido para: {}", correoInstitucional);
+            logger.warn("❌ Login fallido para: {}", userEmail);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                 "error", "Credenciales inválidas",
                 "message", "Email o contraseña incorrectos"
@@ -144,14 +146,20 @@ public class AuthController {
                         .body(Map.of("error", "Token malformado"));
             }
             
-            Usuario user = usuarioService.findByCorreoInstitucional(email);
+            // 🔧 ACTUALIZADO: Usar findByEmail() en lugar de findByCorreoInstitucional()
+            Usuario user = usuarioService.findByEmail(email);
 
             if (user != null) {
                 logger.info("✅ Información de usuario encontrada para: {}", email);
                 
-                // 🔍 VERIFICAR SI REQUIERE COMPLETAR DATOS
+                // Verificar si está activo
+                if (!user.getActivo()) {
+                    logger.warn("❌ Usuario desactivado: {}", email);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("error", "Cuenta desactivada"));
+                }
+                
                 Map<String, Object> userInfo = buildUserResponse(user);
-                userInfo.put("requiresCompletion", user.requiereCompletarDatos());
 
                 return ResponseEntity.ok(userInfo);
             } else {
@@ -270,31 +278,38 @@ public class AuthController {
     // ========== MÉTODOS AUXILIARES ==========
     
     /**
-     * 📋 Construye respuesta de usuario con campos actualizados
+     * 📋 Construye respuesta de usuario con campos de la nueva estructura
      */
     private Map<String, Object> buildUserResponse(Usuario user) {
         Map<String, Object> userInfo = new HashMap<>();
+        
+        // 🔧 CAMPOS BÁSICOS DE LA NUEVA ESTRUCTURA
         userInfo.put("id", user.getId());
-        userInfo.put("nombre", user.getNombre());
-        userInfo.put("apellidos", user.getApellidos());
-        userInfo.put("correoInstitucional", user.getCorreoInstitucional());
+        userInfo.put("nombres", user.getNombres());
+        userInfo.put("apellido", user.getApellido());
+        userInfo.put("email", user.getEmail());
         
-        // 🔧 FIX: Usar getRolString() para compatibilidad
-        userInfo.put("rol", user.getRol() != null ? user.getRol().getValor() : "estudiante");
+        // 🔧 ENUM ROL
+        userInfo.put("rol", user.getRol() != null ? user.getRol().name() : "ALUMNO");
         
-        // 🔧 FIX: Usar cicloActual en lugar de ciclo
-        userInfo.put("cicloActual", user.getCicloActual());
-        
+        // 🔧 RELACIONES
         userInfo.put("departamentoId", user.getDepartamentoId());
         userInfo.put("carreraId", user.getCarreraId());
-        userInfo.put("seccionId", user.getSeccionId());
-        userInfo.put("telefono", user.getTelefono());
         
-        // 🔧 CRÍTICO: Incluir profileImageUrl
+        // 🔧 CAMPOS OPCIONALES
+        userInfo.put("telefono", user.getTelefono());
         userInfo.put("profileImageUrl", user.getProfileImageUrl());
+        userInfo.put("activo", user.getActivo());
+        userInfo.put("fechaRegistro", user.getFechaRegistro());
+        
+        // 🔧 COMPATIBILIDAD FRONTEND (CAMPOS LEGACY)
+        userInfo.put("nombre", user.getNombres()); // Alias para compatibilidad
+        userInfo.put("apellidos", user.getApellido()); // Alias para compatibilidad
+        userInfo.put("correoInstitucional", user.getEmail()); // Alias para compatibilidad
         
         // 🔧 DEBUG LOG
         logger.debug("ProfileImageUrl desde BD: {}", user.getProfileImageUrl());
+        logger.debug("Respuesta de usuario construida para: {}", user.getEmail());
         
         return userInfo;
     }

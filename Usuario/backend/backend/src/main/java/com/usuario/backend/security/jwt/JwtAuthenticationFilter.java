@@ -1,6 +1,6 @@
 package com.usuario.backend.security.jwt;
 
-import com.usuario.backend.service.user.UsuarioService;
+import com.usuario.backend.service.core.UsuarioService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,37 +40,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         try {
             String jwt = getJwtFromRequest(request);
-            logger.debug("JWT token received for {}: {}", requestURI, 
-                        jwt != null ? jwt.substring(0, Math.min(10, jwt.length())) + "..." : "null");
 
             if (StringUtils.hasText(jwt)) {
-                
-                // 🔧 NUEVA VALIDACIÓN: Verificar blacklist Y validez del token
+                // Verificar si el token es válido (incluye blacklist)
                 if (jwtTokenManager.isTokenValid(jwt)) {
                     String email = tokenProvider.getEmailFromToken(jwt);
 
                     if (email != null) {
-                        logger.debug("JWT token válido para usuario: {}", email);
-
                         UserDetails userDetails = usuarioService.loadUserByUsername(email);
 
                         UsernamePasswordAuthenticationToken authentication =
                                 new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        logger.debug("Usuario autenticado via JWT: {}", email);
+                        
+                        logger.debug("Usuario autenticado: {}", email);
                     } else {
-                        logger.debug("No se pudo extraer email del token JWT");
-                        handleInvalidToken(response, "Token JWT inválido: no se pudo extraer email");
+                        handleInvalidToken(response, "Token JWT inválido");
                         return;
                     }
                 } else {
-                    // Token inválido (expirado, malformado, o en blacklist)
-                    logger.debug("Token JWT inválido o en blacklist para: {}", requestURI);
-                    
-                    // Solo devolver error en endpoints protegidos
+                    // Token inválido o en blacklist
                     if (isProtectedEndpoint(request)) {
                         handleInvalidToken(response, "Token JWT inválido o expirado");
                         return;
@@ -78,12 +69,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             } else if (isProtectedEndpoint(request)) {
                 // No hay token en endpoint protegido
-                logger.debug("No hay token JWT para endpoint protegido: {}", requestURI);
                 handleInvalidToken(response, "Token JWT requerido");
                 return;
             }
         } catch (Exception ex) {
-            logger.error("Error al procesar autenticación JWT para {}: {}", requestURI, ex.getMessage());
+            logger.error("Error al procesar autenticación JWT: {}", ex.getMessage());
             
             if (isProtectedEndpoint(request)) {
                 handleInvalidToken(response, "Error al procesar autenticación");
@@ -98,46 +88,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * Determina si un endpoint requiere autenticación
      */
     private boolean isProtectedEndpoint(HttpServletRequest request) {
-    String path = request.getRequestURI();
-    String method = request.getMethod();
-    
-    // 🔥 ENDPOINTS PÚBLICOS (NO REQUIEREN AUTENTICACIÓN)
-    String[] publicPaths = {
-        "/",
-        "/oauth2/",
-        "/login",
-        "/api/auth/login",           // 🔥 CRÍTICO: Login debe ser público
-        "/api/auth/google-login",    // 🔥 Google login público
-        "/api/usuarios/register",    // 🔥 Registro público
-        "/api/usuarios/login",       // 🔥 Login legacy público
-        "/api/carreras/activas",     // 🔥 Carreras para registro
-        "/api/carreras/health",      // 🔥 Health check público
-        "/api/public/",
-        "/error",
-        "/api/debug/"  // Temporal para debugging
-    };
-    
-    // Verificar si la ruta coincide con algún endpoint público
-    for (String publicPath : publicPaths) {
-        if (path.equals(publicPath) || path.startsWith(publicPath)) {
-            logger.debug("Endpoint público detectado: {} {}", method, path);
-            return false;
+        String path = request.getRequestURI();
+        
+        // Endpoints públicos
+        String[] publicPaths = {
+            "/",
+            "/oauth2/",
+            "/login",
+            "/api/auth/login",
+            "/api/auth/google-login",
+            "/api/core/usuarios/register",
+            "/api/core/carreras/activas",
+            "/api/public/",
+            "/error"
+        };
+        
+        for (String publicPath : publicPaths) {
+            if (path.equals(publicPath) || path.startsWith(publicPath)) {
+                return false;
+            }
         }
+        
+        return true;
     }
     
-    logger.debug("Endpoint protegido detectado: {} {}", method, path);
-    return true;
-}
-    
     /**
-     * Maneja tokens inválidos con respuesta JSON estructurada
+     * Maneja tokens inválidos
      */
     private void handleInvalidToken(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json;charset=UTF-8");
         
         String jsonResponse = String.format(
-            "{\"error\":\"Unauthorized\",\"message\":\"%s\",\"timestamp\":%d,\"requiresLogin\":true}",
+            "{\"error\":\"Unauthorized\",\"message\":\"%s\",\"timestamp\":%d}",
             message, System.currentTimeMillis()
         );
         

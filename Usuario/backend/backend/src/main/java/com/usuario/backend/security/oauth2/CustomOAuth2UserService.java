@@ -26,10 +26,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             logger.info("Loading OAuth2 user info");
             Map<String, Object> attributes = oAuth2User.getAttributes();
 
-            // Verificar que los atributos esperados estén presentes
+            // Verificar email
             if (!attributes.containsKey("email")) {
-                logger.error("Email attribute not found in OAuth2 user info");
-                throw new OAuth2AuthenticationException(new OAuth2Error("missing_attribute"), "Email not found in OAuth2 user info");
+                logger.error("Email not found in OAuth2 user info");
+                throw new OAuth2AuthenticationException(
+                    new OAuth2Error("missing_attribute"), 
+                    "Email not found in OAuth2 user info"
+                );
             }
 
             String email = (String) attributes.get("email");
@@ -38,18 +41,22 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             // Verificar dominio institucional
             if (!email.endsWith("@tecsup.edu.pe")) {
                 logger.error("Email domain not allowed: {}", email);
-                throw new OAuth2AuthenticationException(new OAuth2Error("invalid_domain"), "Solo se permite acceso con correo institucional tecsup.edu.pe");
+                throw new OAuth2AuthenticationException(
+                    new OAuth2Error("invalid_domain"), 
+                    "Solo se permite acceso con correo institucional tecsup.edu.pe"
+                );
             }
 
-            logger.info("OAuth2 user loaded successfully");
-
             return new DefaultOAuth2User(
-                    Collections.singleton(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")),
-                    attributes,
-                    "email");
+                Collections.singleton(
+                    new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")
+                ),
+                attributes,
+                "email"
+            );
 
         } catch (OAuth2AuthenticationException ex) {
-            logger.error("OAuth2 authentication exception: {}", ex.getMessage(), ex);
+            logger.error("OAuth2 authentication exception: {}", ex.getMessage());
             throw ex;
         } catch (Exception ex) {
             logger.error("Error processing OAuth2 user: {}", ex.getMessage(), ex);
