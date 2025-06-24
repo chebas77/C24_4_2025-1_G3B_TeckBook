@@ -15,6 +15,7 @@ import {
   Settings
 } from 'lucide-react';
 import InvitarEstudiantesModal from './InvitarEstudiantesModal';
+import InvitacionesPendientes from './InvitacionesPendientes';
 import './Aula.css';
 
 function Aulas() {
@@ -26,6 +27,7 @@ function Aulas() {
   const [userData, setUserData] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedAula, setSelectedAula] = useState(null);
+  const [showInvitaciones, setShowInvitaciones] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -178,6 +180,9 @@ function Aulas() {
           <button onClick={() => navigate('/home')} className="aulas-nav-link">
             Inicio
           </button>
+          <button onClick={() => setShowInvitaciones(true)} className="aulas-nav-link">
+            Invitaciones
+          </button>
           <button onClick={() => navigate('/perfil')} className="aulas-nav-link">
             Perfil
           </button>
@@ -195,6 +200,16 @@ function Aulas() {
           </button>
         </nav>
       </header>
+
+      {/* MODAL DE INVITACIONES */}
+      {showInvitaciones && (
+        <div className="modal-invitaciones-overlay" onClick={() => setShowInvitaciones(false)}>
+          <div className="modal-invitaciones" onClick={e => e.stopPropagation()}>
+            <button className="close-modal" onClick={() => setShowInvitaciones(false)}>X</button>
+            <InvitacionesPendientes onAulaAceptada={fetchAulas} />
+          </div>
+        </div>
+      )}
 
       {/* CONTENIDO PRINCIPAL */}
       <div className="aulas-main">

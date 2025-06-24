@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, Check, X, User, BookOpen } from 'lucide-react';
 
-function InvitacionesPendientes() {
+function InvitacionesPendientes({ onAulaAceptada }) {
   const [invitaciones, setInvitaciones] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [procesando, setProcesando] = useState(null);
@@ -34,7 +34,6 @@ function InvitacionesPendientes() {
     try {
       setProcesando(codigoInvitacion);
       const token = localStorage.getItem('token');
-      
       const response = await fetch(`http://localhost:8080/api/invitaciones/aceptar/${codigoInvitacion}`, {
         method: 'POST',
         headers: {
@@ -51,6 +50,9 @@ function InvitacionesPendientes() {
         // Actualizar la lista
         fetchInvitacionesPendientes();
         
+        // Notifica al padre para refrescar aulas
+        if (onAulaAceptada) onAulaAceptada();
+        
         // Opcional: redirigir al aula
         // window.location.href = `/aulas/${data.aulaId}`;
       } else {
@@ -60,6 +62,31 @@ function InvitacionesPendientes() {
     } catch (error) {
       console.error('Error al aceptar invitación:', error);
       alert('Error de conexión al aceptar la invitación');
+    } finally {
+      setProcesando(null);
+    }
+  };
+
+  const rechazarInvitacion = async (codigoInvitacion) => {
+    try {
+      setProcesando(codigoInvitacion);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/invitaciones/rechazar/${codigoInvitacion}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        alert('Invitación rechazada correctamente.');
+        fetchInvitacionesPendientes();
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error al rechazar invitación:', error);
+      alert('Error de conexión al rechazar la invitación');
     } finally {
       setProcesando(null);
     }
@@ -170,9 +197,22 @@ function InvitacionesPendientes() {
                 )}
               </button>
               
-              <button className="btn-rechazar">
-                <X size={16} />
-                Rechazar
+              <button
+                onClick={() => rechazarInvitacion(invitacion.codigoInvitacion)}
+                disabled={procesando === invitacion.codigoInvitacion}
+                className="btn-rechazar"
+              >
+                {procesando === invitacion.codigoInvitacion ? (
+                  <>
+                    <div className="loading-spinner-small"></div>
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <X size={16} />
+                    Rechazar
+                  </>
+                )}
               </button>
             </div>
           </div>

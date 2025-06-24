@@ -28,31 +28,25 @@ public class AulaVirtualService {
     public List<AulaVirtual> getAulasByUsuario(Long usuarioId, String rol) {
         try {
             logger.info("Obteniendo aulas para usuario {} con rol {}", usuarioId, rol);
-            
             if ("PROFESOR".equalsIgnoreCase(rol)) {
-                // Profesores ven sus aulas activas
-                List<AulaVirtual> aulas = aulaVirtualRepository.findByProfesorIdAndEstadoOrderByFechaInicioDesc(usuarioId, "activa");
-                logger.info("Profesor {} tiene {} aulas activas", usuarioId, aulas.size());
+                // Profesores ven todas sus aulas (activas, inactivas, finalizadas)
+                List<AulaVirtual> aulas = aulaVirtualRepository.findByProfesorIdOrderByFechaInicioDesc(usuarioId);
+                logger.info("Profesor {} tiene {} aulas", usuarioId, aulas.size());
                 return aulas;
-                
             } else if ("ESTUDIANTE".equalsIgnoreCase(rol)) {
-                // Estudiantes ven aulas donde están inscritos (solo activas)
+                // Estudiantes ven todas las aulas donde están inscritos (sin filtrar por estado de aula)
                 List<Long> aulaIds = aulaEstudianteRepository.findAulaIdsByEstudianteId(usuarioId);
-                
                 if (aulaIds.isEmpty()) {
                     logger.info("Estudiante {} no está inscrito en ningún aula", usuarioId);
                     return List.of();
                 }
-                
-                List<AulaVirtual> aulas = aulaVirtualRepository.findByIdInAndEstadoOrderByFechaInicioDesc(aulaIds, "activa");
-                logger.info("Estudiante {} está inscrito en {} aulas activas", usuarioId, aulas.size());
+                List<AulaVirtual> aulas = aulaVirtualRepository.findAllById(aulaIds);
+                logger.info("Estudiante {} está inscrito en {} aulas", usuarioId, aulas.size());
                 return aulas;
-                
             } else {
                 logger.warn("Rol no reconocido: {}", rol);
                 return List.of();
             }
-            
         } catch (Exception e) {
             logger.error("Error al obtener aulas para usuario {}: {}", usuarioId, e.getMessage(), e);
             throw new RuntimeException("Error al obtener las aulas del usuario", e);
@@ -82,20 +76,32 @@ public class AulaVirtualService {
                 throw new IllegalArgumentException("El aula con ID " + aulaId + " no existe");
             }
 
-            // Verificar si ya está inscrito
+            // Verificar si ya está inscrito como activo
             boolean yaInscrito = aulaEstudianteRepository.existsByAulaIdAndEstudianteIdAndEstado(
                 aulaId, estudianteId, AulaEstudiante.EstadoEstudiante.activo);
-            
             if (yaInscrito) {
                 throw new IllegalArgumentException("El estudiante ya está inscrito en esta aula");
             }
 
-            // Crear nueva inscripción
-            AulaEstudiante aulaEstudiante = new AulaEstudiante(aulaId, estudianteId);
-            aulaEstudianteRepository.save(aulaEstudiante);
-            
-            logger.info("Estudiante {} agregado al aula {} exitosamente", estudianteId, aulaId);
-            
+            // Buscar si existe registro previo como invitado o inactivo
+            List<AulaEstudiante> registros = aulaEstudianteRepository.findByAulaIdAndEstado(aulaId, AulaEstudiante.EstadoEstudiante.invitado);
+            registros.addAll(aulaEstudianteRepository.findByAulaIdAndEstado(aulaId, AulaEstudiante.EstadoEstudiante.inactivo));
+            AulaEstudiante existente = registros.stream()
+                .filter(ae -> ae.getEstudianteId().equals(estudianteId))
+                .findFirst().orElse(null);
+
+            if (existente != null) {
+                existente.setEstado(AulaEstudiante.EstadoEstudiante.activo);
+                existente.setFechaUnion(java.time.LocalDateTime.now());
+                existente.setFechaSalida(null);
+                aulaEstudianteRepository.save(existente);
+                logger.info("Estudiante {} reactivado en el aula {}", estudianteId, aulaId);
+            } else {
+                // Crear nueva inscripción
+                AulaEstudiante aulaEstudiante = new AulaEstudiante(aulaId, estudianteId);
+                aulaEstudianteRepository.save(aulaEstudiante);
+                logger.info("Estudiante {} agregado al aula {} exitosamente", estudianteId, aulaId);
+            }
         } catch (Exception e) {
             logger.error("Error al agregar estudiante {} al aula {}: {}", estudianteId, aulaId, e.getMessage());
             throw e;

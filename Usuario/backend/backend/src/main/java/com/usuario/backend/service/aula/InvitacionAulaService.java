@@ -70,7 +70,7 @@ public class InvitacionAulaService {
     }
 
     /**
-     * Acepta una invitación usando el código único
+     * Acepta una invitación usando el código único y agrega al usuario al aula
      */
     public InvitacionAula aceptarInvitacion(String codigoInvitacion, String correoUsuario) {
         logger.info("✅ Procesando aceptación de invitación: {}", codigoInvitacion);
@@ -98,13 +98,30 @@ public class InvitacionAulaService {
             }
         }
 
+        // Buscar usuario por correo
+        Usuario usuario = usuarioService.findByCorreoInstitucional(correoUsuario);
+        if (usuario == null) {
+            throw new RuntimeException("Usuario no encontrado para el correo: " + correoUsuario);
+        }
+        if (!"ESTUDIANTE".equals(usuario.getRol().toString())) {
+            throw new RuntimeException("Solo los usuarios con rol ESTUDIANTE pueden aceptar invitaciones a aulas");
+        }
+
+        // Agregar usuario al aula
+        try {
+            aulaService.agregarEstudianteAAula(invitacion.getAulaVirtualId(), usuario.getId());
+        } catch (Exception e) {
+            logger.error("Error al agregar estudiante al aula al aceptar invitación: {}", e.getMessage());
+            throw new RuntimeException("No se pudo agregar al aula: " + e.getMessage());
+        }
+
         // Aceptar invitación
         invitacion.setEstado("aceptada");
         invitacion.setFechaRespuesta(LocalDateTime.now());
         
         InvitacionAula invitacionAceptada = invitacionRepository.save(invitacion);
         
-        logger.info("✅ Invitación aceptada exitosamente para: {}", correoUsuario);
+        logger.info("✅ Invitación aceptada exitosamente para: {} y usuario unido al aula", correoUsuario);
         
         return invitacionAceptada;
     }
