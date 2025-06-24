@@ -1,6 +1,6 @@
 /* CompletarPerfil.css - Estilo del Modal */
 
-.modal-overlay {
+.perfil-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -21,15 +21,17 @@
   to { opacity: 1; }
 }
 
-.modal-container {
+.perfil-modal-container {
   background: white;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 500px;
+  max-width: 500px; /* Cambiado de 80vh a 500px para un ancho fijo y correcto */
   max-height: 90vh;
-  overflow: hidden;
+  overflow-x: auto;
   animation: slideUp 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes slideUp {
@@ -44,7 +46,7 @@
 }
 
 /* Header del Modal */
-.modal-header {
+.perfil-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -53,24 +55,24 @@
   background: #f9fafb;
 }
 
-.modal-title {
+.perfil-modal-title {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.modal-icon {
+.perfil-modal-icon {
   color: #005DAB;
 }
 
-.modal-title h2 {
+.perfil-modal-title h2 {
   font-size: 20px;
   font-weight: 600;
   color: #111827;
   margin: 0;
 }
 
-.close-button {
+.perfil-modal-close-button {
   background: none;
   border: none;
   padding: 8px;
@@ -83,21 +85,24 @@
   justify-content: center;
 }
 
-.close-button:hover:not(:disabled) {
+.perfil-modal-close-button:hover:not(:disabled) {
   background: #f3f4f6;
   color: #374151;
 }
 
-.close-button:disabled {
+.perfil-modal-close-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* Contenido del Modal */
-.modal-content {
-  padding: 24px;
-  overflow-y: auto;
-  max-height: calc(90vh - 120px);
+.perfil-modal-content {
+  padding: 32px;
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Sección de Bienvenida */
@@ -244,10 +249,12 @@ input[type="tel"].form-select::placeholder {
 }
 
 /* Botones de Acción */
-.form-actions {
+.perfil-modal-actions {
   display: flex;
   gap: 12px;
   margin-top: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .btn-secondary {
@@ -319,25 +326,25 @@ input[type="tel"].form-select::placeholder {
 
 /* Responsive Design */
 @media (max-width: 640px) {
-  .modal-overlay {
+  .perfil-modal-overlay {
     padding: 16px;
     align-items: flex-start;
     padding-top: 60px;
   }
 
-  .modal-container {
+  .perfil-modal-container {
     max-width: 100%;
   }
 
-  .modal-header {
+  .perfil-modal-header {
     padding: 20px;
   }
 
-  .modal-content {
+  .perfil-modal-content {
     padding: 20px;
   }
 
-  .modal-title h2 {
+  .perfil-modal-title h2 {
     font-size: 18px;
   }
 
@@ -356,7 +363,7 @@ input[type="tel"].form-select::placeholder {
     gap: 16px;
   }
 
-  .form-actions {
+  .perfil-modal-actions {
     flex-direction: column;
   }
 
@@ -367,16 +374,16 @@ input[type="tel"].form-select::placeholder {
 }
 
 @media (max-width: 480px) {
-  .modal-overlay {
+  .perfil-modal-overlay {
     padding: 12px;
     padding-top: 40px;
   }
 
-  .modal-header {
+  .perfil-modal-header {
     padding: 16px;
   }
 
-  .modal-content {
+  .perfil-modal-content {
     padding: 16px;
   }
 

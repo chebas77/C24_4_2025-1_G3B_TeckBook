@@ -398,13 +398,6 @@ return (
                 </div>
               </div>
               <div className="info-item">
-                <p className="info-label">Correo Institucional</p>
-                <div className="info-field">
-                  <Mail size={16} className="field-icon" />
-                  <span className="field-value">{usuario.correoInstitucional}</span>
-                </div>
-              </div>
-              <div className="info-item">
                 <p className="info-label">Ciclo</p>
                 <div className="info-field">
                   <BookOpen size={16} className="field-icon" />

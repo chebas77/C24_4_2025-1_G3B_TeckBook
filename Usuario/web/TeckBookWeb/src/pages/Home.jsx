@@ -4,8 +4,6 @@ import '../css/Home.css';
 import CompletarPerfil from '../components/CompletarPerfil';
 import Header from '../components/Header';
 import { 
-  Calendar,
-  BarChart3,
   Video,
   Image,
   Smile,
@@ -124,10 +122,9 @@ function Home() {
     { id: 3, author: "Admin TecBook", initials: "AT", time: "Hace 6 horas", content: "Nueva actualización del sistema: Ahora pueden..." }
   ];
 
-  const mockChats = [
-    { id: 1, name: "Ana Rivera", initials: "AR", message: "¿Tienes las notas de la clase?", time: "10:30", online: true },
-    { id: 2, name: "Carlos Ruiz", initials: "CR", message: "Nos vemos en el laboratorio", time: "09:45", online: true },
-    { id: 3, name: "María López", initials: "ML", message: "El proyecto está listo", time: "Ayer", online: false }
+  const mockPinnedAnnouncements = [
+    { id: 1, title: "Bienvenida al nuevo ciclo", content: "Les damos la bienvenida a todos los estudiantes al nuevo ciclo académico. ¡Éxitos!", time: "Hace 1 día" },
+    { id: 2, title: "Feria de proyectos", content: "No olviden participar en la feria de proyectos este viernes. Habrá premios.", time: "Hace 3 días" }
   ];
 
   if (isLoading) return <div className="home-loading-container"><div className="home-loading-spinner"></div><p>Cargando información del usuario...</p></div>;
@@ -155,8 +152,6 @@ function Home() {
             <div className="home-action-buttons">
               <div className="home-action-button" onClick={() => navigate('/perfil')}><User className="home-action-icon" /><div className="home-action-text"><span className="home-action-title">Mi Perfil</span><span className="home-action-subtitle">Actualiza tus datos</span></div></div>
               <div className="home-action-button" onClick={() => navigate('/aulas')}><BookOpen className="home-action-icon" /><div className="home-action-text"><span className="home-action-title">Mis Aulas</span><span className="home-action-subtitle">Accede a tus aulas</span></div></div>
-              <div className="home-action-button"><Calendar className="home-action-icon" /><div className="home-action-text"><span className="home-action-title">Calendario</span><span className="home-action-subtitle">Revisa tus entregas</span></div></div>
-              <div className="home-action-button"><BarChart3 className="home-action-icon" /><div className="home-action-text"><span className="home-action-title">Notas</span><span className="home-action-subtitle">Consulta tus calificaciones</span></div></div>
               <div className="home-action-button" onClick={() => setShowCompletarPerfil(true)}><User className="home-action-icon" /><div className="home-action-text"><span className="home-action-title">Completar Perfil</span><span className="home-action-subtitle">Información académica</span></div></div>
             </div>
           </div>
@@ -199,18 +194,16 @@ function Home() {
         <aside className="home-right-sidebar">
           <div className="home-chat-section">
             <div className="home-chat-header">
-              <h3 className="home-chat-title">Chats Recientes</h3>
-              <button className="home-chat-options"><Search size={20} /></button>
+              <h3 className="home-chat-title">Anuncios Fijados</h3>
             </div>
             <div className="home-chat-list">
-              {mockChats.map(chat => (
-                <div key={chat.id} className="home-chat-item">
-                  <div className="home-chat-avatar">{chat.initials}<div className={`home-chat-status ${chat.online ? 'online' : 'offline'}`}></div></div>
+              {mockPinnedAnnouncements.map(announcement => (
+                <div key={announcement.id} className="home-chat-item">
                   <div className="home-chat-info">
-                    <h4 className="home-chat-name">{chat.name}</h4>
-                    <p className="home-chat-message">{chat.message}</p>
+                    <h4 className="home-chat-name">{announcement.title}</h4>
+                    <p className="home-chat-message">{announcement.content}</p>
                   </div>
-                  <span className="home-chat-time">{chat.time}</span>
+                  <span className="home-chat-time">{announcement.time}</span>
                 </div>
               ))}
             </div>

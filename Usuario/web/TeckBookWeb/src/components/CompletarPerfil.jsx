@@ -194,17 +194,17 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleBackdropClick}>
-      <div className="modal-container">
+    <div className="perfil-modal-overlay" onClick={handleBackdropClick}>
+      <div className="perfil-modal-container">
         {/* Header del modal */}
-        <div className="modal-header">
-          <div className="modal-title">
-            <GraduationCap size={24} className="modal-icon" />
+        <div className="perfil-modal-header">
+          <div className="perfil-modal-title">
+            <GraduationCap size={24} className="perfil-modal-icon" />
             <h2>¡Completa tu perfil!</h2>
           </div>
           <button 
             onClick={handleClose} 
-            className="close-button" 
+            className="perfil-modal-close-button" 
             disabled={isLoading}
           >
             <X size={20} />
@@ -212,7 +212,7 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
         </div>
 
         {/* Contenido del modal */}
-        <div className="modal-content">
+        <div className="perfil-modal-content">
           <div className="welcome-section">
             <div className="user-info">
               <div className="user-avatar">
@@ -341,7 +341,7 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
             </div>
 
             {/* Botones de acción */}
-            <div className="form-actions">
+            <div className="perfil-modal-actions">
               <button
                 type="button"
                 onClick={handleClose}
