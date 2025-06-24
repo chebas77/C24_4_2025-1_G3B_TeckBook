@@ -336,7 +336,7 @@ function Aulas() {
                     </div>
                     
                     <div className="aula-actions">
-                      <button className="aula-btn primary">
+                      <button className="aula-btn primary" onClick={() => navigate(`/aulas/${aula.id}`)}>
                         Ingresar al Aula
                       </button>
                       <button className="aula-btn secondary">

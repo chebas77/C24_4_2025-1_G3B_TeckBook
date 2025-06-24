@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import Perfil from "./pages/Perfil"; 
 import Aulas from "./components/Aula"; // 🆕 IMPORTAR
 import CrearAula from "./pages/CrearAula"; // 🆕 IMPORTAR
+import AulaDetalle from "./pages/AulaDetalle";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
@@ -40,6 +41,12 @@ function App() {
         <Route path="/crear-aula" element={
           <ProtectedRoute>
             <CrearAula />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/aulas/:aulaId" element={
+          <ProtectedRoute>
+            <AulaDetalle />
           </ProtectedRoute>
         } />
       </Routes>
