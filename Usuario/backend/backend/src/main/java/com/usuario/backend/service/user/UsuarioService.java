@@ -26,240 +26,144 @@ public class UsuarioService implements UserDetailsService {
 
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    // ========== REGISTRO NORMAL ==========
+    
     /**
-     * 🔧 MEJORADO: Registra un usuario con validaciones y debug
+     * 📝 Registra un usuario normal (con validaciones completas)
      */
     public Usuario registrarUsuario(Usuario usuario) {
         try {
-            logger.info("🔧 Iniciando registro para usuario: {}", usuario.getCorreoInstitucional());
+            logger.info("📝 Registrando usuario: {}", usuario.getCorreoInstitucional());
             
-            // 🔥 VALIDACIÓN: Verificar que el usuario no exista ya
-            Usuario existingUser = usuarioRepository.findByCorreoInstitucional(usuario.getCorreoInstitucional());
-            if (existingUser != null) {
-                logger.warn("❌ Usuario ya existe: {}", usuario.getCorreoInstitucional());
+            // Validar que no existe
+            if (usuarioRepository.findByCorreoInstitucional(usuario.getCorreoInstitucional()) != null) {
                 throw new IllegalArgumentException("Ya existe un usuario con el correo: " + usuario.getCorreoInstitucional());
             }
             
-            // 🔥 VALIDACIÓN: Verificar campos requeridos
-            if (usuario.getPassword() == null || usuario.getPassword().trim().isEmpty()) {
-                logger.error("❌ Password es null o vacío");
-                throw new IllegalArgumentException("La contraseña es requerida");
-            }
+            // Validar campos requeridos
+            validateRequiredFields(usuario);
             
-            if (usuario.getCorreoInstitucional() == null || usuario.getCorreoInstitucional().trim().isEmpty()) {
-                logger.error("❌ Correo institucional es null o vacío");
-                throw new IllegalArgumentException("El correo institucional es requerido");
-            }
-            
-            // 🔧 DEBUG: Log de datos recibidos
-            logger.debug("🔧 Datos recibidos:");
-            logger.debug("   - Nombre: {}", usuario.getNombre());
-            logger.debug("   - Apellidos: {}", usuario.getApellidos());
-            logger.debug("   - Código: {}", usuario.getCodigo());
-            logger.debug("   - Correo: {}", usuario.getCorreoInstitucional());
-            logger.debug("   - Password recibido: {}", usuario.getPassword() != null ? "***[PRESENTE]***" : "NULL");
-            logger.debug("   - Ciclo: {}", usuario.getCiclo());
-            logger.debug("   - CarreraId: {}", usuario.getCarreraId());
-            logger.debug("   - Rol: {}", usuario.getRol());
-            
-            // 🔧 ENCRIPTAR CONTRASEÑA
+            // Encriptar contraseña
             String passwordOriginal = usuario.getPassword();
-            String passwordEncriptada = passwordEncoder.encode(passwordOriginal);
-            usuario.setPassword(passwordEncriptada);
+            usuario.setPassword(passwordEncoder.encode(passwordOriginal));
             
-            logger.info("✅ Contraseña encriptada correctamente");
-            logger.debug("🔧 Hash generado: {}", passwordEncriptada.substring(0, Math.min(30, passwordEncriptada.length())) + "...");
+            // Guardar y verificar
+            Usuario saved = usuarioRepository.save(usuario);
+            logger.info("✅ Usuario registrado exitosamente: {}", saved.getId());
             
-            // 🔧 VERIFICACIÓN: Probar que la encriptación funciona inmediatamente
-            boolean verificacion = passwordEncoder.matches(passwordOriginal, passwordEncriptada);
-            logger.info("🔧 Verificación inmediata de encriptación: {}", verificacion ? "✅ ÉXITO" : "❌ FALLÓ");
-            
-            if (!verificacion) {
-                logger.error("❌ CRÍTICO: La encriptación falló durante el registro");
-                throw new RuntimeException("Error en la encriptación de contraseña");
-            }
-            
-            // 🔧 GUARDAR USUARIO
-            Usuario usuarioGuardado = usuarioRepository.save(usuario);
-            logger.info("✅ Usuario guardado exitosamente con ID: {}", usuarioGuardado.getId());
-            
-            // 🔧 VERIFICACIÓN FINAL: Leer desde BD y verificar password
-            Usuario usuarioVerificacion = usuarioRepository.findByCorreoInstitucional(usuario.getCorreoInstitucional());
-            if (usuarioVerificacion != null) {
-                boolean verificacionFinal = passwordEncoder.matches(passwordOriginal, usuarioVerificacion.getPassword());
-                logger.info("🔧 Verificación final desde BD: {}", verificacionFinal ? "✅ ÉXITO" : "❌ FALLÓ");
-                
-                if (!verificacionFinal) {
-                    logger.error("❌ CRÍTICO: El usuario se guardó pero la contraseña no es verificable");
-                }
-            }
-            
-            return usuarioGuardado;
+            return saved;
             
         } catch (Exception e) {
-            logger.error("❌ Error al registrar usuario {}: {}", usuario.getCorreoInstitucional(), e.getMessage(), e);
+            logger.error("❌ Error al registrar usuario: {}", e.getMessage(), e);
             throw e;
         }
     }
 
+    // ========== OAUTH2 ==========
+    
+    /**
+     * 🔐 Guarda usuario OAuth2 (sin validaciones completas)
+     */
+    public Usuario guardarUsuarioOAuth2(Usuario usuario) {
+        try {
+            logger.info("🔐 Guardando usuario OAuth2: {}", usuario.getCorreoInstitucional());
+            
+            // Solo verificar que no existe
+            if (usuarioRepository.findByCorreoInstitucional(usuario.getCorreoInstitucional()) != null) {
+                throw new IllegalArgumentException("Usuario OAuth2 ya existe: " + usuario.getCorreoInstitucional());
+            }
+            
+            // Asegurar campos mínimos
+            if (usuario.getPassword() == null) {
+                usuario.setPassword(passwordEncoder.encode(generateRandomPassword()));
+            }
+            if (usuario.getRol() == null) {
+                usuario.setRol(Usuario.RolUsuario.ESTUDIANTE);
+            }
+            
+            Usuario saved = usuarioRepository.save(usuario);
+            logger.info("✅ Usuario OAuth2 guardado: {}", saved.getId());
+            
+            return saved;
+            
+        } catch (Exception e) {
+            logger.error("❌ Error OAuth2: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * 🔄 Actualiza usuario OAuth2 existente
+     */
     public Usuario registrarUsuarioOAuth(Usuario usuario) {
         try {
-            // Verificar si ya existe un usuario con ese correo
             Usuario existingUser = usuarioRepository.findByCorreoInstitucional(usuario.getCorreoInstitucional());
+            
             if (existingUser != null) {
-                // Actualizar información si es necesario
-                existingUser.setNombre(usuario.getNombre());
-                existingUser.setApellidos(usuario.getApellidos());
+                // Actualizar datos existentes
+                if (usuario.getNombre() != null) existingUser.setNombre(usuario.getNombre());
+                if (usuario.getApellidos() != null) existingUser.setApellidos(usuario.getApellidos());
+                if (usuario.getProfileImageUrl() != null) existingUser.setProfileImageUrl(usuario.getProfileImageUrl());
+                
                 return usuarioRepository.save(existingUser);
+            } else {
+                // Crear nuevo con datos mínimos
+                return guardarUsuarioOAuth2(usuario);
             }
-
-            // Asignar valores por defecto a campos obligatorios
-            if (usuario.getCodigo() == null || usuario.getCodigo().isEmpty()) {
-                // Generar un código basado en el email
-                String emailUsername = usuario.getCorreoInstitucional().split("@")[0];
-                usuario.setCodigo(emailUsername);
-            }
-
-            if (usuario.getRol() == null || usuario.getRol().isEmpty()) {
-                usuario.setRol("ESTUDIANTE");
-            }
-
-            // Establecer valores por defecto para otros campos obligatorios
-            if (usuario.getCiclo() == null || usuario.getCiclo().isEmpty()) {
-                usuario.setCiclo("1");
-            }
-
-            // Asegurarse de que se asigne un departamento válido (obligatorio por la restricción de la BD)
-            if (usuario.getDepartamentoId() == null) {
-                usuario.setDepartamentoId(1L); // ID 1: Tecnología Digital
-            }
-
-            // Para un usuario OAuth no necesitamos contraseña, pero podemos
-            // establecer un valor aleatorio si la columna no permite nulos
-            if (usuario.getPassword() == null) {
-                String randomPassword = generateRandomPassword();
-                usuario.setPassword(passwordEncoder.encode(randomPassword));
-            }
-
-            // Guardar el usuario
-            return usuarioRepository.save(usuario);
+            
         } catch (Exception e) {
-            logger.error("Error al registrar usuario OAuth: {}", e.getMessage(), e);
+            logger.error("❌ Error registrarUsuarioOAuth: {}", e.getMessage(), e);
             throw e;
         }
     }
 
+    // ========== AUTENTICACIÓN ==========
+    
     /**
-     * Genera una contraseña aleatoria
-     * @return Una cadena aleatoria de 12 caracteres
-     */
-    private String generateRandomPassword() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
-        StringBuilder sb = new StringBuilder();
-        Random random = new Random();
-
-        for (int i = 0; i < 12; i++) {
-            int index = random.nextInt(chars.length());
-            sb.append(chars.charAt(index));
-        }
-
-        return sb.toString();
-    }
-
-    /**
-     * 🔧 MEJORADO: Verifica las credenciales con debug detallado
+     * 🔐 Autentica usuario con credenciales
      */
     public boolean autenticarUsuario(String correoInstitucional, String password) {
         try {
-            logger.info("🔧 Iniciando autenticación para: {}", correoInstitucional);
+            logger.info("🔐 Autenticando: {}", correoInstitucional);
             
-            // 🔥 VALIDACIÓN: Verificar parámetros
-            if (correoInstitucional == null || correoInstitucional.trim().isEmpty()) {
-                logger.warn("❌ Correo institucional vacío o null");
+            if (correoInstitucional == null || password == null) {
                 return false;
             }
             
-            if (password == null || password.trim().isEmpty()) {
-                logger.warn("❌ Password vacío o null");
-                return false;
-            }
-            
-            // 🔧 BUSCAR USUARIO
             Usuario usuario = usuarioRepository.findByCorreoInstitucional(correoInstitucional);
             if (usuario == null) {
-                logger.warn("❌ Usuario no encontrado en BD: {}", correoInstitucional);
+                logger.warn("❌ Usuario no encontrado: {}", correoInstitucional);
                 return false;
             }
             
-            logger.info("✅ Usuario encontrado: {} {} (ID: {})", usuario.getNombre(), usuario.getApellidos(), usuario.getId());
-            
-            // 🔧 DEBUG: Información del usuario
-            logger.debug("🔧 Datos del usuario en BD:");
-            logger.debug("   - ID: {}", usuario.getId());
-            logger.debug("   - Nombre: {}", usuario.getNombre());
-            logger.debug("   - Correo: {}", usuario.getCorreoInstitucional());
-            logger.debug("   - Rol: {}", usuario.getRol());
-            logger.debug("   - Password hash: {}", usuario.getPassword() != null ? usuario.getPassword().substring(0, Math.min(30, usuario.getPassword().length())) + "..." : "NULL");
-            logger.debug("   - Password recibido: {}", "***[" + password.length() + " caracteres]***");
-            
-            // 🔧 VERIFICAR CONTRASEÑA
-            if (usuario.getPassword() == null || usuario.getPassword().trim().isEmpty()) {
-                logger.error("❌ Usuario no tiene contraseña configurada en BD");
+            if (usuario.getPassword() == null) {
+                logger.error("❌ Usuario sin contraseña configurada");
                 return false;
             }
             
             boolean matches = passwordEncoder.matches(password, usuario.getPassword());
-            logger.info("🔧 Resultado de verificación de contraseña: {}", matches ? "✅ CORRECTO" : "❌ INCORRECTO");
-            
-            if (!matches) {
-                logger.warn("❌ Contraseña incorrecta para usuario: {}", correoInstitucional);
-                
-                // 🔧 DEBUG ADICIONAL: Verificar si es problema de encoding
-                logger.debug("🔧 Diagnóstico adicional:");
-                logger.debug("   - Longitud password BD: {}", usuario.getPassword().length());
-                logger.debug("   - Longitud password recibido: {}", password.length());
-                logger.debug("   - Password comienza con $2: {}", usuario.getPassword().startsWith("$2"));
-            } else {
-                logger.info("✅ Autenticación exitosa para: {}", correoInstitucional);
-            }
+            logger.info("🔐 Autenticación {}: {}", matches ? "exitosa" : "fallida", correoInstitucional);
             
             return matches;
             
         } catch (Exception e) {
-            logger.error("❌ Error durante autenticación para {}: {}", correoInstitucional, e.getMessage(), e);
+            logger.error("❌ Error autenticación: {}", e.getMessage(), e);
             return false;
         }
     }
 
     /**
-     * Busca un usuario por su correo institucional
-     * @param correoInstitucional El correo institucional a buscar
-     * @return El usuario encontrado o null si no existe
-     */
-    public Usuario findByCorreoInstitucional(String correoInstitucional) {
-        return usuarioRepository.findByCorreoInstitucional(correoInstitucional);
-    }
-
-    /**
-     * Implementación de UserDetailsService para Spring Security
-     * Carga un usuario por su nombre de usuario (correo institucional)
-     * @param correoInstitucional El correo institucional del usuario
-     * @return Un objeto UserDetails con la información del usuario
-     * @throws UsernameNotFoundException Si no se encuentra el usuario
+     * 🔐 Spring Security UserDetailsService
      */
     @Override
     public UserDetails loadUserByUsername(String correoInstitucional) throws UsernameNotFoundException {
         Usuario usuario = usuarioRepository.findByCorreoInstitucional(correoInstitucional);
         if (usuario == null) {
-            logger.error("Usuario no encontrado con correo: {}", correoInstitucional);
-            throw new UsernameNotFoundException("Usuario no encontrado con correo: " + correoInstitucional);
+            throw new UsernameNotFoundException("Usuario no encontrado: " + correoInstitucional);
         }
 
-        logger.debug("Usuario encontrado para Spring Security: {}", usuario.getNombre());
-
-        // Para usuarios OAuth, la contraseña puede ser null
         String password = usuario.getPassword() != null ? usuario.getPassword() : "";
-
+        
         return new User(
                 usuario.getCorreoInstitucional(),
                 password,
@@ -267,48 +171,99 @@ public class UsuarioService implements UserDetailsService {
         );
     }
 
+    // ========== CRUD BÁSICO ==========
+    
     /**
-     * Actualiza la información de un usuario
-     * @param usuario El usuario con la información actualizada
-     * @return El usuario actualizado
+     * 📝 Actualiza usuario existente
      */
     public Usuario actualizarUsuario(Usuario usuario) {
-        // Si se está actualizando la contraseña, encriptarla
-        if (usuario.getPassword() != null && !usuario.getPassword().isEmpty()) {
-            usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
-        } else {
-            // Si no se proporciona una contraseña, mantener la existente
-            Usuario existingUser = usuarioRepository.findById(usuario.getId()).orElse(null);
-            if (existingUser != null) {
-                usuario.setPassword(existingUser.getPassword());
+        try {
+            logger.info("📝 Actualizando usuario: {}", usuario.getId());
+            
+            // Solo encriptar si la contraseña es nueva
+            if (usuario.getPassword() != null && !usuario.getPassword().isEmpty()) {
+                if (!usuario.getPassword().startsWith("$2")) {
+                    usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+                }
+            } else {
+                // Mantener contraseña existente
+                Usuario existing = usuarioRepository.findById(usuario.getId()).orElse(null);
+                if (existing != null) {
+                    usuario.setPassword(existing.getPassword());
+                }
             }
+            
+            Usuario updated = usuarioRepository.save(usuario);
+            logger.info("✅ Usuario actualizado: {}", updated.getId());
+            
+            return updated;
+            
+        } catch (Exception e) {
+            logger.error("❌ Error actualizando usuario: {}", e.getMessage(), e);
+            throw e;
         }
-
-        return usuarioRepository.save(usuario);
     }
 
     /**
-     * Obtiene todos los usuarios
-     * @return Una lista con todos los usuarios
+     * 🔍 Busca usuario por correo
      */
-    public Iterable<Usuario> findAll() {
-        return usuarioRepository.findAll();
+    public Usuario findByCorreoInstitucional(String correoInstitucional) {
+        return usuarioRepository.findByCorreoInstitucional(correoInstitucional);
     }
 
     /**
-     * Busca un usuario por su ID
-     * @param id El ID del usuario a buscar
-     * @return El usuario encontrado o null si no existe
+     * 🔍 Busca usuario por ID
      */
     public Usuario findById(Long id) {
         return usuarioRepository.findById(id).orElse(null);
     }
 
     /**
-     * Elimina un usuario por su ID
-     * @param id El ID del usuario a eliminar
+     * 📋 Obtiene todos los usuarios
+     */
+    public Iterable<Usuario> findAll() {
+        return usuarioRepository.findAll();
+    }
+
+    /**
+     * 🗑️ Elimina usuario por ID
      */
     public void deleteById(Long id) {
         usuarioRepository.deleteById(id);
+    }
+
+    // ========== MÉTODOS AUXILIARES ==========
+    
+    /**
+     * 🔒 Genera contraseña aleatoria para OAuth2
+     */
+    public String generateRandomPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+        StringBuilder sb = new StringBuilder();
+        Random random = new Random();
+
+        for (int i = 0; i < 12; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * ✅ Valida campos requeridos para registro normal
+     */
+    private void validateRequiredFields(Usuario usuario) {
+        if (usuario.getPassword() == null || usuario.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("La contraseña es requerida");
+        }
+        if (usuario.getCorreoInstitucional() == null || usuario.getCorreoInstitucional().trim().isEmpty()) {
+            throw new IllegalArgumentException("El correo institucional es requerido");
+        }
+        if (usuario.getNombre() == null || usuario.getNombre().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre es requerido");
+        }
+        if (usuario.getApellidos() == null || usuario.getApellidos().trim().isEmpty()) {
+            throw new IllegalArgumentException("Los apellidos son requeridos");
+        }
     }
 }

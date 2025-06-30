@@ -14,7 +14,9 @@ import {
   Upload,
   Camera
 } from 'lucide-react';
-import './Perfil.css';
+import "../css/Perfil.css";
+import Header from '../components/Header';
+
 
 function Perfil() {
   const [usuario, setUsuario] = useState({
@@ -293,36 +295,40 @@ function Perfil() {
       </div>
     );
   }
+  const handleCancel = () => {
+  const fetchUsuario = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/auth/user', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
-  return (
+      if (!response.ok) {
+        throw new Error('No se pudo obtener la información del usuario');
+      }
+
+      const data = await response.json();
+      setUsuario(data);
+      setIsEditing(false);
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  fetchUsuario();
+};
+
+return (
+  <>
+    <Header />
     <div className="full-page">
-      {/* HEADER */}
-      <header className="header">
-        <div className="header-content">
-          <h1 className="logo">TecBook</h1>
-          <nav className="nav">
-            <a href="/home" className="nav-link">Inicio</a>
-            <a href="/perfil" className="nav-link active">Perfil</a>
-            <a href="/aulas" className="nav-link">Aulas</a>
-            <a 
-  href="/"
-  onClick={(e) => {
-    e.preventDefault();
-    handleLogout(); // 🔧 USAR LA NUEVA FUNCIÓN
-  }} 
-  className="nav-link"
->
-  Cerrar sesión
-</a>
-          </nav>
-        </div>
-      </header>
-
       <div className="main-content">
         <div className="profile-card">
           <div className="profile-header">
             {renderAvatar()}
-            
+
             <input 
               type="file" 
               ref={fileInputRef}
@@ -330,7 +336,7 @@ function Perfil() {
               accept="image/jpeg,image/png,image/gif,image/webp"
               style={{ display: 'none' }} 
             />
-            
+
             <div className="profile-info">
               <h2 className="profile-name">{`${usuario.nombre} ${usuario.apellidos}`}</h2>
               <p className="profile-role">{usuario.rol}</p>
@@ -392,13 +398,6 @@ function Perfil() {
                 </div>
               </div>
               <div className="info-item">
-                <p className="info-label">Correo Institucional</p>
-                <div className="info-field">
-                  <Mail size={16} className="field-icon" />
-                  <span className="field-value">{usuario.correoInstitucional}</span>
-                </div>
-              </div>
-              <div className="info-item">
                 <p className="info-label">Ciclo</p>
                 <div className="info-field">
                   <BookOpen size={16} className="field-icon" />
@@ -437,7 +436,6 @@ function Perfil() {
           </div>
         </div>
 
-        {/* Modal de edición */}
         {isEditing && (
           <div className="modal-overlay">
             <div className="modal-content">
@@ -448,7 +446,6 @@ function Perfil() {
                 </button>
               </div>
               <form onSubmit={handleSubmit} className="form">
-                {/* Sección de foto de perfil */}
                 <div className="form-section">
                   <h4 className="form-section-title">Foto de Perfil</h4>
                   <div className="photo-upload-container">
@@ -641,30 +638,8 @@ function Perfil() {
         )}
       </div>
     </div>
-  );
+  </>
+);
 }
-const handleCancel = () => {
-  const fetchUsuario = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/auth/user', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
 
-      if (!response.ok) {
-        throw new Error('No se pudo obtener la información del usuario');
-      }
-
-      const data = await response.json();
-      setUsuario(data);
-      setIsEditing(false);
-    } catch (error) {
-      setError(error.message);
-    }
-  };
-
-  fetchUsuario();
-};
 export default Perfil;

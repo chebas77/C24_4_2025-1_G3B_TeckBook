@@ -1,6 +1,6 @@
 import { useState } from "react";
-import portalImage from "./assets/portal.png";
-import './RecuperarCuenta.css';
+import portalImage from "../assets/portal.png";
+import '../css/RecuperarCuenta.css';
 
 function RecuperarCuenta() {
   const [correo, setCorreo] = useState("");

@@ -1,0 +1,448 @@
+/* ============================
+   MODAL BASE
+   ============================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  animation: modalEnter 0.3s ease-out;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ============================
+   MODAL HEADER
+   ============================ */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.modal-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.close-btn {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 10px;
+  padding: 8px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: #e2e8f0;
+  color: #374151;
+}
+
+/* ============================
+   MODAL BODY
+   ============================ */
+.modal-body {
+  padding: 24px;
+  max-height: calc(90vh - 120px);
+  overflow-y: auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ============================
+   SUBTITULO
+   ============================ */
+.invitaciones-subtitle {
+  color: #64748b;
+  font-size: 16px;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+/* ============================
+   ESTADOS DE CARGA Y VACÍO EN MODAL
+   ============================ */
+.invitaciones-loading,
+.invitaciones-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.invitaciones-loading p {
+  margin: 16px 0 0 0;
+  color: #374151;
+  font-size: 16px;
+}
+
+.invitaciones-empty h3 {
+  margin: 16px 0 8px 0;
+  color: #374151;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.invitaciones-empty p {
+  color: #64748b;
+  margin: 0;
+}
+
+.empty-icon {
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+/* ============================
+   SPINNERS
+   ============================ */
+.spinner,
+.spinner-small {
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ============================
+   LISTA DE INVITACIONES
+   ============================ */
+.invitaciones-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ============================
+   TARJETA DE INVITACIÓN
+   ============================ */
+.invitacion-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.invitacion-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* ============================
+   HEADER DE INVITACIÓN
+   ============================ */
+.invitacion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.invitacion-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 1;
+}
+
+.aula-icon {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.invitacion-details {
+  flex: 1;
+}
+
+.aula-nombre {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.invitacion-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.invitado-por,
+.fecha-invitacion {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* ============================
+   TIEMPO RESTANTE
+   ============================ */
+.tiempo-restante {
+  flex-shrink: 0;
+}
+
+.dias-restantes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.dias-restantes.advertencia {
+  background: #fef3c7;
+  color: #d97706;
+  border-color: #fde68a;
+}
+
+.dias-restantes.urgente {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* ============================
+   MENSAJE
+   ============================ */
+.invitacion-mensaje {
+  margin: 16px 0;
+  padding: 16px;
+  background: #f8fafc;
+  border-left: 4px solid #3b82f6;
+  border-radius: 8px;
+}
+
+.invitacion-mensaje p {
+  margin: 0;
+  color: #374151;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ============================
+   ACCIONES
+   ============================ */
+.invitacion-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.btn-aceptar,
+.btn-rechazar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+  justify-content: center;
+}
+
+.btn-aceptar {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.btn-aceptar:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-rechazar {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-rechazar:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #374151;
+}
+
+.btn-aceptar:disabled,
+.btn-rechazar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================
+   RESPONSIVE MODAL
+   ============================ */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+  
+  .modal-content {
+    max-height: 95vh;
+    border-radius: 16px;
+  }
+  
+  .modal-header {
+    padding: 20px 20px 16px 20px;
+  }
+  
+  .modal-header h3 {
+    font-size: 20px;
+  }
+  
+  .modal-body {
+    padding: 20px;
+    max-height: calc(95vh - 100px);
+  }
+  
+  .invitacion-card {
+    padding: 20px;
+  }
+  
+  .invitacion-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .tiempo-restante {
+    align-self: flex-start;
+  }
+  
+  .invitacion-actions {
+    flex-direction: column;
+  }
+  
+  .invitacion-meta {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 8px;
+  }
+  
+  .modal-header {
+    padding: 16px 16px 12px 16px;
+  }
+  
+  .modal-body {
+    padding: 16px;
+  }
+  
+  .invitacion-card {
+    padding: 16px;
+  }
+  
+  .invitacion-info {
+    gap: 12px;
+  }
+  
+  .aula-icon {
+    padding: 10px;
+  }
+  
+  .aula-nombre {
+    font-size: 18px;
+  }
+  
+  .btn-aceptar,
+  .btn-rechazar {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}

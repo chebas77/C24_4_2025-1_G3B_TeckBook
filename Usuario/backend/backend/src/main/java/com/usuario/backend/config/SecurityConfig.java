@@ -1,4 +1,6 @@
-// Usuario/backend/backend/src/main/java/com/usuario/backend/config/SecurityConfig.java
+// ===============================================
+// SECURITY CONFIG ACTUALIZADO
+// ===============================================
 package com.usuario.backend.config;
 
 import com.usuario.backend.security.oauth2.CustomOAuth2UserService;
@@ -47,14 +49,32 @@ public class SecurityConfig {
                         .requestMatchers("/api/usuarios/register", "/api/usuarios/login").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/google-login").permitAll()
                         
-                        // 🔥 ENDPOINT DE CARRERAS PÚBLICO (PARA REGISTRO)
+                        // 🔥 ENDPOINTS PARA FILTROS EN CASCADA (PÚBLICOS PARA CREAR AULAS)
+                        .requestMatchers("/api/departamentos/activos").permitAll()
                         .requestMatchers("/api/carreras/activas").permitAll()
+                        .requestMatchers("/api/carreras/departamento/*/activas").permitAll() // 🆕 NUEVO
+                        .requestMatchers("/api/ciclos/todos").permitAll() // 🆕 NUEVO
+                        .requestMatchers("/api/ciclos/carrera/*").permitAll() // 🆕 NUEVO
+                        .requestMatchers("/api/secciones/carrera/*").permitAll() // 🆕 NUEVO
+                        .requestMatchers("/api/secciones/carrera/*/ciclo/*").permitAll() // 🆕 NUEVO
+                        
+                        // 🔥 HEALTH CHECKS PÚBLICOS
                         .requestMatchers("/api/carreras/health").permitAll()
+                        .requestMatchers("/api/departamentos/health").permitAll() // 🆕 NUEVO
+                        .requestMatchers("/api/ciclos/health").permitAll() // 🆕 NUEVO
+                        .requestMatchers("/api/secciones/health").permitAll() // 🆕 NUEVO
                         
                         // 🔥 ENDPOINTS QUE REQUIEREN AUTENTICACIÓN
                         .requestMatchers("/api/usuarios/me", "/api/usuarios/{id}").authenticated()
                         .requestMatchers("/api/auth/user", "/api/auth/logout", "/api/auth/token/status").authenticated()
                         .requestMatchers("/api/upload/**").authenticated()
+                        
+                        // 🔥 AULAS VIRTUALES - REQUIERE AUTENTICACIÓN
+                        .requestMatchers("/api/aulas", "/api/aulas/**").authenticated()
+                        .requestMatchers("/api/aulas-virtuales", "/api/aulas-virtuales/**").authenticated()
+                        
+                        // 🔥 INVITACIONES - REQUIERE AUTENTICACIÓN 
+                        .requestMatchers("/api/invitaciones/**").authenticated() // 🆕 AGREGADO
                         
                         // 🔥 ENDPOINTS DE CARRERAS QUE REQUIEREN AUTENTICACIÓN (ADMINISTRACIÓN)
                         .requestMatchers("/api/carreras/{id}", "/api/carreras/departamento/**", 
@@ -62,6 +82,12 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/carreras").authenticated()
                         .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/carreras/**").authenticated()
                         .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/carreras/**").authenticated()
+                        
+                        // 🔥 ENDPOINTS DE DEPARTAMENTOS QUE REQUIEREN AUTENTICACIÓN (ADMINISTRACIÓN)
+                        .requestMatchers("/api/departamentos/{id}").authenticated() // 🆕 NUEVO
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/departamentos").authenticated() // 🆕 NUEVO
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/departamentos/**").authenticated() // 🆕 NUEVO
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/departamentos/**").authenticated() // 🆕 NUEVO
                         
                         // 🔥 DEBUG ENDPOINTS (TEMPORALES)
                         .requestMatchers("/api/debug/**").permitAll()

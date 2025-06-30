@@ -1,7 +1,8 @@
 package com.usuario.backend.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.persistence.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,39 +13,39 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    @Column(name = "nombre", nullable = false)
     private String nombre;
-    private String apellidos;
-    private String codigo;
     
-    @Column(name = "correo_institucional")
+    @Column(name = "apellidos", nullable = false)
+    private String apellidos;
+    
+    @Column(name = "correo_institucional", nullable = false, unique = true)
     private String correoInstitucional;
     
+    @Column(name = "password", nullable = false)
     private String password;
-    private String ciclo;
-    private String rol;
     
-    @Column(name = "departamento_id")
-    private Long departamentoId;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rol", nullable = false)
+    private RolUsuario rol;
+    
+    @Column(name = "ciclo_actual")
+    private Integer cicloActual;
+    
+    @Column(name = "seccion_id")
+    private Long seccionId;
     
     @Column(name = "carrera_id")
     private Long carreraId;
     
-    @Column(name = "seccion_id")
-    private Long seccionId;
-
+    @Column(name = "departamento_id")
+    private Long departamentoId;
+    
     @Column(name = "profile_image_url")
     private String profileImageUrl;
     
-    // 🔥 CAMPOS QUE FALTABAN (según la imagen de tu BD):
-    
     @Column(name = "telefono")
     private String telefono;
-    
-    @Column(name = "direccion")
-    private String direccion;
-    
-    @Column(name = "fecha_nacimiento")
-    private LocalDate fechaNacimiento;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -52,10 +53,51 @@ public class Usuario {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // 🔧 CONSTRUCTOR POR DEFECTO
+    // 🔧 FIX: Enum con deserialización flexible
+    public enum RolUsuario {
+        ESTUDIANTE("estudiante"),
+        PROFESOR("profesor"), 
+        ADMIN("admin");
+        
+        private final String valor;
+        
+        RolUsuario(String valor) {
+            this.valor = valor;
+        }
+        
+        @JsonValue
+        public String getValor() {
+            return valor;
+        }
+        
+        // 🎯 FIX PRINCIPAL: Permite deserializar tanto "estudiante" como "ESTUDIANTE"
+        @JsonCreator
+        public static RolUsuario fromString(String value) {
+            if (value == null) return ESTUDIANTE;
+            
+            // Intentar por valor (estudiante, profesor, admin)
+            for (RolUsuario rol : RolUsuario.values()) {
+                if (rol.valor.equalsIgnoreCase(value)) {
+                    return rol;
+                }
+            }
+            
+            // Intentar por nombre del enum (ESTUDIANTE, PROFESOR, ADMIN)
+            for (RolUsuario rol : RolUsuario.values()) {
+                if (rol.name().equalsIgnoreCase(value)) {
+                    return rol;
+                }
+            }
+            
+            // Default a estudiante si no encuentra
+            return ESTUDIANTE;
+        }
+    }
+
+    // Constructor por defecto
     public Usuario() {}
 
-    // 🔧 CONSTRUCTOR PARA FECHAS AUTOMÁTICAS
+    // 🔧 Timestamps automáticos
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -67,16 +109,8 @@ public class Usuario {
         updatedAt = LocalDateTime.now();
     }
 
-    // ========== GETTERS Y SETTERS EXISTENTES ==========
+    // ========== GETTERS Y SETTERS ==========
     
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
-    public void setProfileImageUrl(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
-    }
-
     public Long getId() {
         return id;
     }
@@ -101,14 +135,6 @@ public class Usuario {
         this.apellidos = apellidos;
     }
 
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public void setCodigo(String codigo) {
-        this.codigo = codigo;
-    }
-
     public String getCorreoInstitucional() {
         return correoInstitucional;
     }
@@ -125,36 +151,29 @@ public class Usuario {
         this.password = password;
     }
 
-    public String getCiclo() {
-        return ciclo;
-    }
-
-    public void setCiclo(String ciclo) {
-        this.ciclo = ciclo;
-    }
-
-    public String getRol() {
+    public RolUsuario getRol() {
         return rol;
     }
 
-    public void setRol(String rol) {
+    public void setRol(RolUsuario rol) {
         this.rol = rol;
     }
 
-    public Long getDepartamentoId() {
-        return departamentoId;
+    // 🔧 MÉTODOS LEGACY para compatibilidad con código existente
+    public String getRolString() {
+        return rol != null ? rol.getValor() : "estudiante";
+    }
+    
+    public void setRolString(String rolString) {
+        this.rol = RolUsuario.fromString(rolString);
     }
 
-    public void setDepartamentoId(Long departamentoId) {
-        this.departamentoId = departamentoId;
+    public Integer getCicloActual() {
+        return cicloActual;
     }
 
-    public Long getCarreraId() {
-        return carreraId;
-    }
-
-    public void setCarreraId(Long carreraId) {
-        this.carreraId = carreraId;
+    public void setCicloActual(Integer cicloActual) {
+        this.cicloActual = cicloActual;
     }
 
     public Long getSeccionId() {
@@ -165,30 +184,36 @@ public class Usuario {
         this.seccionId = seccionId;
     }
 
-    // ========== GETTERS Y SETTERS PARA CAMPOS NUEVOS ==========
-    
+    public Long getCarreraId() {
+        return carreraId;
+    }
+
+    public void setCarreraId(Long carreraId) {
+        this.carreraId = carreraId;
+    }
+
+    public Long getDepartamentoId() {
+        return departamentoId;
+    }
+
+    public void setDepartamentoId(Long departamentoId) {
+        this.departamentoId = departamentoId;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
     public String getTelefono() {
         return telefono;
     }
 
     public void setTelefono(String telefono) {
         this.telefono = telefono;
-    }
-
-    public String getDireccion() {
-        return direccion;
-    }
-
-    public void setDireccion(String direccion) {
-        this.direccion = direccion;
-    }
-
-    public LocalDate getFechaNacimiento() {
-        return fechaNacimiento;
-    }
-
-    public void setFechaNacimiento(LocalDate fechaNacimiento) {
-        this.fechaNacimiento = fechaNacimiento;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -210,44 +235,45 @@ public class Usuario {
     // ========== MÉTODOS AUXILIARES ==========
     
     /**
-     * Método para obtener el nombre completo
-     */
-    public String getNombreCompleto() {
-        return (nombre != null ? nombre : "") + " " + (apellidos != null ? apellidos : "");
-    }
-
-    /**
-     * Método para verificar si el usuario está completamente registrado
+     * Verifica si el perfil está completo para acceder al sistema
      */
     public boolean isPerfilCompleto() {
         return nombre != null && !nombre.trim().isEmpty() &&
                apellidos != null && !apellidos.trim().isEmpty() &&
                correoInstitucional != null && !correoInstitucional.trim().isEmpty() &&
-               codigo != null && !codigo.trim().isEmpty() &&
                carreraId != null &&
-               ciclo != null && !ciclo.trim().isEmpty();
+               cicloActual != null &&
+               departamentoId != null;
     }
 
     /**
-     * Método toString para debugging
+     * Verifica si faltan datos críticos después de OAuth2
      */
+    public boolean requiereCompletarDatos() {
+        return carreraId == null || cicloActual == null || departamentoId == null || seccionId == null || createdAt == null;
+    }
+
+    /**
+     * Obtiene el nombre completo
+     */
+    public String getNombreCompleto() {
+        return (nombre != null ? nombre : "") + " " + (apellidos != null ? apellidos : "");
+    }
+
     @Override
     public String toString() {
         return "Usuario{" +
                 "id=" + id +
                 ", nombre='" + nombre + '\'' +
                 ", apellidos='" + apellidos + '\'' +
-                ", codigo='" + codigo + '\'' +
                 ", correoInstitucional='" + correoInstitucional + '\'' +
-                ", ciclo='" + ciclo + '\'' +
-                ", rol='" + rol + '\'' +
-                ", departamentoId=" + departamentoId +
+                ", rol=" + rol +
+                ", cicloActual=" + cicloActual +
                 ", carreraId=" + carreraId +
+                ", departamentoId=" + departamentoId +
                 ", seccionId=" + seccionId +
-                ", telefono='" + telefono + '\'' +
-                ", direccion='" + direccion + '\'' +
-                ", fechaNacimiento=" + fechaNacimiento +
                 ", profileImageUrl='" + profileImageUrl + '\'' +
+                ", telefono='" + telefono + '\'' +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 '}';

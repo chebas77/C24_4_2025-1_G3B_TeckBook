@@ -1,4 +1,3 @@
-// Usuario/backend/backend/src/main/java/com/usuario/backend/model/entity/Carrera.java
 package com.usuario.backend.model.entity;
 
 import jakarta.persistence.*;
@@ -12,59 +11,59 @@ public class Carrera {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
     
-    @Column(name = "codigo", unique = true)
+    @Column(name = "codigo", nullable = false, unique = true, length = 10)
     private String codigo;
     
-    @Column(name = "descripcion")
+    @Column(name = "departamento_id", nullable = false)
+    private Long departamentoId;
+    
+    @Column(name = "activo", nullable = false)
+    private Boolean activo = true;
+
+    // 🔧 CAMPOS OPCIONALES (no están en tu BD actual pero pueden ser útiles)
+    @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
     
     @Column(name = "duracion_ciclos")
     private Integer duracionCiclos;
     
-    @Column(name = "departamento_id")
-    private Long departamentoId;
-    
-    @Column(name = "modalidad")
+    @Column(name = "modalidad", length = 50)
     private String modalidad;
     
-    // 🔥 FIX: Cambiar de "activa" a "activo" para coincidir con tu BD
-    @Column(name = "activo")
-    private Boolean activo = true;
-    
+    // 🔧 TIMESTAMPS - NO ESTÁN EN TU BD ACTUAL
+    // Comentados para evitar errores de columnas inexistentes
+    /*
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    */
 
-    // Constructores
+    // ========== CONSTRUCTORES ==========
+    
     public Carrera() {}
 
-    public Carrera(String nombre, String codigo, String descripcion, Integer duracionCiclos, Long departamentoId) {
+    public Carrera(String nombre, String codigo, Long departamentoId) {
         this.nombre = nombre;
         this.codigo = codigo;
-        this.descripcion = descripcion;
-        this.duracionCiclos = duracionCiclos;
         this.departamentoId = departamentoId;
         this.activo = true;
     }
 
-    // 🔥 TIMESTAMPS AUTOMÁTICOS
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    public Carrera(String nombre, String codigo, Long departamentoId, String descripcion, Integer duracionCiclos) {
+        this.nombre = nombre;
+        this.codigo = codigo;
+        this.departamentoId = departamentoId;
+        this.descripcion = descripcion;
+        this.duracionCiclos = duracionCiclos;
+        this.activo = true;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    // Getters y Setters
+    
     public Long getId() {
         return id;
     }
@@ -78,7 +77,7 @@ public class Carrera {
     }
 
     public void setNombre(String nombre) {
-        this.nombre = nombre;
+        this.nombre = nombre != null ? nombre.trim() : null;
     }
 
     public String getCodigo() {
@@ -86,23 +85,7 @@ public class Carrera {
     }
 
     public void setCodigo(String codigo) {
-        this.codigo = codigo;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public Integer getDuracionCiclos() {
-        return duracionCiclos;
-    }
-
-    public void setDuracionCiclos(Integer duracionCiclos) {
-        this.duracionCiclos = duracionCiclos;
+        this.codigo = codigo != null ? codigo.trim().toUpperCase() : null;
     }
 
     public Long getDepartamentoId() {
@@ -113,37 +96,87 @@ public class Carrera {
         this.departamentoId = departamentoId;
     }
 
-    public String getModalidad() {
-        return modalidad;
-    }
-
-    public void setModalidad(String modalidad) {
-        this.modalidad = modalidad;
-    }
-
-    // 🔥 FIX: Cambiar método para usar "activo"
     public Boolean getActivo() {
         return activo;
     }
 
     public void setActivo(Boolean activo) {
-        this.activo = activo;
+        this.activo = activo != null ? activo : true;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    // 🔧 CAMPOS OPCIONALES
+    
+    public String getDescripcion() {
+        return descripcion;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion != null ? descripcion.trim() : null;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public Integer getDuracionCiclos() {
+        return duracionCiclos;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setDuracionCiclos(Integer duracionCiclos) {
+        this.duracionCiclos = duracionCiclos;
+    }
+
+    public String getModalidad() {
+        return modalidad;
+    }
+
+    public void setModalidad(String modalidad) {
+        this.modalidad = modalidad != null ? modalidad.trim() : null;
+    }
+
+
+    public boolean isActiva() {
+        return activo != null && activo;
+    }
+
+    /**
+     * 📝 Obtiene el nombre completo con código
+     */
+    public String getNombreCompleto() {
+        if (codigo != null && !codigo.isEmpty()) {
+            return nombre + " (" + codigo + ")";
+        }
+        return nombre;
+    }
+
+    /**
+     * 🔍 Verifica si los datos básicos están completos
+     */
+    public boolean isDatosCompletos() {
+        return nombre != null && !nombre.trim().isEmpty() &&
+               codigo != null && !codigo.trim().isEmpty() &&
+               departamentoId != null && departamentoId > 0;
+    }
+
+    // ========== MÉTODOS OBJECT ==========
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        
+        Carrera carrera = (Carrera) obj;
+        
+        if (id != null) {
+            return id.equals(carrera.id);
+        }
+        
+        // Si no hay ID, comparar por código único
+        return codigo != null && codigo.equals(carrera.codigo);
+    }
+
+    @Override
+    public int hashCode() {
+        if (id != null) {
+            return id.hashCode();
+        }
+        return codigo != null ? codigo.hashCode() : 0;
     }
 
     @Override
@@ -152,13 +185,11 @@ public class Carrera {
                 "id=" + id +
                 ", nombre='" + nombre + '\'' +
                 ", codigo='" + codigo + '\'' +
-                ", descripcion='" + descripcion + '\'' +
-                ", duracionCiclos=" + duracionCiclos +
                 ", departamentoId=" + departamentoId +
-                ", modalidad='" + modalidad + '\'' +
                 ", activo=" + activo +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
+                (descripcion != null ? ", descripcion='" + descripcion + '\'' : "") +
+                (duracionCiclos != null ? ", duracionCiclos=" + duracionCiclos : "") +
+                (modalidad != null ? ", modalidad='" + modalidad + '\'' : "") +
                 '}';
     }
 }

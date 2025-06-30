@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle, HelpCircle } from 'lucide-react';
-import portalImage from "./assets/portal.png";
-import './Login.css';
+import portalImage from "../assets/portal.png";
+import '../css/Login.css';
 
 function Login() {
   const [correoInstitucional, setCorreoInstitucional] = useState("");

@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, User, Mail, Lock, BookOpen, Database, GraduationCap, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
-import portalImage from "./assets/portal.png";
-import './Register.css';
+import portalImage from "../assets/portal.png";
+import "../css/Register.css";
 
 function Register() {
   const [formData, setFormData] = useState({

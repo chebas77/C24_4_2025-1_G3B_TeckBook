@@ -10,74 +10,23 @@
   flex-direction: column;
 }
 
-.header {
-  width: 100%;
-  background: linear-gradient(135deg, #005DAB 0%, #0066c7 100%);
-  color: white;
-  box-shadow: 0 8px 32px rgba(0, 93, 171, 0.15);
-  padding: 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  backdrop-filter: blur(10px);
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.logo {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: -0.5px;
-  background: linear-gradient(45deg, #005DAB, #005DAB);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.nav {
-  display: flex;
-  gap: 8px;
-}
-
-.nav-link {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  font-size: 15px;
-  font-weight: 500;
-  padding: 12px 20px;
-  border-radius: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.nav-link:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffc107;
-  transform: translateY(-1px);
-}
-
-.nav-link.active {
-  background: rgba(255, 193, 7, 0.2);
-  color: #ffc107;
-  font-weight: 600;
-}
-
 .main-content {
   flex: 1;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.profile-card,
+.info-sections,
+.info-section {
+  width: 100%;
+  max-width: 1200px;
+  box-sizing: border-box;
 }
 
 /* Diseño moderno del perfil header */
@@ -85,7 +34,9 @@
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 24px;
   box-shadow: 0 20px 60px rgba(0, 93, 171, 0.08);
-  margin-bottom: 32px;
+  width: 100%;
+  max-width: 1080px;
+  margin-bottom: 0;
   overflow: hidden;
   position: relative;
 }
@@ -105,8 +56,24 @@
   position: relative;
   padding: 140px 40px 40px;
   display: flex;
+  flex-direction: row;
   align-items: flex-end;
   gap: 32px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 100px 20px 30px;
+    align-items: center;
+    gap: 16px;
+  }
+  .profile-info {
+    align-items: center;
+    text-align: center;
+  }
 }
 
 .avatar-container {
@@ -163,6 +130,9 @@
   color: #1e293b;
   z-index: 2;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .profile-name {
@@ -192,6 +162,7 @@
 .edit-button-container {
   z-index: 2;
   position: relative;
+  margin-top: 16px;
 }
 
 .edit-button {
@@ -217,8 +188,19 @@
 
 /* Secciones de información modernas */
 .info-sections {
-  display: grid;
+  width: 90%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
+  margin-top: 0;
+  
+}
+
+@media (max-width: 1200px) {
+  .info-sections {
+    grid-template-columns: 1fr;
+  }
 }
 
 .info-section {
@@ -229,6 +211,8 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
+  width: 100%;
+  max-width: 1200px;
 }
 
 .info-section::before {
@@ -336,8 +320,8 @@
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 24px;
   box-shadow: 0 32px 80px rgba(0, 93, 171, 0.2);
-  width: 90%;
-  max-width: 800px;
+  width: 100%;
+  max-width: 1200px;
   max-height: 85vh;
   overflow: auto;
   animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -647,12 +631,15 @@
 @media (max-width: 768px) {
   .main-content {
     padding: 20px 16px;
+    gap: 24px;
   }
   
   .profile-header {
     flex-direction: column;
     text-align: center;
     padding: 100px 20px 30px;
+    align-items: center;
+    gap: 16px;
   }
   
   .profile-name {
@@ -671,7 +658,6 @@
     flex-direction: column;
     text-align: center;
   }
-}: #004a8f;
 }
 
 .upload-photo-button:disabled {
