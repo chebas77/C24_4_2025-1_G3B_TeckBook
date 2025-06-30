@@ -1301,3 +1301,53 @@
   transform: none;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
+
+/* ============================
+   SIDEBAR AJUSTES VISUALES
+   ============================ */
+
+.sidebar {
+  max-height: calc(100vh - 160px); /* margen para header y footer */
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* Limita la altura de la lista de integrantes para evitar solapamiento */
+.sidebar .participantes-list {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 0;
+}
+
+/* Ajusta la info-card para que no crezca demasiado */
+.sidebar .info-card {
+  flex-shrink: 0;
+}
+
+/* Mejora el espaciado entre tarjetas en la sidebar */
+.sidebar > *:not(:last-child) {
+  margin-bottom: 20px;
+}
+
+/* Responsive: sidebar ocupa 100% y scroll en móvil */
+@media (max-width: 1024px) {
+  .sidebar {
+    max-height: none;
+    overflow: visible;
+    grid-template-columns: 1fr;
+  }
+  .sidebar .participantes-list {
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  .sidebar .participantes-list {
+    max-height: 160px;
+  }
+}

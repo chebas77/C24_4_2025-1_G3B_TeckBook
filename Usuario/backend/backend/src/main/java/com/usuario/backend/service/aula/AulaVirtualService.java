@@ -175,4 +175,28 @@ public class AulaVirtualService {
             return List.of();
         }
     }
+
+    /**
+     * Elimina (desactiva) un participante activo de un aula. Devuelve true si se desactivó, false si no existía.
+     */
+    public boolean eliminarParticipanteAula(Long aulaId, Long estudianteId) {
+        try {
+            List<AulaEstudiante> lista = aulaEstudianteRepository.findByAulaIdAndEstado(aulaId, AulaEstudiante.EstadoEstudiante.activo);
+            AulaEstudiante participante = lista.stream()
+                .filter(ae -> ae.getEstudianteId().equals(estudianteId))
+                .findFirst().orElse(null);
+            if (participante == null) {
+                logger.warn("No se encontró participante activo con id {} en aula {}", estudianteId, aulaId);
+                return false;
+            }
+            participante.setEstado(AulaEstudiante.EstadoEstudiante.inactivo);
+            participante.setFechaSalida(java.time.LocalDateTime.now());
+            aulaEstudianteRepository.save(participante);
+            logger.info("Participante {} desactivado en aula {}", estudianteId, aulaId);
+            return true;
+        } catch (Exception e) {
+            logger.error("Error al eliminar participante {} del aula {}: {}", estudianteId, aulaId, e.getMessage());
+            throw e;
+        }
+    }
 }

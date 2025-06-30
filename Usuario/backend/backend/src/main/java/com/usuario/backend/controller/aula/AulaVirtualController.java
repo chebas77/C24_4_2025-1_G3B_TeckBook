@@ -56,8 +56,34 @@ public class AulaVirtualController {
             String rolString = usuario.getRol().toString(); // Convertir enum a String
             List<AulaVirtual> aulas = aulaVirtualService.getAulasByUsuario(usuario.getId(), rolString);
 
+            // Enriquecer cada aula con el nombre completo del profesor
+            List<Map<String, Object>> aulasConProfesor = aulas.stream().map(aula -> {
+                Map<String, Object> aulaMap = new HashMap<>();
+                aulaMap.put("id", aula.getId());
+                aulaMap.put("nombre", aula.getNombre());
+                aulaMap.put("titulo", aula.getTitulo());
+                aulaMap.put("descripcion", aula.getDescripcion());
+                aulaMap.put("codigoAcceso", aula.getCodigoAcceso());
+                aulaMap.put("profesorId", aula.getProfesorId());
+                aulaMap.put("seccionId", aula.getSeccionId());
+                aulaMap.put("estado", aula.getEstado());
+                aulaMap.put("fechaInicio", aula.getFechaInicio());
+                aulaMap.put("fechaFin", aula.getFechaFin());
+                aulaMap.put("createdAt", aula.getCreatedAt());
+                aulaMap.put("updatedAt", aula.getUpdatedAt());
+                // Buscar el profesor y agregar su nombre completo
+                Usuario profesor = usuarioService.findById(aula.getProfesorId());
+                if (profesor != null) {
+                    String nombreCompleto = profesor.getNombre() + " " + profesor.getApellidos();
+                    aulaMap.put("profesorNombreCompleto", nombreCompleto);
+                } else {
+                    aulaMap.put("profesorNombreCompleto", "Profesor desconocido");
+                }
+                return aulaMap;
+            }).toList();
+
             Map<String, Object> response = new HashMap<>();
-            response.put("aulas", aulas);
+            response.put("aulas", aulasConProfesor);
             response.put("totalAulas", aulas.size());
             response.put("rol", rolString);
             response.put("usuarioId", usuario.getId());
@@ -238,6 +264,104 @@ public class AulaVirtualController {
             logger.error("Error al buscar aulas por nombre '{}': {}", nombre, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error al buscar aulas", "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Listar integrantes (participantes) activos de un aula
+     */
+    @GetMapping("/{aulaId}/participantes")
+    public ResponseEntity<?> listarParticipantesAula(@PathVariable Long aulaId, @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            if (userDetails == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Usuario no autenticado"));
+            }
+            String email = userDetails.getUsername();
+            Usuario usuario = usuarioService.findByCorreoInstitucional(email);
+            if (usuario == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Usuario no encontrado"));
+            }
+            // Solo participantes pueden ver la lista
+            String rolString = usuario.getRol().toString();
+            boolean puedeAcceder = aulaVirtualService.puedeAccederAAula(usuario.getId(), rolString, aulaId);
+            if (!puedeAcceder) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "No tienes acceso a esta aula"));
+            }
+            // Obtener lista de participantes activos y enriquecer con datos del usuario
+            List<AulaEstudiante> participantes = aulaVirtualService.getEstudiantesDeAula(aulaId);
+            List<Map<String, Object>> participantesConDatos = participantes.stream().map(p -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", p.getId());
+                map.put("aulaId", p.getAulaId());
+                map.put("estudianteId", p.getEstudianteId());
+                map.put("estado", p.getEstado());
+                map.put("fechaUnion", p.getFechaUnion());
+                map.put("fechaSalida", p.getFechaSalida());
+                // Buscar datos del estudiante
+                Usuario est = usuarioService.findById(p.getEstudianteId());
+                if (est != null) {
+                    map.put("nombre", est.getNombre());
+                    map.put("apellidos", est.getApellidos());
+                    map.put("email", est.getCorreoInstitucional());
+                } else {
+                    map.put("nombre", "Sin nombre");
+                    map.put("apellidos", "");
+                    map.put("email", "");
+                }
+                return map;
+            }).toList();
+            return ResponseEntity.ok(Map.of("participantes", participantesConDatos));
+        } catch (Exception e) {
+            logger.error("Error al listar participantes del aula {}: {}", aulaId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al listar participantes", "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Eliminar (desactivar) integrante de un aula (solo profesor del aula)
+     */
+    @DeleteMapping("/{aulaId}/participantes/{estudianteId}")
+    public ResponseEntity<?> eliminarParticipanteAula(
+            @PathVariable Long aulaId,
+            @PathVariable Long estudianteId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            if (userDetails == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Usuario no autenticado"));
+            }
+            String email = userDetails.getUsername();
+            Usuario usuario = usuarioService.findByCorreoInstitucional(email);
+            if (usuario == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Usuario no encontrado"));
+            }
+            String rolString = usuario.getRol().toString();
+            // Solo el profesor del aula puede eliminar
+            boolean esProfesorDelAula = aulaVirtualService.puedeAccederAAula(usuario.getId(), rolString, aulaId) && "PROFESOR".equals(rolString);
+            if (!esProfesorDelAula) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Solo el profesor del aula puede eliminar integrantes"));
+            }
+            boolean eliminado = aulaVirtualService.eliminarParticipanteAula(aulaId, estudianteId);
+            if (!eliminado) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of(
+                            "error", "No se encontró el participante activo en el aula",
+                            "aulaId", aulaId,
+                            "estudianteId", estudianteId,
+                            "detalle", "Verifica que el estudiante esté inscrito y activo en el aula antes de eliminar."
+                        ));
+            }
+            return ResponseEntity.ok(Map.of("message", "Integrante eliminado correctamente"));
+        } catch (Exception e) {
+            logger.error("Error al eliminar participante {} del aula {}: {}", estudianteId, aulaId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al eliminar participante", "message", e.getMessage()));
         }
     }
 

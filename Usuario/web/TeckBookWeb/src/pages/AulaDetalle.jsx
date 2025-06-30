@@ -19,6 +19,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import './AulaDetalle.css';
+import ListaIntegrantes from '../components/ListaIntegrantes';
 
 function AulaDetalle() {
   const { aulaId } = useParams();
@@ -53,7 +54,13 @@ function AulaDetalle() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('No se pudo cargar el aula');
-      setAula(await res.json());
+      const data = await res.json();
+      // Si la respuesta tiene un objeto 'aula', úsalo, si no, usa el objeto raíz
+      if (data.aula) {
+        setAula(data.aula);
+      } else {
+        setAula(data);
+      }
     } catch (e) {
       setError(e.message);
     }
@@ -104,6 +111,19 @@ function AulaDetalle() {
     anuncio.contenido?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Utilidad para obtener la fecha de creación más probable
+  const getFechaCreacion = () => {
+    if (!aula) return null;
+    // Intenta varios nombres de campo posibles
+    return (
+      aula.fechaCreacion ||
+      aula.fecha_creacion ||
+      aula.fechaInicio ||
+      aula.fecha_inicio ||
+      null
+    );
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -134,18 +154,22 @@ function AulaDetalle() {
   return (
     <div className="aula-interna">
       {/* Header */}
-      <header className="aula-header" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
-        <div className="header-content">
+      <header className="aula-header" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', zIndex: 10, position: 'relative' }}>
+        <div className="header-content" style={{ position: 'relative', zIndex: 11 }}>
           <div className="header-left">
             <button className="back-btn" onClick={() => navigate(-1)}>
               <ArrowLeft size={20} />
             </button>
             <div className="aula-info">
               <h1>{aula?.nombre || aula?.titulo || 'Aula'}</h1>
+              {aula?.descripcion && (
+                <div className="aula-descripcion-header">
+                  {aula.descripcion}
+                </div>
+              )}
               <div className="aula-meta">
                 <span><BookOpen size={14} /> Código: {aula?.codigo || 'N/A'}</span>
-                <span><Calendar size={14} /> {aula?.fechaCreacion ? 
-                  new Date(aula.fechaCreacion).toLocaleDateString('es-ES') : 'Fecha no disponible'}</span>
+                {/* Se elimina la fecha de creación del header para mostrarla solo en la sidebar */}
               </div>
             </div>
           </div>
@@ -163,7 +187,33 @@ function AulaDetalle() {
       </header>
 
       {/* Contenido Principal */}
-      <div className="main-content">
+      <div className="main-content" style={{ zIndex: 1, position: 'relative' }}>
+        {/* Información del Aula visible arriba */}
+        <div className="info-card" style={{ marginBottom: 24 }}>
+          <h3>Información del Aula</h3>
+          <div className="info-items">
+            <div className="info-item">
+              <BookOpen size={16} color="#64748b" />
+              <div>
+                <div className="label">Código</div>
+                <div className="value">{aula?.codigo || 'N/A'}</div>
+              </div>
+            </div>
+            <div className="info-item">
+              <Calendar size={16} color="#64748b" />
+              <div>
+                <div className="label">Fecha de Creación</div>
+                <div className="value">
+                  {getFechaCreacion() ? 
+                    new Date(getFechaCreacion()).toLocaleDateString('es-ES') : 
+                    'No disponible'
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="anuncios-section">
           {/* Barra de Acciones */}
           <div className="actions-bar">
@@ -262,9 +312,9 @@ function AulaDetalle() {
           </div>
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar: primero info del aula, luego integrantes */}
         <div className="sidebar">
-          <div className="info-card">
+          <div className="info-card" style={{ marginBottom: 24 }}>
             <h3>Información del Aula</h3>
             <div className="info-items">
               <div className="info-item">
@@ -279,40 +329,16 @@ function AulaDetalle() {
                 <div>
                   <div className="label">Fecha de Creación</div>
                   <div className="value">
-                    {aula?.fechaCreacion ? 
-                      new Date(aula.fechaCreacion).toLocaleDateString('es-ES') : 
+                    {getFechaCreacion() ? 
+                      new Date(getFechaCreacion()).toLocaleDateString('es-ES') : 
                       'No disponible'
                     }
                   </div>
                 </div>
               </div>
-              {aula?.descripcion && (
-                <div className="info-item">
-                  <MessageCircle size={16} color="#64748b" />
-                  <div>
-                    <div className="label">Descripción</div>
-                    <div className="value">{aula.descripcion}</div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
-
-          <div className="actions-card">
-            <h3>Participantes</h3>
-            <div className="participantes-list">
-              {aula?.participantes && aula.participantes.length > 0 ? (
-                aula.participantes.map(participante => (
-                  <div key={participante.id} className="participante-item">
-                    <Users size={16} />
-                    <span>{participante.nombre}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="no-participantes">No hay participantes registrados</p>
-              )}
-            </div>
-          </div>
+          <ListaIntegrantes aulaId={aulaId} />
         </div>
       </div>
 

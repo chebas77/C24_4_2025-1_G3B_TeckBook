@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import "../css/Home.css";
 import CompletarPerfil from '../components/CompletarPerfil'; // ✅ IMPORTAR EL MODAL
+import InvitacionesPendientes from '../components/InvitacionesPendientes';
 
 function Home() {
   const [userData, setUserData] = useState(null);
@@ -25,6 +26,7 @@ function Home() {
   
   // ✅ ESTADO PARA EL MODAL DE COMPLETAR PERFIL
   const [showCompletarPerfil, setShowCompletarPerfil] = useState(false);
+  const [showInvitaciones, setShowInvitaciones] = useState(false);
   
   const navigate = useNavigate();
 
@@ -189,6 +191,14 @@ function Home() {
     setShowCompletarPerfil(false);
   };
 
+  // Handler para cuando se acepta un aula (puedes personalizar la lógica)
+  const handleAulaAceptada = () => {
+    // Por ejemplo, podrías recargar aulas o mostrar un mensaje
+    // window.location.reload();
+    // O simplemente cerrar el modal
+    setShowInvitaciones(false);
+  };
+
   const getUserInitials = () => {
     if (userData?.nombre && userData?.apellidos) {
       return `${userData.nombre.charAt(0)}${userData.apellidos.charAt(0)}`.toUpperCase();
@@ -330,6 +340,9 @@ function Home() {
           <button onClick={() => navigate('/crear-aula')} className="home-nav-link home-create-btn">
             <Plus size={16} style={{marginRight: '4px'}} />
             Crear Aula
+          </button>
+          <button onClick={() => setShowInvitaciones(true)} className="home-nav-link">
+            Ver Invitaciones
           </button>
           <button onClick={handleLogout} className="home-logout">
             Cerrar sesión
@@ -507,6 +520,13 @@ function Home() {
         userData={userData}
         onComplete={handleCompletarPerfil}
         isNewUser={false}
+      />
+
+      {/* MODAL DE INVITACIONES PENDIENTES */}
+      <InvitacionesPendientes
+        isOpen={showInvitaciones}
+        onClose={() => setShowInvitaciones(false)}
+        onAulaAceptada={handleAulaAceptada}
       />
     </div>
   );

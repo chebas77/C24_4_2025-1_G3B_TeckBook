@@ -132,6 +132,11 @@ function Aulas() {
     navigate('/crear-aula');
   };
 
+  const handleAulaAceptada = () => {
+    fetchAulas();
+    setShowInvitaciones(false);
+  };
+
   // Filtrar aulas según búsqueda y filtros
   const filteredAulas = aulas.filter(aula => {
     const matchesSearch = (aula.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -202,14 +207,11 @@ function Aulas() {
       </header>
 
       {/* MODAL DE INVITACIONES */}
-      {showInvitaciones && (
-        <div className="modal-invitaciones-overlay" onClick={() => setShowInvitaciones(false)}>
-          <div className="modal-invitaciones" onClick={e => e.stopPropagation()}>
-            <button className="close-modal" onClick={() => setShowInvitaciones(false)}>X</button>
-            <InvitacionesPendientes onAulaAceptada={fetchAulas} />
-          </div>
-        </div>
-      )}
+      <InvitacionesPendientes
+        isOpen={showInvitaciones}
+        onClose={() => setShowInvitaciones(false)}
+        onAulaAceptada={handleAulaAceptada}
+      />
 
       {/* CONTENIDO PRINCIPAL */}
       <div className="aulas-main">
@@ -327,10 +329,10 @@ function Aulas() {
                       
                       <div className="aula-professor">
                         <div className="professor-avatar">
-                          {isProfesor() ? getUserInitials() : 'PR'}
+                          {isProfesor() ? getUserInitials() : (aula.profesorNombreCompleto ? aula.profesorNombreCompleto.charAt(0) : 'PR')}
                         </div>
                         <span className="professor-name">
-                          {isProfesor() ? 'Mi aula' : 'Profesor asignado'}
+                          {isProfesor() ? 'Mi aula' : (aula.profesorNombreCompleto || 'Profesor asignado')}
                         </span>
                       </div>
                     </div>
