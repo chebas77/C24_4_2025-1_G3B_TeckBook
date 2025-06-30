@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, Check, X, User, BookOpen, AlertCircle } from 'lucide-react';
-import './InvitacionesPendientes.css'; // Opcional: si prefieres mover los estilos a un archivo externo
+import '../css/InvitacionesPendientes.css'; // Opcional: si prefieres mover los estilos a un archivo externo
 
 function InvitacionesPendientes({ isOpen, onClose, onAulaAceptada }) {
   const [invitaciones, setInvitaciones] = useState([]);

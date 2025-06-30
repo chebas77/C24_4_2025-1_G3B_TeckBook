@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import '../css/Home.css';
 import CompletarPerfil from '../components/CompletarPerfil';
 import Header from '../components/Header';
+import InvitacionesPendientes from '../components/InvitacionesPendientes';
 import { 
   Video,
   Image,
@@ -13,10 +14,10 @@ import {
   MoreHorizontal,
   Search,
   User,
-  BookOpen
+  BookOpen,
+  Plus
 } from 'lucide-react';
 import "../css/Home.css";
-import CompletarPerfil from '../components/CompletarPerfil'; // ✅ IMPORTAR EL MODAL
 
 function Home() {
   const [userData, setUserData] = useState(null);
