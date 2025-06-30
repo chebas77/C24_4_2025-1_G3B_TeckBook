@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, Check, X, User, BookOpen, AlertCircle } from 'lucide-react';
+import './InvitacionesPendientes.css'; // Opcional: si prefieres mover los estilos a un archivo externo
 
 function InvitacionesPendientes({ isOpen, onClose, onAulaAceptada }) {
   const [invitaciones, setInvitaciones] = useState([]);
@@ -32,11 +33,11 @@ function InvitacionesPendientes({ isOpen, onClose, onAulaAceptada }) {
     }
   };
 
-  const aceptarInvitacion = async (codigoInvitacion) => {
+  const aceptarInvitacion = async (codigo) => {
     try {
-      setProcesando(codigoInvitacion);
+      setProcesando(codigo);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/invitaciones/aceptar/${codigoInvitacion}`, {
+      const response = await fetch(`http://localhost:8080/api/invitaciones/aceptar/${codigo}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -44,14 +45,10 @@ function InvitacionesPendientes({ isOpen, onClose, onAulaAceptada }) {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        
         alert('¡Te has unido al aula exitosamente!');
-        fetchInvitacionesPendientes();
-        
         if (onAulaAceptada) onAulaAceptada();
-        
-        // Cerrar modal si no hay más invitaciones
+        fetchInvitacionesPendientes();
+
         setTimeout(() => {
           if (invitaciones.length <= 1) {
             onClose();
@@ -62,28 +59,27 @@ function InvitacionesPendientes({ isOpen, onClose, onAulaAceptada }) {
         alert(`Error: ${errorData.error}`);
       }
     } catch (error) {
-      console.error('Error al aceptar invitación:', error);
-      alert('Error de conexión al aceptar la invitación');
+      alert('Error al aceptar invitación');
     } finally {
       setProcesando(null);
     }
   };
 
-  const rechazarInvitacion = async (codigoInvitacion) => {
+  const rechazarInvitacion = async (codigo) => {
     try {
-      setProcesando(codigoInvitacion);
+      setProcesando(codigo);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/invitaciones/rechazar/${codigoInvitacion}`, {
+      const response = await fetch(`http://localhost:8080/api/invitaciones/rechazar/${codigo}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+
       if (response.ok) {
         alert('Invitación rechazada correctamente.');
         fetchInvitacionesPendientes();
-        
-        // Cerrar modal si no hay más invitaciones
+
         setTimeout(() => {
           if (invitaciones.length <= 1) {
             onClose();
@@ -94,8 +90,7 @@ function InvitacionesPendientes({ isOpen, onClose, onAulaAceptada }) {
         alert(`Error: ${errorData.error}`);
       }
     } catch (error) {
-      console.error('Error al rechazar invitación:', error);
-      alert('Error de conexión al rechazar la invitación');
+      alert('Error al rechazar invitación');
     } finally {
       setProcesando(null);
     }
@@ -120,41 +115,7 @@ function InvitacionesPendientes({ isOpen, onClose, onAulaAceptada }) {
     return Math.max(0, dias);
   };
 
-  // No mostrar modal si no está abierto
   if (!isOpen) return null;
-
-  if (isLoading) {
-    return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <div className="invitaciones-loading">
-            <div className="spinner"></div>
-            <p>Cargando invitaciones...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (invitaciones.length === 0) {
-    return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <h3>Invitaciones Pendientes</h3>
-            <button className="close-btn" onClick={onClose}>
-              <X size={20} />
-            </button>
-          </div>
-          <div className="invitaciones-empty">
-            <Mail size={48} className="empty-icon" />
-            <h3>No tienes invitaciones pendientes</h3>
-            <p>Cuando recibas invitaciones a aulas virtuales, aparecerán aquí.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -168,86 +129,78 @@ function InvitacionesPendientes({ isOpen, onClose, onAulaAceptada }) {
             <X size={20} />
           </button>
         </div>
+
         <div className="modal-body">
-          <p className="invitaciones-subtitle">
-            Tienes invitaciones para unirte a aulas virtuales
-          </p>
-          <div className="invitaciones-list">
-            {invitaciones.map((invitacion) => {
-              const dias = diasRestantes(invitacion.fechaExpiracion);
-              return (
-                <div key={invitacion.id} className="invitacion-card">
-                  <div className="invitacion-header">
-                    <div className="invitacion-info">
-                      <div className="aula-icon">
-                        <BookOpen size={20} />
-                      </div>
-                      <div className="invitacion-details">
-                        <h3 className="aula-nombre">Aula Virtual #{invitacion.aulaVirtualId}</h3>
-                        <div className="invitacion-meta">
-                          <span className="invitado-por">
-                            <User size={14} />
-                            Invitado por ID: {invitacion.invitadoPorId}
-                          </span>
-                          <span className="fecha-invitacion">
-                            <Clock size={14} />
-                            {formatearFecha(invitacion.fechaInvitacion)}
-                          </span>
+          {isLoading ? (
+            <div className="spinner"></div>
+          ) : invitaciones.length === 0 ? (
+            <div className="invitaciones-empty">
+              <Mail size={48} className="empty-icon" />
+              <h3>No tienes invitaciones pendientes</h3>
+              <p>Cuando recibas invitaciones a aulas virtuales, aparecerán aquí.</p>
+            </div>
+          ) : (
+            <div className="invitaciones-list">
+              {invitaciones.map((inv) => {
+                const dias = diasRestantes(inv.fechaExpiracion);
+                return (
+                  <div key={inv.id} className="invitacion-card">
+                    <div className="invitacion-header">
+                      <div className="invitacion-info">
+                        <div className="aula-icon">
+                          <BookOpen size={20} />
+                        </div>
+                        <div className="invitacion-details">
+                          <h4>Aula Virtual #{inv.aulaVirtualId}</h4>
+                          <div className="invitacion-meta">
+                            <span>
+                              <User size={14} /> Invitado por ID: {inv.invitadoPorId}
+                            </span>
+                            <span>
+                              <Clock size={14} /> {formatearFecha(inv.fechaInvitacion)}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <div className="tiempo-restante">
+                        <span className={`dias-restantes ${dias <= 1 ? 'urgente' : dias <= 3 ? 'advertencia' : ''}`}>
+                          {dias <= 1 && <AlertCircle size={16} />}
+                          {dias} días restantes
+                        </span>
+                      </div>
                     </div>
-                    <div className="tiempo-restante">
-                      <span className={`dias-restantes ${dias <= 1 ? 'urgente' : dias <= 3 ? 'advertencia' : ''}`}>
-                        {dias <= 1 && <AlertCircle size={16} />}
-                        {dias} días restantes
-                      </span>
+
+                    {inv.mensaje && <p className="invitacion-mensaje">"{inv.mensaje}"</p>}
+
+                    <div className="invitacion-actions">
+                      <button
+                        onClick={() => aceptarInvitacion(inv.codigoInvitacion)}
+                        disabled={procesando === inv.codigoInvitacion}
+                        className="btn-aceptar"
+                      >
+                        {procesando === inv.codigoInvitacion ? 'Procesando...' : (
+                          <>
+                            <Check size={16} /> Aceptar
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => rechazarInvitacion(inv.codigoInvitacion)}
+                        disabled={procesando === inv.codigoInvitacion}
+                        className="btn-rechazar"
+                      >
+                        {procesando === inv.codigoInvitacion ? 'Procesando...' : (
+                          <>
+                            <X size={16} /> Rechazar
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
-                  {invitacion.mensaje && (
-                    <div className="invitacion-mensaje">
-                      <p>"{invitacion.mensaje}"</p>
-                    </div>
-                  )}
-                  <div className="invitacion-actions">
-                    <button
-                      onClick={() => aceptarInvitacion(invitacion.codigoInvitacion)}
-                      disabled={procesando === invitacion.codigoInvitacion}
-                      className="btn-aceptar"
-                    >
-                      {procesando === invitacion.codigoInvitacion ? (
-                        <>
-                          <div className="spinner-small"></div>
-                          Procesando...
-                        </>
-                      ) : (
-                        <>
-                          <Check size={16} />
-                          Aceptar Invitación
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => rechazarInvitacion(invitacion.codigoInvitacion)}
-                      disabled={procesando === invitacion.codigoInvitacion}
-                      className="btn-rechazar"
-                    >
-                      {procesando === invitacion.codigoInvitacion ? (
-                        <>
-                          <div className="spinner-small"></div>
-                          Procesando...
-                        </>
-                      ) : (
-                        <>
-                          <X size={16} />
-                          Rechazar
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
