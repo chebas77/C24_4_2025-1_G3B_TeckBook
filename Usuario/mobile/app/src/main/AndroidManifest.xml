@@ -2,6 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 🌐 PERMISOS DE RED NECESARIOS PARA LAS APIs -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- 🔧 Permitir tráfico HTTP para desarrollo (opcional para emulador) -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -11,22 +18,31 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
+
+        <!-- 📱 ACTIVIDADES DE LA APP -->
         <activity
             android:name=".RegisterActivity"
-            android:exported="true" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- 🔐 LOGIN COMO ACTIVIDAD PRINCIPAL -->
         <activity
             android:name=".LoginActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 🏠 MAIN ACTIVITY -->
         <activity
             android:name=".MainActivity"
-            android:exported="true"></activity>
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

@@ -1,16 +1,20 @@
-package com.rodriguez.manuel.teckbookmovil;
-
+package com.rodriguez.manuel.teckbookmovil
 
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.textfield.TextInputEditText
+import com.rodriguez.manuel.teckbookmovil.data.models.*
+import com.rodriguez.manuel.teckbookmovil.data.network.NetworkModule
+import com.rodriguez.manuel.teckbookmovil.data.repository.AuthRepository
+import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
 
-    // Elementos de la UI
+    // Elementos de la UI - mismos que antes
     private lateinit var btnBack: ImageButton
     private lateinit var tvTitle: TextView
     private lateinit var tvProgress: TextView
@@ -18,29 +22,23 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var progress2: View
     private lateinit var progress3: View
 
-    // Contenedores de pasos
     private lateinit var step1Container: LinearLayout
     private lateinit var step2Container: LinearLayout
     private lateinit var step3Container: LinearLayout
 
-    // Botones de navegación
     private lateinit var btnPrevious: Button
     private lateinit var btnNext: Button
     private lateinit var tvBackToLogin: TextView
 
-    // Campos del formulario - Paso 1
+    // Campos del formulario
     private lateinit var etNombres: TextInputEditText
     private lateinit var etApellidos: TextInputEditText
     private lateinit var etCodigo: TextInputEditText
     private lateinit var etCorreoInstitucional: TextInputEditText
-
-    // Campos del formulario - Paso 2
     private lateinit var etContraseña: TextInputEditText
     private lateinit var etCiclo: TextInputEditText
     private lateinit var etRol: TextInputEditText
     private lateinit var etDepartamentoId: TextInputEditText
-
-    // Campos del formulario - Paso 3
     private lateinit var etCarreraId: TextInputEditText
     private lateinit var etSeccionId: TextInputEditText
     private lateinit var etEmail: TextInputEditText
@@ -50,13 +48,25 @@ class RegisterActivity : AppCompatActivity() {
     private var currentStep = 1
     private val totalSteps = 3
 
+    // 🔐 Repositorio de autenticación
+    private lateinit var authRepository: AuthRepository
+
+    // 📋 Datos para cargar dinámicamente
+    private var carreras: List<Carrera> = emptyList()
+    private var departamentos: List<Departamento> = emptyList()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
+        authRepository = AuthRepository(this)
+
         initViews()
         setupClickListeners()
         updateStepUI()
+
+        // 🔥 CARGAR DATOS DINÁMICOS DESDE LA API
+        loadInitialData()
     }
 
     private fun initViews() {
@@ -83,24 +93,22 @@ class RegisterActivity : AppCompatActivity() {
         etApellidos = findViewById(R.id.etApellidos)
         etCodigo = findViewById(R.id.etCodigo)
         etCorreoInstitucional = findViewById(R.id.etCorreoInstitucional)
+        etContraseña = findViewById(R.id.etContraseña)
 
         // Campos Paso 2
-        etContraseña = findViewById(R.id.etContraseña)
         etCiclo = findViewById(R.id.etCiclo)
         etRol = findViewById(R.id.etRol)
         etDepartamentoId = findViewById(R.id.etDepartamentoId)
-
-        // Campos Paso 3
         etCarreraId = findViewById(R.id.etCarreraId)
         etSeccionId = findViewById(R.id.etSeccionId)
+
+        // Campos Paso 3
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
     }
 
     private fun setupClickListeners() {
-        btnBack.setOnClickListener {
-            finish() // Cierra la actividad y regresa
-        }
+        btnBack.setOnClickListener { finish() }
 
         btnPrevious.setOnClickListener {
             if (currentStep > 1) {
@@ -115,49 +123,163 @@ class RegisterActivity : AppCompatActivity() {
                     currentStep++
                     updateStepUI()
                 } else {
-                    // Último paso - registrar usuario
-                    registerUser()
+                    // Último paso - registrar usuario CON API
+                    registerUserWithAPI()
                 }
             }
         }
 
-        tvBackToLogin.setOnClickListener {
-            finish() // Regresa al login
+        tvBackToLogin.setOnClickListener { finish() }
+    }
+
+    /**
+     * 🔥 CARGAR DATOS INICIALES DESDE LA API
+     */
+    private fun loadInitialData() {
+        lifecycleScope.launch {
+            try {
+                // Cargar carreras activas
+                val carrerasResponse = NetworkModule.apiService.getCarrerasActivas()
+                if (carrerasResponse.isSuccessful) {
+                    carreras = carrerasResponse.body()?.carreras ?: emptyList()
+                    setupCarrerasHints()
+                }
+
+                // Cargar departamentos activos
+                val departamentosResponse = NetworkModule.apiService.getDepartamentosActivos()
+                if (departamentosResponse.isSuccessful) {
+                    departamentos = departamentosResponse.body()?.departamentos ?: emptyList()
+                    setupDepartamentosHints()
+                }
+
+            } catch (e: Exception) {
+                Toast.makeText(this@RegisterActivity,
+                    "Error al cargar datos: ${e.message}",
+                    Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    private fun updateStepUI() {
-        // Actualizar indicador de progreso
-        tvProgress.text = "Paso $currentStep de $totalSteps"
+    /**
+     * 🎯 CONFIGURAR HINTS DINÁMICOS
+     */
+    private fun setupCarrerasHints() {
+        if (carreras.isNotEmpty()) {
+            val primerasCarreras = carreras.take(3).joinToString(", ") { "${it.id}-${it.codigo ?: it.nombre.take(10)}" }
+            etCarreraId.hint = "ID Carrera (ej: $primerasCarreras)"
+        }
+    }
 
-        // Actualizar barras de progreso
+    private fun setupDepartamentosHints() {
+        if (departamentos.isNotEmpty()) {
+            val primerosDep = departamentos.take(2).joinToString(", ") { "${it.id}-${it.codigo ?: it.nombre.take(10)}" }
+            etDepartamentoId.hint = "ID Depto (ej: $primerosDep)"
+        }
+    }
+
+    /**
+     * 📝 REGISTRAR USUARIO CON LA API
+     */
+    private fun registerUserWithAPI() {
+        setLoadingState(true)
+
+        lifecycleScope.launch {
+            try {
+                // Crear objeto Usuario con todos los datos
+                val usuario = createUsuarioFromForm()
+
+                // Llamar a la API de registro
+                val result = authRepository.register(usuario)
+
+                when (result) {
+                    is Resource.Success -> {
+                        setLoadingState(false)
+
+                        // Registro exitoso
+                        Toast.makeText(this@RegisterActivity,
+                            "¡Registro exitoso! Ahora puedes iniciar sesión",
+                            Toast.LENGTH_LONG).show()
+
+                        // Regresar al login
+                        finish()
+                    }
+
+                    is Resource.Error -> {
+                        setLoadingState(false)
+                        showError(result.message)
+                    }
+
+                    is Resource.Loading -> {
+                        // Loading ya manejado
+                    }
+                }
+
+            } catch (e: Exception) {
+                setLoadingState(false)
+                showError("Error inesperado: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * 👤 CREAR OBJETO USUARIO DESDE EL FORMULARIO
+     */
+    private fun createUsuarioFromForm(): Usuario {
+        return Usuario(
+            id = 0, // Se asigna automáticamente en el backend
+            nombre = etNombres.text.toString().trim(),
+            apellidos = etApellidos.text.toString().trim(),
+            correoInstitucional = etCorreoInstitucional.text.toString().trim(),
+            rol = etRol.text.toString().trim().lowercase(),
+            cicloActual = etCiclo.text.toString().trim().toIntOrNull(),
+            departamentoId = etDepartamentoId.text.toString().trim().toLongOrNull(),
+            carreraId = etCarreraId.text.toString().trim().toLongOrNull(),
+            seccionId = if (etSeccionId.text.toString().trim().isEmpty()) null else etSeccionId.text.toString().trim().toLongOrNull(),
+            telefono = null, // Se puede agregar después
+            profileImageUrl = null
+        )
+    }
+
+    /**
+     * 🔄 Gestionar estado de loading
+     */
+    private fun setLoadingState(isLoading: Boolean) {
+        if (isLoading) {
+            btnNext.isEnabled = false
+            btnNext.text = "Registrando..."
+            btnPrevious.isEnabled = false
+        } else {
+            btnNext.isEnabled = true
+            btnNext.text = if (currentStep == totalSteps) "Registrar" else "Siguiente"
+            btnPrevious.isEnabled = true
+        }
+    }
+
+    /**
+     * ⚠️ Mostrar mensaje de error
+     */
+    private fun showError(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+
+    // ========== RESTO DE MÉTODOS (UI LOGIC) - MISMOS QUE ANTES ==========
+
+    private fun updateStepUI() {
+        tvProgress.text = "Paso $currentStep de $totalSteps"
         updateProgressBars()
 
-        // Mostrar/ocultar contenedores
         step1Container.visibility = if (currentStep == 1) View.VISIBLE else View.GONE
         step2Container.visibility = if (currentStep == 2) View.VISIBLE else View.GONE
         step3Container.visibility = if (currentStep == 3) View.VISIBLE else View.GONE
 
-        // Actualizar títulos
         when (currentStep) {
             1 -> tvTitle.text = "Información Personal"
             2 -> tvTitle.text = "Información Académica"
             3 -> tvTitle.text = "Información de Contacto"
         }
 
-        // Actualizar botones
         btnPrevious.visibility = if (currentStep == 1) View.GONE else View.VISIBLE
         btnNext.text = if (currentStep == totalSteps) "Registrar" else "Siguiente"
-
-        // Ajustar el weight de los botones
-        val layoutParams = btnNext.layoutParams as LinearLayout.LayoutParams
-        if (currentStep == 1) {
-            layoutParams.weight = 1f
-            btnNext.layoutParams = layoutParams
-        } else {
-            layoutParams.weight = 1f
-            btnNext.layoutParams = layoutParams
-        }
     }
 
     private fun updateProgressBars() {
@@ -211,6 +333,11 @@ class RegisterActivity : AppCompatActivity() {
                 etCorreoInstitucional.requestFocus()
                 false
             }
+            !correoInstitucional.endsWith("@tecsup.edu.pe") -> {
+                etCorreoInstitucional.error = "Debe ser un correo institucional (@tecsup.edu.pe)"
+                etCorreoInstitucional.requestFocus()
+                false
+            }
             contraseña.isEmpty() -> {
                 etContraseña.error = "La contraseña es requerida"
                 etContraseña.requestFocus()
@@ -233,7 +360,6 @@ class RegisterActivity : AppCompatActivity() {
         val rol = etRol.text.toString().trim()
         val departamentoId = etDepartamentoId.text.toString().trim()
         val carreraId = etCarreraId.text.toString().trim()
-        val seccionId = etSeccionId.text.toString().trim()
 
         return when {
             ciclo.isEmpty() -> {
@@ -242,7 +368,7 @@ class RegisterActivity : AppCompatActivity() {
                 false
             }
             rol.isEmpty() -> {
-                etRol.error = "El rol es requerido"
+                etRol.error = "El rol es requerido (estudiante/profesor)"
                 etRol.requestFocus()
                 false
             }
@@ -254,11 +380,6 @@ class RegisterActivity : AppCompatActivity() {
             carreraId.isEmpty() -> {
                 etCarreraId.error = "El ID de carrera es requerido"
                 etCarreraId.requestFocus()
-                false
-            }
-            seccionId.isEmpty() -> {
-                etSeccionId.error = "El ID de sección es requerido"
-                etSeccionId.requestFocus()
                 false
             }
             else -> {
@@ -326,31 +447,5 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun isValidEmail(email: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    }
-
-    private fun registerUser() {
-        // Aquí iría la lógica de registro real
-        Toast.makeText(this, "¡Registro exitoso! Implementar lógica de backend", Toast.LENGTH_LONG).show()
-
-        // Por ahora, regresamos al login
-        finish()
-    }
-
-    // Función para obtener todos los datos del formulario
-    private fun getUserData(): Map<String, String> {
-        return mapOf(
-            "nombres" to etNombres.text.toString().trim(),
-            "apellidos" to etApellidos.text.toString().trim(),
-            "codigo" to etCodigo.text.toString().trim(),
-            "correoInstitucional" to etCorreoInstitucional.text.toString().trim(),
-            "contraseña" to etContraseña.text.toString().trim(),
-            "ciclo" to etCiclo.text.toString().trim(),
-            "rol" to etRol.text.toString().trim(),
-            "departamentoId" to etDepartamentoId.text.toString().trim(),
-            "carreraId" to etCarreraId.text.toString().trim(),
-            "seccionId" to etSeccionId.text.toString().trim(),
-            "email" to etEmail.text.toString().trim(),
-            "password" to etPassword.text.toString().trim()
-        )
     }
 }
