@@ -26,4 +26,18 @@ public class AnuncioController {
         String rol = usuario.getRol().toString(); // El rol real del usuario autenticado
         return anuncioService.getAnunciosDeAula(usuarioId, rol, aulaId);
     }
+
+    // POST: crear un nuevo anuncio en un aula (solo para usuarios autorizados)
+    @PostMapping
+    public Anuncio crearAnuncio(
+        @PathVariable Long aulaId,
+        @RequestBody Anuncio anuncio,
+        Principal principal
+    ) {
+        String email = principal.getName();
+        var usuario = usuarioService.findByCorreoInstitucional(email);
+        Long usuarioId = usuario.getId();
+        String rol = usuario.getRol().toString();
+        return anuncioService.crearAnuncio(usuarioId, rol, aulaId, anuncio);
+    }
 }

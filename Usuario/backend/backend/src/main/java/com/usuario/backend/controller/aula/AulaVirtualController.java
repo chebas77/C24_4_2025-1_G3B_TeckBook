@@ -14,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -363,6 +364,20 @@ public class AulaVirtualController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error al eliminar participante", "message", e.getMessage()));
         }
+    }
+
+    /**
+     * 🔥 POST: crear un aula nueva
+     */
+    @PostMapping
+    public AulaVirtual crearAula(@RequestBody AulaVirtual aula, Principal principal) {
+        String email = principal.getName();
+        var usuario = usuarioService.findByCorreoInstitucional(email);
+        Long usuarioId = usuario.getId();
+        aula.setProfesorId(usuarioId);
+        aula.setEstado("activa");
+        // Puedes asignar otros campos por defecto aquí
+        return aulaVirtualService.crearAula(aula);
     }
 
     /**

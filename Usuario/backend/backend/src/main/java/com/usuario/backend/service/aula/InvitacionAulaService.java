@@ -88,7 +88,8 @@ public class InvitacionAulaService {
         if (!invitacion.isPendiente()) {
             String estado = invitacion.getEstado();
             if ("aceptada".equals(estado)) {
-                throw new RuntimeException("Ya has aceptado esta invitación anteriormente");
+                // Si ya fue aceptada, simplemente retorna la invitación
+                return invitacion;
             } else if ("expirada".equals(estado) || invitacion.isExpirada()) {
                 throw new RuntimeException("Esta invitación ha expirado");
             } else if ("rechazada".equals(estado)) {
@@ -107,12 +108,19 @@ public class InvitacionAulaService {
             throw new RuntimeException("Solo los usuarios con rol ESTUDIANTE pueden aceptar invitaciones a aulas");
         }
 
-        // Agregar usuario al aula
+        // Intentar agregar usuario al aula, pero si ya está inscrito, no lanzar excepción
+        boolean yaInscrito = false;
         try {
             aulaService.agregarEstudianteAAula(invitacion.getAulaVirtualId(), usuario.getId());
         } catch (Exception e) {
-            logger.error("Error al agregar estudiante al aula al aceptar invitación: {}", e.getMessage());
-            throw new RuntimeException("No se pudo agregar al aula: " + e.getMessage());
+            String msg = e.getMessage() != null ? e.getMessage() : "";
+            if (msg.contains("ya está inscrito")) {
+                yaInscrito = true;
+                logger.info("El estudiante ya estaba inscrito en el aula, se marca invitación como aceptada");
+            } else {
+                logger.error("Error al agregar estudiante al aula al aceptar invitación: {}", e.getMessage());
+                throw new RuntimeException("No se pudo agregar al aula: " + e.getMessage());
+            }
         }
 
         // Aceptar invitación
@@ -121,7 +129,7 @@ public class InvitacionAulaService {
         
         InvitacionAula invitacionAceptada = invitacionRepository.save(invitacion);
         
-        logger.info("✅ Invitación aceptada exitosamente para: {} y usuario unido al aula", correoUsuario);
+        logger.info("✅ Invitación aceptada exitosamente para: {} y usuario unido al aula (idempotente={})", correoUsuario, yaInscrito);
         
         return invitacionAceptada;
     }

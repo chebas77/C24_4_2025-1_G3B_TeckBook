@@ -288,10 +288,10 @@ public class UsuarioController {
         }
         
         // 🔧 FIX: Validar cicloActual como Integer
-        if (usuario.getCicloActual() == null) {
-            errors.put("cicloActual", "El ciclo es requerido");
-        } else if (usuario.getCicloActual() < 1 || usuario.getCicloActual() > 6) {
-            errors.put("cicloActual", "El ciclo debe ser un número entre 1 y 6");
+        if (usuario.getCicloActual() != null) {
+            if (usuario.getCicloActual() < 1 || usuario.getCicloActual() > 6) {
+                errors.put("cicloActual", "El ciclo debe ser un número entre 1 y 6");
+            }
         }
         
         if (usuario.getCarreraId() == null) {

@@ -21,4 +21,16 @@ public class AnuncioService {
         }
         return anuncioRepository.findByAulaIdAndActivoTrueOrderByFechaPublicacionDesc(aulaId);
     }
+
+    public Anuncio crearAnuncio(Long usuarioId, String rol, Long aulaId, Anuncio anuncio) {
+        // Verifica acceso antes de crear anuncio
+        if (!aulaVirtualService.puedeAccederAAula(usuarioId, rol, aulaId)) {
+            throw new SecurityException("No tiene permiso para crear anuncios en este aula");
+        }
+        anuncio.setAulaId(aulaId);
+        anuncio.setAutorId(usuarioId);
+        anuncio.setFechaPublicacion(java.time.LocalDateTime.now());
+        anuncio.setActivo(true);
+        return anuncioRepository.save(anuncio);
+    }
 }

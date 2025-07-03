@@ -108,12 +108,9 @@ function Home() {
     setShowCompletarPerfil(false);
   };
 
-  // Handler para cuando se acepta un aula (puedes personalizar la lógica)
+  // Handler para cuando se acepta un aula (ahora recarga la página)
   const handleAulaAceptada = () => {
-    // Por ejemplo, podrías recargar aulas o mostrar un mensaje
-    // window.location.reload();
-    // O simplemente cerrar el modal
-    setShowInvitaciones(false);
+    window.location.reload();
   };
 
   const getUserInitials = () => {

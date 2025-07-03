@@ -199,4 +199,16 @@ public class AulaVirtualService {
             throw e;
         }
     }
+
+    /**
+     * Crear un aula virtual nueva
+     */
+    public AulaVirtual crearAula(AulaVirtual aula) {
+        // Asignar valores por defecto si es necesario
+        aula.setEstado("activa");
+        aula.setCreatedAt(java.time.LocalDateTime.now());
+        aula.setUpdatedAt(java.time.LocalDateTime.now());
+        // Puedes agregar más lógica aquí (validaciones, etc)
+        return aulaVirtualRepository.save(aula);
+    }
 }

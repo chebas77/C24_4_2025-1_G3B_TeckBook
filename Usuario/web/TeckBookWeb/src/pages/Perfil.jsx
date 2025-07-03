@@ -236,6 +236,7 @@ function Perfil() {
       setUsuario(updatedUsuario);
       setSuccess('Perfil actualizado correctamente');
       setIsEditing(false);
+      window.location.reload();
     } catch (err) {
       setError(err.message);
     }
