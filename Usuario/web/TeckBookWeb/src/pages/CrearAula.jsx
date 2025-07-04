@@ -56,6 +56,9 @@ function CrearAula() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [userData, setUserData] = useState(null);
 
+  // Obtener la fecha de hoy en formato YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0];
+
   // 🔥 EFECTO: Verificar autenticación y cargar datos iniciales
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -668,6 +671,7 @@ function CrearAula() {
                       value={formData.fechaInicio}
                       onChange={handleChange}
                       className="input"
+                      min={today}
                     />
                   </div>
                 </div>

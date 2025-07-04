@@ -1,23 +1,81 @@
+/* ============================
+   VARIABLES CSS CUSTOM PROPERTIES
+   Variables aisladas para Header
+   ============================ */
+
+.header-wrapper {
+  /* Colores primarios */
+  --header-primary-blue: #005DAB;
+  --header-primary-blue-light: #0066c7;
+  --header-warning: #ffc107;
+  
+  /* Colores de texto */
+  --header-text-primary: #ffffff;
+  --header-text-secondary: rgba(255, 255, 255, 0.9);
+  --header-text-warning: #ffc107;
+  
+  /* Colores de fondo */
+  --header-bg-transparent: transparent;
+  --header-bg-hover: rgba(255, 255, 255, 0.1);
+  --header-bg-active: rgba(255, 255, 255, 0.2);
+  --header-bg-warning-hover: rgba(255, 193, 7, 0.2);
+  
+  /* Spacing */
+  --header-space-xs: 10px;
+  --header-space-sm: 12px;
+  --header-space-md: 16px;
+  --header-space-lg: 20px;
+  --header-space-xl: 32px;
+  
+  /* Radios */
+  --header-radius-md: 12px;
+  
+  /* Sombras */
+  --header-shadow-main: 0 8px 32px rgba(0, 93, 171, 0.15);
+  
+  /* Tipografía */
+  --header-font-family: inherit;
+  --header-font-size-sm: 15px;
+  --header-font-size-lg: 28px;
+  --header-font-weight-normal: 500;
+  --header-font-weight-semibold: 600;
+  --header-font-weight-bold: 700;
+  --header-letter-spacing: -0.5px;
+  
+  /* Transiciones */
+  --header-transition-normal: all 0.3s ease;
+  
+  /* Z-index */
+  --header-z-index: 1000;
+  
+  /* Blur */
+  --header-blur: blur(5px);
+}
+
+/* ============================
+   ESTILOS BASE CON VARIABLES
+   ============================ */
+
 .header-wrapper {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 32px;
-  background: linear-gradient(135deg, #005DAB 0%, #0066c7 100%);
-  color: white;
-  box-shadow: 0 8px 32px rgba(0, 93, 171, 0.15);
+  padding: var(--header-space-md) var(--header-space-xl);
+  background: linear-gradient(135deg, var(--header-primary-blue) 0%, var(--header-primary-blue-light) 100%);
+  color: var(--header-text-primary);
+  box-shadow: var(--header-shadow-main);
   position: sticky;
   top: 0;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
+  z-index: var(--header-z-index);
+  backdrop-filter: var(--header-blur);
 }
 
 .header-left .header-logo {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: var(--header-font-size-lg);
+  font-weight: var(--header-font-weight-bold);
   margin: 0;
-  letter-spacing: -0.5px;
-  background: linear-gradient(45deg, #ffffff, #ffff);
+  letter-spacing: var(--header-letter-spacing);
+  background: linear-gradient(45deg, var(--header-text-primary), var(--header-text-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -25,47 +83,198 @@
 
 .header-nav {
   display: flex;
-  gap: 10px;
+  gap: var(--header-space-xs);
 }
 
 .header-link {
-  color: rgba(255, 255, 255, 0.9);
-  background-color: transparent;
+  color: var(--header-text-secondary);
+  background-color: var(--header-bg-transparent);
   border: none;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: var(--header-font-size-sm);
+  font-weight: var(--header-font-weight-normal);
   cursor: pointer;
-  padding: 12px 20px;
-  border-radius: 12px;
+  padding: var(--header-space-sm) var(--header-space-lg);
+  border-radius: var(--header-radius-md);
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: var(--header-transition-normal);
 }
 
 .header-link:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #005DAB;
+  background: var(--header-bg-hover);
+  color: var(--header-primary-blue);
   transform: translateY(-1px);
 }
 
 .header-link.active {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  font-weight: 600;
+  background: var(--header-bg-active);
+  color: var(--header-text-primary);
+  font-weight: var(--header-font-weight-semibold);
+}
+
+/* BOTÓN DE INVITACIONES EN EL HEADER */
+.header-invitations-btn {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: var(--header-text-primary);
+  border: none;
+  font-size: var(--header-font-size-sm);
+  font-weight: var(--header-font-weight-semibold);
+  cursor: pointer;
+  padding: var(--header-space-sm) var(--header-space-lg);
+  border-radius: var(--header-radius-md);
+  transition: var(--header-transition-normal);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.header-invitations-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.header-invitations-btn:focus {
+  outline: 2px solid rgba(16, 185, 129, 0.5);
+  outline-offset: 2px;
 }
 
 .header-logout {
-  color: #ffc107;
-  background-color: transparent;
+  color: var(--header-text-warning);
+  background-color: var(--header-bg-transparent);
   border: none;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: var(--header-font-size-sm);
+  font-weight: var(--header-font-weight-normal);
   cursor: pointer;
-  padding: 12px 20px;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  padding: var(--header-space-sm) var(--header-space-lg);
+  border-radius: var(--header-radius-md);
+  transition: var(--header-transition-normal);
 }
 
 .header-logout:hover {
-  background: rgba(255, 193, 7, 0.2);
+  background: var(--header-bg-warning-hover);
   transform: translateY(-1px);
+}
+
+/* ESTADO DE LOADING */
+.header-loading {
+  color: var(--header-text-secondary);
+  font-size: var(--header-font-size-sm);
+  font-weight: var(--header-font-weight-normal);
+  padding: var(--header-space-sm) var(--header-space-lg);
+  border-radius: var(--header-radius-md);
+  background: var(--header-bg-hover);
+  animation: headerPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes headerPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ============================
+   RESPONSIVE DESIGN
+   ============================ */
+
+@media (max-width: 768px) {
+  .header-wrapper {
+    padding: var(--header-space-sm) var(--header-space-md);
+    flex-direction: column;
+    gap: var(--header-space-sm);
+  }
+  
+  .header-left .header-logo {
+    font-size: 24px;
+  }
+  
+  .header-nav {
+    gap: var(--header-space-xs);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .header-link,
+  .header-logout,
+  .header-invitations-btn {
+    padding: var(--header-space-xs) var(--header-space-md);
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-wrapper {
+    padding: var(--header-space-xs) var(--header-space-sm);
+  }
+  
+  .header-left .header-logo {
+    font-size: 20px;
+  }
+  
+  .header-nav {
+    gap: var(--header-space-xs);
+  }
+  
+  .header-link,
+  .header-logout,
+  .header-invitations-btn {
+    padding: var(--header-space-xs) var(--header-space-sm);
+    font-size: 13px;
+  }
+  
+  /* En móviles, ocultar el texto del botón de invitaciones */
+  .header-invitations-btn span {
+    display: none;
+  }
+}
+
+/* ============================
+   MEJORAS DE ACCESIBILIDAD
+   ============================ */
+
+@media (prefers-contrast: high) {
+  .header-link:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: var(--header-text-primary);
+  }
+  
+  .header-link.active {
+    background: rgba(255, 255, 255, 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-link:hover,
+  .header-logout:hover {
+    transform: none;
+  }
+  
+  * {
+    transition: none !important;
+  }
+}
+
+/* Estados de focus mejorados para navegación por teclado */
+.header-wrapper *:focus-visible {
+  outline: 2px solid var(--header-text-primary);
+  outline-offset: 2px;
+}
+
+/* ============================
+   UTILIDADES
+   ============================ */
+
+.header-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

@@ -29,7 +29,6 @@ function Aulas() {
   const [userData, setUserData] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedAula, setSelectedAula] = useState(null);
-  const [showInvitaciones, setShowInvitaciones] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -85,30 +84,6 @@ function Aulas() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const response = await fetch('http://localhost:8080/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (response.ok) {
-          console.log("✅ Sesión cerrada en el backend");
-        }
-      }
-      localStorage.removeItem('token');
-      navigate('/');
-    } catch (error) {
-      console.error("❌ Error durante logout:", error);
-      localStorage.removeItem('token');
-      navigate('/');
-    }
-  };
-
   const handleInviteStudents = (aula) => {
     setSelectedAula(aula);
     setShowInviteModal(true);
@@ -120,7 +95,6 @@ function Aulas() {
 
   const handleAulaAceptada = () => {
     fetchAulas();
-    setShowInvitaciones(false);
   };
 
   const filteredAulas = aulas.filter(aula => {
@@ -149,7 +123,7 @@ function Aulas() {
   if (isLoading) {
     return (
       <div className="aulas-wrapper">
-        <Header active="Aulas" />
+        <Header />
         <div className="aulas-loading">
           <div className="loading-spinner"></div>
           <p>Cargando aulas...</p>
@@ -157,45 +131,13 @@ function Aulas() {
       </div>
     );
   }
+
   return (
-  <div className="aulas-wrapper">
-    {/* HEADER */}
-    <header className="aulas-header">
-      <h1 className="aulas-logo">TecBook</h1>
-      <nav className="aulas-nav">
-        <button onClick={() => navigate('/home')} className="aulas-nav-link">
-          Inicio
-        </button>
-        <button onClick={() => setShowInvitaciones(true)} className="aulas-nav-link">
-          Invitaciones
-        </button>
-        <button onClick={() => navigate('/perfil')} className="aulas-nav-link">
-          Perfil
-        </button>
-        <button className="aulas-nav-link aulas-active">
-          Aulas
-        </button>
-        {isProfesor() && (
-          <button onClick={handleCreateAula} className="aulas-nav-link aulas-create-btn">
-            <Plus size={16} style={{ marginRight: '4px' }} />
-            Crear Aula
-          </button>
-        )}
-        <button onClick={handleLogout} className="aulas-logout">
-          Cerrar sesión
-        </button>
-      </nav>
-    </header>
+    <div className="aulas-wrapper">
+      {/* USAR EL HEADER UNIFICADO */}
+      <Header />
 
-    {/* MODAL DE INVITACIONES */}
-    <InvitacionesPendientes
-      isOpen={showInvitaciones}
-      onClose={() => setShowInvitaciones(false)}
-      onAulaAceptada={handleAulaAceptada}
-    />
-
-    {/* CONTENIDO PRINCIPAL */}
-
+      {/* CONTENIDO PRINCIPAL */}
       <div className="aulas-main">
         <div className="aulas-container">
           {/* TÍTULO Y CONTROLES */}
@@ -221,6 +163,14 @@ function Aulas() {
                   className="search-input"
                 />
               </div>
+              
+              {/* BOTÓN DE CREAR AULA SOLO PARA PROFESORES */}
+              {isProfesor() && (
+                <button onClick={handleCreateAula} className="aulas-create-main-btn">
+                  <Plus size={20} />
+                  Crear Nueva Aula
+                </button>
+              )}
             </div>
           </div>
 

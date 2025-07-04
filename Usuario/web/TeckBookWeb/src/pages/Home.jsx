@@ -15,16 +15,15 @@ import {
   Search,
   User,
   BookOpen,
-  Plus
+  Plus,
+  Users
 } from 'lucide-react';
-import "../css/Home.css";
 
 function Home() {
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCompletarPerfil, setShowCompletarPerfil] = useState(false);
-    const [showInvitaciones, setShowInvitaciones] = useState(false);
 
   const navigate = useNavigate();
 
@@ -83,26 +82,6 @@ function Home() {
     return () => { isMounted = false; };
   }, [navigate]);
 
-  const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        await fetch('http://localhost:8080/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-      }
-      localStorage.removeItem('token');
-      navigate('/');
-    } catch {
-      localStorage.removeItem('token');
-      navigate('/');
-    }
-  };
-
   const handleCompletarPerfil = (result) => {
     setUserData(prev => ({ ...prev, ...result }));
     setShowCompletarPerfil(false);
@@ -141,34 +120,10 @@ function Home() {
 
   return (
     <div className="home-wrapper">
-      {/* ENCABEZADO */}
-<header className="home-header">
-  <h1 className="home-logo">TecBook</h1>
-  <nav className="home-nav">
-    <button className="home-nav-link" style={{ color: '#ffc107' }}>
-      Inicio
-    </button>
-    <button onClick={() => navigate('/perfil')} className="home-nav-link">
-      Perfil
-    </button>
-    <button onClick={() => navigate('/aulas')} className="home-nav-link">
-      Aulas
-    </button>
-    <button onClick={() => navigate('/crear-aula')} className="home-nav-link home-create-btn">
-      <Plus size={16} style={{ marginRight: '4px' }} />
-      Crear Aula
-    </button>
-    <button onClick={() => setShowInvitaciones(true)} className="home-nav-link">
-      Ver Invitaciones
-    </button>
-    <button onClick={handleLogout} className="home-logout">
-      Cerrar sesión
-    </button>
-  </nav>
-</header>
+      {/* USAR EL HEADER UNIFICADO */}
+      <Header />
 
-{/* LAYOUT DE 3 COLUMNAS */}
-
+      {/* LAYOUT DE 3 COLUMNAS */}
       <div className="home-main-layout">
         <aside className="home-left-sidebar">
           <div className="home-welcome-card">
@@ -185,9 +140,27 @@ function Home() {
           <div className="home-quick-actions">
             <h3 className="home-section-title">Acciones Rápidas</h3>
             <div className="home-action-buttons">
-              <div className="home-action-button" onClick={() => navigate('/perfil')}><User className="home-action-icon" /><div className="home-action-text"><span className="home-action-title">Mi Perfil</span><span className="home-action-subtitle">Actualiza tus datos</span></div></div>
-              <div className="home-action-button" onClick={() => navigate('/aulas')}><BookOpen className="home-action-icon" /><div className="home-action-text"><span className="home-action-title">Mis Aulas</span><span className="home-action-subtitle">Accede a tus aulas</span></div></div>
-              <div className="home-action-button" onClick={() => setShowCompletarPerfil(true)}><User className="home-action-icon" /><div className="home-action-text"><span className="home-action-title">Completar Perfil</span><span className="home-action-subtitle">Información académica</span></div></div>
+              <div className="home-action-button" onClick={() => navigate('/perfil')}>
+                <User className="home-action-icon" />
+                <div className="home-action-text">
+                  <span className="home-action-title">Mi Perfil</span>
+                  <span className="home-action-subtitle">Actualiza tus datos</span>
+                </div>
+              </div>
+              <div className="home-action-button" onClick={() => navigate('/aulas')}>
+                <BookOpen className="home-action-icon" />
+                <div className="home-action-text">
+                  <span className="home-action-title">Mis Aulas</span>
+                  <span className="home-action-subtitle">Accede a tus aulas</span>
+                </div>
+              </div>
+              <div className="home-action-button" onClick={() => setShowCompletarPerfil(true)}>
+                <User className="home-action-icon" />
+                <div className="home-action-text">
+                  <span className="home-action-title">Completar Perfil</span>
+                  <span className="home-action-subtitle">Información académica</span>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
@@ -211,7 +184,8 @@ function Home() {
                 <div className="home-post-header">
                   <div className="home-post-avatar">{post.initials}</div>
                   <div className="home-post-info">
-                    <h4>{post.author}</h4><p>{post.time}</p>
+                    <h4>{post.author}</h4>
+                    <p>{post.time}</p>
                   </div>
                   <button className="home-chat-options"><MoreHorizontal size={20} /></button>
                 </div>
@@ -253,13 +227,6 @@ function Home() {
         userData={userData}
         onComplete={handleCompletarPerfil}
         isNewUser={false}
-      />
-
-      {/* MODAL DE INVITACIONES PENDIENTES */}
-      <InvitacionesPendientes
-        isOpen={showInvitaciones}
-        onClose={() => setShowInvitaciones(false)}
-        onAulaAceptada={handleAulaAceptada}
       />
     </div>
   );

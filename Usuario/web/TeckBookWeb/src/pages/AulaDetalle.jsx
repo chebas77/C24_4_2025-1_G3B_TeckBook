@@ -16,7 +16,10 @@ import {
   Bell,
   Search,
   Filter,
-  AlertCircle
+  AlertCircle,
+  Calculator,
+  Trash2,
+  X
 } from 'lucide-react';
 import './AulaDetalle.css';
 import ListaIntegrantes from '../components/ListaIntegrantes';
@@ -30,11 +33,19 @@ function AulaDetalle() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCalculadora, setShowCalculadora] = useState(false);
   const [newAnuncio, setNewAnuncio] = useState({
     titulo: '',
     contenido: '',
     fijado: false
   });
+
+  // Estados para la calculadora de notas
+  const [porcentajeTeoria, setPorcentajeTeoria] = useState(70);
+  const [notasTeoria, setNotasTeoria] = useState([]);
+  const [notasLaboratorio, setNotasLaboratorio] = useState([]);
+  const [nuevaNotaTeoria, setNuevaNotaTeoria] = useState('');
+  const [nuevaNotaLaboratorio, setNuevaNotaLaboratorio] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -106,6 +117,74 @@ function AulaDetalle() {
     }
   };
 
+  // Funciones para la calculadora de notas
+  const agregarNotaTeoria = () => {
+    const nota = parseFloat(nuevaNotaTeoria);
+    if (!isNaN(nota) && nota >= 0 && nota <= 20) {
+      setNotasTeoria([...notasTeoria, nota]);
+      setNuevaNotaTeoria('');
+    }
+  };
+
+  const agregarNotaLaboratorio = () => {
+    const nota = parseFloat(nuevaNotaLaboratorio);
+    if (!isNaN(nota) && nota >= 0 && nota <= 20) {
+      setNotasLaboratorio([...notasLaboratorio, nota]);
+      setNuevaNotaLaboratorio('');
+    }
+  };
+
+  const eliminarNotaTeoria = (index) => {
+    const nuevasNotas = notasTeoria.filter((_, i) => i !== index);
+    setNotasTeoria(nuevasNotas);
+  };
+
+  const eliminarNotaLaboratorio = (index) => {
+    const nuevasNotas = notasLaboratorio.filter((_, i) => i !== index);
+    setNotasLaboratorio(nuevasNotas);
+  };
+
+  const calcularPromedioTeoria = () => {
+    if (notasTeoria.length === 0) return 0;
+    if (notasTeoria.length === 1) return notasTeoria[0];
+    
+    const notasOrdenadas = [...notasTeoria].sort((a, b) => a - b);
+    const notasSinLaMasBaja = notasOrdenadas.slice(1);
+    const suma = notasSinLaMasBaja.reduce((acc, nota) => acc + nota, 0);
+    return suma / notasSinLaMasBaja.length;
+  };
+
+  const calcularPromedioLaboratorio = () => {
+    if (notasLaboratorio.length === 0) return 0;
+    const suma = notasLaboratorio.reduce((acc, nota) => acc + nota, 0);
+    return suma / notasLaboratorio.length;
+  };
+
+  const calcularNotaFinal = () => {
+    const promedioTeoria = calcularPromedioTeoria();
+    const promedioLaboratorio = calcularPromedioLaboratorio();
+    const porcentajeLaboratorio = 100 - porcentajeTeoria;
+
+    const notaTeoriaPonderada = (promedioTeoria * porcentajeTeoria) / 100;
+    const notaLaboratorioPonderada = (promedioLaboratorio * porcentajeLaboratorio) / 100;
+    
+    let notaFinal = notaTeoriaPonderada + notaLaboratorioPonderada;
+    
+    if (notaFinal >= 12.49) {
+      notaFinal = Math.max(13, Math.round(notaFinal));
+    } else {
+      notaFinal = Math.round(notaFinal * 100) / 100;
+    }
+    
+    return notaFinal;
+  };
+
+  const limpiarCalculadora = () => {
+    setNotasTeoria([]);
+    setNotasLaboratorio([]);
+    setPorcentajeTeoria(70);
+  };
+
   const filteredAnuncios = anuncios.filter(anuncio =>
     anuncio.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     anuncio.contenido?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -126,8 +205,8 @@ function AulaDetalle() {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
+      <div className="aula-loading-container">
+        <div className="aula-loading-spinner"></div>
         <p>Cargando aula...</p>
       </div>
     );
@@ -135,15 +214,15 @@ function AulaDetalle() {
 
   if (error && !aula) {
     return (
-      <div className="error-container">
+      <div className="aula-error-container">
         <AlertCircle size={48} />
         <h2>Error al cargar el aula</h2>
         <p>{error}</p>
-        <div className="error-actions">
-          <button className="btn-secondary" onClick={() => navigate(-1)}>
+        <div className="aula-error-actions">
+          <button className="aula-btn-secondary" onClick={() => navigate(-1)}>
             Volver
           </button>
-          <button className="btn-primary" onClick={() => window.location.reload()}>
+          <button className="aula-btn-primary" onClick={() => window.location.reload()}>
             Reintentar
           </button>
         </div>
@@ -151,34 +230,37 @@ function AulaDetalle() {
     );
   }
 
+  const notaFinal = calcularNotaFinal();
+  const esAprobado = notaFinal >= 13;
+
   return (
-    <div className="aula-interna">
+    <div className="aula-detalle-container">
       {/* Header */}
-      <header className="aula-header" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', zIndex: 10, position: 'relative' }}>
-        <div className="header-content" style={{ position: 'relative', zIndex: 11 }}>
-          <div className="header-left">
-            <button className="back-btn" onClick={() => navigate(-1)}>
+      <header className="aula-detalle-header" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', zIndex: 10, position: 'relative' }}>
+        <div className="aula-header-content" style={{ position: 'relative', zIndex: 11 }}>
+          <div className="aula-header-left">
+            <button className="aula-back-btn" onClick={() => navigate(-1)}>
               <ArrowLeft size={20} />
             </button>
-            <div className="aula-info">
+            <div className="aula-info-section">
               <h1>{aula?.nombre || aula?.titulo || 'Aula'}</h1>
               {aula?.descripcion && (
                 <div className="aula-descripcion-header">
                   {aula.descripcion}
                 </div>
               )}
-              <div className="aula-meta">
+              <div className="aula-meta-info">
                 <span><BookOpen size={14} /> Código: {aula?.codigo || 'N/A'}</span>
                 {/* Se elimina la fecha de creación del header para mostrarla solo en la sidebar */}
               </div>
             </div>
           </div>
-          <div className="header-actions">
-            <button className="header-btn" onClick={() => setShowCreateModal(true)}>
+          <div className="aula-header-actions">
+            <button className="aula-header-btn" onClick={() => setShowCreateModal(true)}>
               <Plus size={16} />
               <span>Nuevo Anuncio</span>
             </button>
-            <button className="header-btn">
+            <button className="aula-header-btn">
               <Settings size={16} />
               <span>Configuración</span>
             </button>
@@ -187,83 +269,57 @@ function AulaDetalle() {
       </header>
 
       {/* Contenido Principal */}
-      <div className="main-content" style={{ zIndex: 1, position: 'relative' }}>
-        {/* Información del Aula visible arriba */}
-        <div className="info-card" style={{ marginBottom: 24 }}>
-          <h3>Información del Aula</h3>
-          <div className="info-items">
-            <div className="info-item">
-              <BookOpen size={16} color="#64748b" />
-              <div>
-                <div className="label">Código</div>
-                <div className="value">{aula?.codigo || 'N/A'}</div>
-              </div>
-            </div>
-            <div className="info-item">
-              <Calendar size={16} color="#64748b" />
-              <div>
-                <div className="label">Fecha de Creación</div>
-                <div className="value">
-                  {getFechaCreacion() ? 
-                    new Date(getFechaCreacion()).toLocaleDateString('es-ES') : 
-                    'No disponible'
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="anuncios-section">
+      <div className="aula-main-content" style={{ zIndex: 1, position: 'relative' }}>
+        <div className="aula-anuncios-section">
           {/* Barra de Acciones */}
-          <div className="actions-bar">
-            <div className="search-container">
-              <Search className="search-icon" size={16} />
+          <div className="aula-actions-bar">
+            <div className="aula-search-container">
+              <Search className="aula-search-icon" size={16} />
               <input
                 type="text"
-                className="search-input"
+                className="aula-search-input"
                 placeholder="Buscar anuncios..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <button className="filter-btn">
+              <button className="aula-filter-btn">
                 <Filter size={16} />
               </button>
             </div>
-            <button className="create-btn" onClick={() => setShowCreateModal(true)}>
+            <button className="aula-create-btn" onClick={() => setShowCreateModal(true)}>
               <Plus size={16} />
               Crear Anuncio
             </button>
           </div>
 
           {/* Lista de Anuncios */}
-          <div className="anuncios-list">
+          <div className="aula-anuncios-list">
             {error && anuncios.length === 0 ? (
-              <div className="empty-state">
+              <div className="aula-empty-state">
                 <AlertCircle size={48} color="#64748b" />
                 <h3>No se pudieron cargar los anuncios</h3>
                 <p>{error}</p>
               </div>
             ) : filteredAnuncios.length === 0 ? (
-              <div className="empty-state">
+              <div className="aula-empty-state">
                 <MessageCircle size={48} color="#64748b" />
                 <h3>No hay anuncios</h3>
                 <p>Cuando se publiquen anuncios en esta aula, aparecerán aquí.</p>
               </div>
             ) : (
               filteredAnuncios.map(anuncio => (
-                <div key={anuncio.id} className={`anuncio-card ${anuncio.fijado ? 'fijado' : ''}`}>
+                <div key={anuncio.id} className={`aula-anuncio-card ${anuncio.fijado ? 'fijado' : ''}`}>
                   {anuncio.fijado && (
-                    <div className="pin-badge">
+                    <div className="aula-pin-badge">
                       <Pin size={12} />
                       Fijado
                     </div>
                   )}
                   
-                  <div className="anuncio-header">
-                    <div className="anuncio-title-section">
+                  <div className="aula-anuncio-header">
+                    <div className="aula-anuncio-title-section">
                       <h3>{anuncio.titulo}</h3>
-                      <div className="anuncio-meta">
+                      <div className="aula-anuncio-meta">
                         <span><Calendar size={14} /> {anuncio.fechaPublicacion ? 
                           new Date(anuncio.fechaPublicacion).toLocaleDateString('es-ES', {
                             day: 'numeric',
@@ -274,34 +330,34 @@ function AulaDetalle() {
                           }) : 'Fecha no disponible'}</span>
                       </div>
                     </div>
-                    <div className="anuncio-actions">
-                      <button className="anuncio-btn" title="Ver">
+                    <div className="aula-anuncio-actions">
+                      <button className="aula-anuncio-btn" title="Ver">
                         <Eye size={16} />
                       </button>
-                      <button className="anuncio-btn" title="Comentarios">
+                      <button className="aula-anuncio-btn" title="Comentarios">
                         <MessageCircle size={16} />
                       </button>
-                      <button className="anuncio-btn" title="Fijar">
+                      <button className="aula-anuncio-btn" title="Fijar">
                         <Pin size={16} />
                       </button>
-                      <button className="anuncio-btn" title="Invitar">
+                      <button className="aula-anuncio-btn" title="Invitar">
                         <UserPlus size={16} />
                       </button>
-                      <button className="anuncio-btn" title="Más opciones">
+                      <button className="aula-anuncio-btn" title="Más opciones">
                         <MoreVertical size={16} />
                       </button>
                     </div>
                   </div>
 
-                  <div className="anuncio-content">
+                  <div className="aula-anuncio-content">
                     <p>{anuncio.contenido}</p>
                   </div>
 
-                  <div className="anuncio-footer">
-                    <span className="anuncio-fecha">
+                  <div className="aula-anuncio-footer">
+                    <span className="aula-anuncio-fecha">
                       {anuncio.fechaPublicacion ? new Date(anuncio.fechaPublicacion).toLocaleString() : ''}
                     </span>
-                    <button className="anuncio-share">
+                    <button className="aula-anuncio-share">
                       <Share2 size={14} />
                       Compartir
                     </button>
@@ -312,42 +368,56 @@ function AulaDetalle() {
           </div>
         </div>
 
-        {/* Sidebar: primero info del aula, luego integrantes */}
-        <div className="sidebar">
-          <div className="info-card" style={{ marginBottom: 24 }}>
-            <h3>Información del Aula</h3>
-            <div className="info-items">
-              <div className="info-item">
-                <BookOpen size={16} color="#64748b" />
-                <div>
-                  <div className="label">Código</div>
-                  <div className="value">{aula?.codigo || 'N/A'}</div>
-                </div>
+        {/* Sidebar: información del aula compacta e integrantes con borde */}
+        <div className="aula-sidebar">
+          {/* Información del Aula - Versión Compacta */}
+          <div className="aula-info-card-compact">
+            <h4>Información del Aula</h4>
+            <div className="aula-info-items-compact">
+              <div className="aula-info-item-compact">
+                <BookOpen size={14} color="#64748b" />
+                <span className="label-compact">Código:</span>
+                <span className="value-compact">{aula?.codigo || 'N/A'}</span>
               </div>
-              <div className="info-item">
-                <Calendar size={16} color="#64748b" />
-                <div>
-                  <div className="label">Fecha de Creación</div>
-                  <div className="value">
-                    {getFechaCreacion() ? 
-                      new Date(getFechaCreacion()).toLocaleDateString('es-ES') : 
-                      'No disponible'
-                    }
-                  </div>
-                </div>
+              <div className="aula-info-item-compact">
+                <Calendar size={14} color="#64748b" />
+                <span className="label-compact">Creado:</span>
+                <span className="value-compact">
+                  {getFechaCreacion() ? 
+                    new Date(getFechaCreacion()).toLocaleDateString('es-ES') : 
+                    'No disponible'
+                  }
+                </span>
               </div>
             </div>
           </div>
-          <ListaIntegrantes aulaId={aulaId} />
+
+          {/* Integrantes con borde especial */}
+          <div className="aula-integrantes-card">
+            <h4>
+              <Users size={16} color="#3b82f6" />
+              Integrantes
+            </h4>
+            <ListaIntegrantes aulaId={aulaId} />
+            
+            {/* Botón de Calculadora de Notas */}
+            <button 
+              className="aula-calculadora-btn" 
+              onClick={() => setShowCalculadora(true)}
+            >
+              <Calculator size={16} />
+              Calculadora de Notas
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Footer con controles */}
       <div className="aula-footer">
-        <div className="footer-control">
+        <div className="aula-footer-control">
           <Bell size={20} />
         </div>
-        <div className="footer-search">
+        <div className="aula-footer-search">
           <input 
             type="text" 
             placeholder="Buscar..." 
@@ -358,23 +428,23 @@ function AulaDetalle() {
             <Search size={16} />
           </button>
         </div>
-        <div className="footer-control">
+        <div className="aula-footer-control">
           <Filter size={20} />
         </div>
       </div>
 
       {/* Modal Crear Anuncio */}
       {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="aula-modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="aula-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="aula-modal-header">
               <h3>Crear Nuevo Anuncio</h3>
-              <button className="close-btn" onClick={() => setShowCreateModal(false)}>
+              <button className="aula-close-btn" onClick={() => setShowCreateModal(false)}>
                 ×
               </button>
             </div>
-            <form className="anuncio-form" onSubmit={handleCreateAnuncio}>
-              <div className="form-group">
+            <form className="aula-anuncio-form" onSubmit={handleCreateAnuncio}>
+              <div className="aula-form-group">
                 <label htmlFor="titulo">Título</label>
                 <input
                   id="titulo"
@@ -384,7 +454,7 @@ function AulaDetalle() {
                   required
                 />
               </div>
-              <div className="form-group">
+              <div className="aula-form-group">
                 <label htmlFor="contenido">Contenido</label>
                 <textarea
                   id="contenido"
@@ -394,7 +464,7 @@ function AulaDetalle() {
                   required
                 />
               </div>
-              <div className="checkbox-group">
+              <div className="aula-checkbox-group">
                 <input
                   id="fijado"
                   type="checkbox"
@@ -403,15 +473,169 @@ function AulaDetalle() {
                 />
                 <label htmlFor="fijado">Fijar anuncio</label>
               </div>
-              <div className="form-actions">
-                <button type="button" className="btn-cancel" onClick={() => setShowCreateModal(false)}>
+              <div className="aula-form-actions">
+                <button type="button" className="aula-btn-cancel" onClick={() => setShowCreateModal(false)}>
                   Cancelar
                 </button>
-                <button type="submit" className="btn-submit">
+                <button type="submit" className="aula-btn-submit">
                   Publicar Anuncio
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Calculadora de Notas */}
+      {showCalculadora && (
+        <div className="aula-modal-overlay" onClick={() => setShowCalculadora(false)}>
+          <div className="calculadora-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="calculadora-modal-header">
+              <h3>
+                <Calculator size={20} />
+                Calculadora de Notas
+              </h3>
+              <button className="aula-close-btn" onClick={() => setShowCalculadora(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="calculadora-body">
+              {/* Configuración de porcentajes */}
+              <div className="porcentaje-section">
+                <label className="porcentaje-label">
+                  Porcentaje de Teoría: {porcentajeTeoria}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={porcentajeTeoria}
+                  onChange={(e) => setPorcentajeTeoria(parseInt(e.target.value))}
+                  className="porcentaje-slider"
+                />
+                <div className="porcentaje-info">
+                  <span>Teoría: {porcentajeTeoria}%</span>
+                  <span>Laboratorio/Taller: {100 - porcentajeTeoria}%</span>
+                </div>
+              </div>
+
+              <div className="notas-sections">
+                {/* Sección de Teoría */}
+                <div className="notas-section">
+                  <h4>Notas de Teoría</h4>
+                  <p className="notas-info">Se elimina la nota más baja automáticamente</p>
+                  
+                  <div className="agregar-nota">
+                    <input
+                      type="number"
+                      min="0"
+                      max="20"
+                      step="0.1"
+                      value={nuevaNotaTeoria}
+                      onChange={(e) => setNuevaNotaTeoria(e.target.value)}
+                      placeholder="Ingresa nota (0-20)"
+                      className="nota-input"
+                      onKeyPress={(e) => e.key === 'Enter' && agregarNotaTeoria()}
+                    />
+                    <button onClick={agregarNotaTeoria} className="agregar-btn">
+                      <Plus size={16} />
+                    </button>
+                  </div>
+
+                  <div className="notas-lista">
+                    {notasTeoria.map((nota, index) => (
+                      <div key={index} className="nota-item">
+                        <span>{nota}</span>
+                        <button onClick={() => eliminarNotaTeoria(index)} className="eliminar-btn">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {notasTeoria.length > 0 && (
+                    <div className="promedio-info">
+                      Promedio: {calcularPromedioTeoria().toFixed(2)}
+                      {notasTeoria.length > 1 && (
+                        <span className="nota-eliminada"> (eliminando nota más baja: {Math.min(...notasTeoria)})</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Sección de Laboratorio */}
+                <div className="notas-section">
+                  <h4>Notas de Laboratorio/Taller</h4>
+                  <p className="notas-info">Se consideran todas las notas</p>
+                  
+                  <div className="agregar-nota">
+                    <input
+                      type="number"
+                      min="0"
+                      max="20"
+                      step="0.1"
+                      value={nuevaNotaLaboratorio}
+                      onChange={(e) => setNuevaNotaLaboratorio(e.target.value)}
+                      placeholder="Ingresa nota (0-20)"
+                      className="nota-input"
+                      onKeyPress={(e) => e.key === 'Enter' && agregarNotaLaboratorio()}
+                    />
+                    <button onClick={agregarNotaLaboratorio} className="agregar-btn">
+                      <Plus size={16} />
+                    </button>
+                  </div>
+
+                  <div className="notas-lista">
+                    {notasLaboratorio.map((nota, index) => (
+                      <div key={index} className="nota-item">
+                        <span>{nota}</span>
+                        <button onClick={() => eliminarNotaLaboratorio(index)} className="eliminar-btn">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {notasLaboratorio.length > 0 && (
+                    <div className="promedio-info">
+                      Promedio: {calcularPromedioLaboratorio().toFixed(2)}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Resultado Final */}
+              <div className="resultado-final">
+                <div className="calculo-detalle">
+                  <div className="calculo-item">
+                    <span>Teoría ({porcentajeTeoria}%): </span>
+                    <span>{((calcularPromedioTeoria() * porcentajeTeoria) / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="calculo-item">
+                    <span>Laboratorio ({100 - porcentajeTeoria}%): </span>
+                    <span>{((calcularPromedioLaboratorio() * (100 - porcentajeTeoria)) / 100).toFixed(2)}</span>
+                  </div>
+                </div>
+                
+                <div className={`nota-final ${esAprobado ? 'aprobado' : 'desaprobado'}`}>
+                  <h3>Nota Final: {notaFinal}</h3>
+                  <p className={`estado ${esAprobado ? 'aprobado' : 'desaprobado'}`}>
+                    {esAprobado ? '✅ APROBADO' : '❌ DESAPROBADO'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Acciones */}
+              <div className="calculadora-actions">
+                <button onClick={limpiarCalculadora} className="aula-btn-cancel">
+                  Limpiar Todo
+                </button>
+                <button onClick={() => setShowCalculadora(false)} className="aula-btn-submit">
+                  Cerrar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
