@@ -142,33 +142,9 @@ function Home() {
   if (isLoading) return <div className="home-loading-container"><div className="home-loading-spinner"></div><p>Cargando información del usuario...</p></div>;
   if (error) return <div className="home-error-container"><h2>Error al cargar datos</h2><p>{error}</p><button onClick={() => navigate('/')} className="home-button">Volver al inicio</button></div>;
 
-  return (
-    <div className="home-wrapper">
-      {/* ENCABEZADO */}
-<header className="home-header">
-  <h1 className="home-logo">TecBook</h1>
-  <nav className="home-nav">
-    <button className="home-nav-link" style={{ color: '#ffc107' }}>
-      Inicio
-    </button>
-    <button onClick={() => navigate('/perfil')} className="home-nav-link">
-      Perfil
-    </button>
-    <button onClick={() => navigate('/aulas')} className="home-nav-link">
-      Aulas
-    </button>
-    <button onClick={() => navigate('/crear-aula')} className="home-nav-link home-create-btn">
-      <Plus size={16} style={{ marginRight: '4px' }} />
-      Crear Aula
-    </button>
-    <button onClick={() => setShowInvitaciones(true)} className="home-nav-link">
-      Ver Invitaciones
-    </button>
-    <button onClick={handleLogout} className="home-logout">
-      Cerrar sesión
-    </button>
-  </nav>
-</header>
+return (
+  <div className="home-wrapper">
+    <Header />  {/* ✅ Tu Header modular real */}
 
 {/* LAYOUT DE 3 COLUMNAS */}
 

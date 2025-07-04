@@ -4,10 +4,10 @@ import './Header.css';
 function Header() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
+ const handleLogout = () => {
+  localStorage.removeItem('token');
+  navigate('/', { replace: true }); // 👈 usa '/'
+};
 
   return (
     <header className="header-wrapper">

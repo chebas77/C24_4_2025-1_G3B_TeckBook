@@ -160,32 +160,7 @@ function Aulas() {
   return (
   <div className="aulas-wrapper">
     {/* HEADER */}
-    <header className="aulas-header">
-      <h1 className="aulas-logo">TecBook</h1>
-      <nav className="aulas-nav">
-        <button onClick={() => navigate('/home')} className="aulas-nav-link">
-          Inicio
-        </button>
-        <button onClick={() => setShowInvitaciones(true)} className="aulas-nav-link">
-          Invitaciones
-        </button>
-        <button onClick={() => navigate('/perfil')} className="aulas-nav-link">
-          Perfil
-        </button>
-        <button className="aulas-nav-link aulas-active">
-          Aulas
-        </button>
-        {isProfesor() && (
-          <button onClick={handleCreateAula} className="aulas-nav-link aulas-create-btn">
-            <Plus size={16} style={{ marginRight: '4px' }} />
-            Crear Aula
-          </button>
-        )}
-        <button onClick={handleLogout} className="aulas-logout">
-          Cerrar sesión
-        </button>
-      </nav>
-    </header>
+    <Header />  {/* ✅ Tu Header modular real */}
 
     {/* MODAL DE INVITACIONES */}
     <InvitacionesPendientes

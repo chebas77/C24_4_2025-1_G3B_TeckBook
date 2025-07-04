@@ -62,7 +62,7 @@
   flex-wrap: wrap;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
   .profile-header {
     flex-direction: column;
     text-align: center;
@@ -199,6 +199,8 @@
 
 @media (max-width: 1200px) {
   .info-sections {
+    display: flex;
+    flex-direction: column;
     grid-template-columns: 1fr;
   }
 }
