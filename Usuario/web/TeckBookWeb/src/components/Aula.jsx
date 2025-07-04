@@ -166,7 +166,7 @@ function Aulas() {
               
               {/* BOTÓN DE CREAR AULA SOLO PARA PROFESORES */}
               {isProfesor() && (
-                <button onClick={handleCreateAula} className="aulas-create-main-btn">
+                <button onClick={handleCreateAula} className="aulas-create-main-btn" type="button">
                   <Plus size={20} />
                   Crear Nueva Aula
                 </button>
