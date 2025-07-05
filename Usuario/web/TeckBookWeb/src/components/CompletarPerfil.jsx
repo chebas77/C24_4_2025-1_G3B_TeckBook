@@ -28,7 +28,21 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
   const [isLoadingDepartamentos, setIsLoadingDepartamentos] = useState(true);
   const [error, setError] = useState('');
 
-  // Cargar carreras al abrir el modal
+  // Precargar datos del usuario cuando se abre el modal o cuando userData cambia
+  useEffect(() => {
+    if (isOpen && userData) {
+      console.log('Precargando datos del usuario:', userData);
+      
+      setFormData({
+        carreraId: userData.carreraId || '',
+        cicloActual: userData.cicloActual || userData.ciclo || '',
+        departamentoId: userData.departamentoId || '',
+        telefono: userData.telefono || ''
+      });
+    }
+  }, [isOpen, userData]);
+
+  // Cargar carreras y departamentos al abrir el modal
   useEffect(() => {
     if (isOpen) {
       // Pequeño delay para evitar múltiples ejecuciones
@@ -57,8 +71,17 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
       const response = await fetch('http://localhost:8080/api/carreras/activas');
       if (response.ok) {
         const data = await response.json();
-        setCarreras(data.carreras || []);
-        console.log('Carreras cargadas:', data.carreras?.length || 0);
+        const carrerasList = data.carreras || [];
+        setCarreras(carrerasList);
+        console.log('Carreras cargadas:', carrerasList.length);
+        
+        // Si el usuario ya tiene una carrera, verificar que existe en la lista
+        if (userData?.carreraId) {
+          const carreraExiste = carrerasList.find(c => c.id === parseInt(userData.carreraId));
+          if (!carreraExiste) {
+            console.warn('La carrera del usuario no está en la lista de carreras activas');
+          }
+        }
       } else {
         console.error('Error al cargar carreras:', response.status);
         setError('Error al cargar carreras');
@@ -77,7 +100,17 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
       const response = await fetch('http://localhost:8080/api/departamentos/activos');
       if (response.ok) {
         const data = await response.json();
-        setDepartamentos(data.departamentos || []);
+        const departamentosList = data.departamentos || [];
+        setDepartamentos(departamentosList);
+        console.log('Departamentos cargados:', departamentosList.length);
+        
+        // Si el usuario ya tiene un departamento, verificar que existe en la lista
+        if (userData?.departamentoId) {
+          const departamentoExiste = departamentosList.find(d => d.id === parseInt(userData.departamentoId));
+          if (!departamentoExiste) {
+            console.warn('El departamento del usuario no está en la lista de departamentos activos');
+          }
+        }
       } else {
         setError('Error al cargar departamentos');
       }
@@ -126,6 +159,17 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
     setError('');
 
     try {
+      // Preparar datos para enviar
+      const dataToUpdate = {
+        ...userData,
+        carreraId: parseInt(formData.carreraId),
+        cicloActual: formData.cicloActual, // Mantener como string o convertir según necesidad del backend
+        departamentoId: parseInt(formData.departamentoId),
+        telefono: formData.telefono.trim() || null
+      };
+
+      console.log('Enviando datos actualizados:', dataToUpdate);
+
       // Endpoint para completar perfil
       const response = await fetch(`http://localhost:8080/api/usuarios/${userData.id}`, {
         method: 'PUT',
@@ -133,20 +177,14 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          ...userData,
-          carreraId: parseInt(formData.carreraId),
-          cicloActual: parseInt(formData.cicloActual),
-          departamentoId: parseInt(formData.departamentoId),
-          telefono: formData.telefono || null
-        })
+        body: JSON.stringify(dataToUpdate)
       });
 
       if (response.ok) {
         const result = await response.json();
         console.log('Perfil completado exitosamente:', result);
         
-        // Callback para el padre
+        // Callback para el padre con los datos actualizados
         if (onComplete) {
           onComplete(result);
         }
@@ -190,8 +228,38 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
     }
   };
 
+  // Función para obtener iniciales del usuario
+  const getUserInitials = () => {
+    if (userData?.nombre && userData?.apellidos) {
+      return `${userData.nombre.charAt(0)}${userData.apellidos.charAt(0)}`.toUpperCase();
+    }
+    return 'GS';
+  };
+
+  // Función para verificar qué campos faltan
+  const getMissingFields = () => {
+    const missing = [];
+    if (!userData?.carreraId && !formData.carreraId) missing.push('carrera');
+    if (!userData?.cicloActual && !userData?.ciclo && !formData.cicloActual) missing.push('ciclo');
+    if (!userData?.departamentoId && !formData.departamentoId) missing.push('departamento');
+    return missing;
+  };
+
+  // Función para verificar si el formulario tiene cambios
+  const hasChanges = () => {
+    return (
+      formData.carreraId !== (userData?.carreraId || '') ||
+      formData.cicloActual !== (userData?.cicloActual || userData?.ciclo || '') ||
+      formData.departamentoId !== (userData?.departamentoId || '') ||
+      formData.telefono !== (userData?.telefono || '')
+    );
+  };
+
   // No renderizar si no está abierto
   if (!isOpen) return null;
+
+  const missingFields = getMissingFields();
+  const isFormComplete = missingFields.length === 0 && hasChanges();
 
   return (
     <div className="perfil-modal-overlay" onClick={handleBackdropClick}>
@@ -200,7 +268,9 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
         <div className="perfil-modal-header">
           <div className="perfil-modal-title">
             <GraduationCap size={24} className="perfil-modal-icon" />
-            <h2>¡Completa tu perfil!</h2>
+            <h2>
+              {missingFields.length > 0 ? '¡Completa tu perfil!' : '¡Actualiza tu perfil!'}
+            </h2>
           </div>
           <button 
             onClick={handleClose} 
@@ -219,14 +289,17 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
                 {userData?.profileImageUrl ? (
                   <img src={userData.profileImageUrl} alt="Perfil" />
                 ) : (
-                  <span>
-                    {userData?.nombre?.charAt(0)}{userData?.apellidos?.charAt(0)}
-                  </span>
+                  <span>{getUserInitials()}</span>
                 )}
               </div>
               <div className="user-details">
                 <h3>¡Hola {userData?.nombre || 'Usuario'}! 👋</h3>
-                <p>Para completar tu registro, necesitamos algunos datos adicionales</p>
+                <p>
+                  {missingFields.length > 0 
+                    ? `Faltan algunos datos: ${missingFields.join(', ')}`
+                    : 'Revisa y actualiza tu información académica'
+                  }
+                </p>
               </div>
             </div>
           </div>
@@ -244,13 +317,14 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
               <label htmlFor="carreraId" className="form-label">
                 <GraduationCap size={18} />
                 Carrera
+                {userData?.carreraId && <span className="field-status">✓ Configurado</span>}
               </label>
               <select
                 id="carreraId"
                 name="carreraId"
                 value={formData.carreraId}
                 onChange={handleChange}
-                className="form-select"
+                className={`form-select ${userData?.carreraId ? 'has-value' : ''}`}
                 disabled={isLoadingCarreras || isLoading}
                 required
               >
@@ -271,13 +345,14 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
                 <label htmlFor="cicloActual" className="form-label">
                   <BookOpen size={18} />
                   Ciclo Actual
+                  {(userData?.cicloActual || userData?.ciclo) && <span className="field-status">✓ Configurado</span>}
                 </label>
                 <select
                   id="cicloActual"
                   name="cicloActual"
                   value={formData.cicloActual}
                   onChange={handleChange}
-                  className="form-select"
+                  className={`form-select ${(userData?.cicloActual || userData?.ciclo) ? 'has-value' : ''}`}
                   disabled={isLoading}
                   required
                 >
@@ -294,13 +369,14 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
                 <label htmlFor="departamentoId" className="form-label">
                   <GraduationCap size={18} />
                   Departamento
+                  {userData?.departamentoId && <span className="field-status">✓ Configurado</span>}
                 </label>
                 <select
                   id="departamentoId"
                   name="departamentoId"
                   value={formData.departamentoId}
                   onChange={handleChange}
-                  className="form-select"
+                  className={`form-select ${userData?.departamentoId ? 'has-value' : ''}`}
                   disabled={isLoadingDepartamentos || isLoading}
                   required
                 >
@@ -321,6 +397,7 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
               <label htmlFor="telefono" className="form-label">
                 <Phone size={18} />
                 Teléfono (Opcional)
+                {userData?.telefono && <span className="field-status">✓ Configurado</span>}
               </label>
               <input
                 type="tel"
@@ -329,7 +406,7 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
                 value={formData.telefono}
                 onChange={handleChange}
                 placeholder="Ej: +51 999 888 777"
-                className="form-select"
+                className={`form-select ${userData?.telefono ? 'has-value' : ''}`}
                 disabled={isLoading}
               />
             </div>
@@ -337,7 +414,12 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
             {/* Información adicional */}
             <div className="info-box">
               <CheckCircle size={16} />
-              <span>Esta información nos ayuda a personalizar tu experiencia y mantenerte conectado</span>
+              <span>
+                {missingFields.length > 0 
+                  ? 'Esta información nos ayuda a personalizar tu experiencia'
+                  : 'Mantén tu información actualizada para una mejor experiencia'
+                }
+              </span>
             </div>
 
             {/* Botones de acción */}
@@ -348,12 +430,12 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
                 className="btn-secondary"
                 disabled={isLoading}
               >
-                Completar después
+                {missingFields.length > 0 ? 'Completar después' : 'Cancelar'}
               </button>
               <button
                 type="submit"
                 className="btn-primary"
-                disabled={isLoading || isLoadingCarreras || isLoadingDepartamentos}
+                disabled={isLoading || isLoadingCarreras || isLoadingDepartamentos || (!hasChanges() && missingFields.length === 0)}
               >
                 {isLoading ? (
                   <>
@@ -363,14 +445,17 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
                 ) : (
                   <>
                     <CheckCircle size={18} />
-                    Completar perfil
+                    {missingFields.length > 0 ? 'Completar perfil' : 'Actualizar perfil'}
                   </>
                 )}
               </button>
             </div>
 
             <div className="form-note">
-              Los campos marcados con * son obligatorios. El teléfono es opcional.
+              {missingFields.length > 0 
+                ? `Campos faltantes: ${missingFields.join(', ')}. El teléfono es opcional.`
+                : 'Todos los campos están completos. El teléfono es opcional.'
+              }
             </div>
           </form>
         </div>
