@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import '../css/Home.css';
 import CompletarPerfil from '../components/CompletarPerfil';
 import Header from '../components/Header';
+import Modal from '../components/Modal';
 import { 
   FileText,
   Upload,
@@ -27,6 +28,13 @@ function Home() {
   const [anunciosFijados, setAnunciosFijados] = useState([]);
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [shareStatus, setShareStatus] = useState({});
+  const [sortOrder, setSortOrder] = useState('recientes'); // 'recientes' o 'antiguos'
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createType, setCreateType] = useState(null); // 'material', 'question', 'upload'
+  const [formData, setFormData] = useState({ aulaId: '', titulo: '', contenido: '', archivo: null });
+  const [aulasDisponibles, setAulasDisponibles] = useState([]);
+  const [formError, setFormError] = useState("");
+  const firstInputRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -189,29 +197,89 @@ function Home() {
     }
   };
 
-  // Navegación a crear contenido
-  const handleCreateContent = (type) => {
-    switch (type) {
-      case 'material':
-        // Redirigir a página de subir material o abrir modal
-        console.log('Compartir material de estudio');
-        break;
-      case 'question':
-        // Redirigir a página de hacer pregunta o abrir modal
-        console.log('Hacer pregunta académica');
-        break;
-      case 'resource':
-        // Redirigir a página de compartir recurso
-        console.log('Compartir recurso útil');
-        break;
-      case 'upload':
-        // Abrir selector de archivos
-        console.log('Subir archivo');
-        break;
-      default:
-        break;
+  // Obtener aulas para el formulario al abrir modal
+  const fetchAulasForForm = async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:8080/api/aulas', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setAulasDisponibles(data.aulas || data);
     }
   };
+
+  const handleCreateContent = (type) => {
+    setCreateType(type);
+    setShowCreateModal(true);
+    fetchAulasForForm();
+    setFormData({ aulaId: '', titulo: '', contenido: '', archivo: null });
+  };
+
+  useEffect(() => {
+    if (showCreateModal && firstInputRef.current) {
+      setTimeout(() => firstInputRef.current.focus(), 100);
+    }
+  }, [showCreateModal]);
+
+  const handleFormChange = e => {
+    const { name, value, files } = e.target;
+    setFormError("");
+    setFormData(prev => ({
+      ...prev,
+      [name]: files ? files[0] : value
+    }));
+  };
+
+  const validateForm = () => {
+    if (!formData.aulaId) return "Selecciona un aula.";
+    if (!formData.titulo.trim()) return "El título es obligatorio.";
+    if (formData.titulo.length > 255) return "El título es muy largo.";
+    if (!formData.contenido.trim()) return "El contenido es obligatorio.";
+    if (createType === 'upload' && !formData.archivo) return "Debes adjuntar un archivo.";
+    if (createType === 'upload' && formData.archivo && formData.archivo.size > 10 * 1024 * 1024) return "El archivo no debe superar 10MB.";
+    return "";
+  };
+
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    const errorMsg = validateForm();
+    if (errorMsg) {
+      setFormError(errorMsg);
+      if (firstInputRef.current) firstInputRef.current.focus();
+      return;
+    }
+    const token = localStorage.getItem('token');
+    const form = new FormData();
+    form.append('titulo', formData.titulo);
+    form.append('contenido', formData.contenido);
+    form.append('tipo', createType === 'question' ? 'PREGUNTA' : createType === 'material' ? 'MATERIAL' : 'ARCHIVO');
+    if (formData.archivo) form.append('archivo', formData.archivo);
+    // POST al backend
+    const res = await fetch(`http://localhost:8080/api/aulas/${formData.aulaId}/anuncios`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: form
+    });
+    if (res.ok) {
+      setShowCreateModal(false);
+      setCreateType(null);
+      setFormData({ aulaId: '', titulo: '', contenido: '', archivo: null });
+      // Refrescar anuncios
+      window.location.reload();
+    } else {
+      alert('Error al crear el anuncio');
+    }
+  };
+
+  // Ordenar anuncios según filtro
+  const sortedAnuncios = [...anuncios].sort((a, b) => {
+    if (sortOrder === 'recientes') {
+      return new Date(b.fechaPublicacion) - new Date(a.fechaPublicacion);
+    } else {
+      return new Date(a.fechaPublicacion) - new Date(b.fechaPublicacion);
+    }
+  });
 
   if (isLoading) return <div className="home-loading-container"><div className="home-loading-spinner"></div><p>Cargando información del usuario...</p></div>;
   if (error) return <div className="home-error-container"><h2>Error al cargar datos</h2><p>{error}</p><button onClick={() => navigate('/')} className="home-button">Volver al inicio</button></div>;
@@ -220,7 +288,6 @@ function Home() {
     <div className="home-wrapper">
       {/* USAR EL HEADER UNIFICADO */}
       <Header />
-      
       {/* LAYOUT DE 3 COLUMNAS */}
       <div className="home-main-layout">
         <aside className="home-left-sidebar">
@@ -262,7 +329,6 @@ function Home() {
             </div>
           </div>
         </aside>
-
         <main className="home-main-content">
           {/* SECCIÓN DE CREAR CONTENIDO ACADÉMICO */}
           <div className="home-create-post">
@@ -300,15 +366,28 @@ function Home() {
             </div>
           </div>
 
+          <div className="home-anuncios-sort-filter">
+            <label htmlFor="anuncios-sort-select">Ordenar anuncios:</label>
+            <select
+              id="anuncios-sort-select"
+              value={sortOrder}
+              onChange={e => setSortOrder(e.target.value)}
+              className="home-anuncios-sort-select"
+            >
+              <option value="recientes">Más recientes primero</option>
+              <option value="antiguos">Más antiguos primero</option>
+            </select>
+          </div>
+
           <div className="home-posts-container">
-            {anuncios.length === 0 && !isLoading ? (
+            {sortedAnuncios.length === 0 && !isLoading ? (
               <div className="home-empty-state">
                 <FileText size={48} color="#94a3b8" />
                 <h3>No hay anuncios recientes</h3>
                 <p>Los anuncios de tus aulas aparecerán aquí cuando se publiquen.</p>
               </div>
             ) : (
-              anuncios.map(post => (
+              sortedAnuncios.map(post => (
                 <article key={post.id} className="home-post">
                   <div className="home-post-header">
                     {post.profesorImagenUrl && post.profesorImagenUrl.trim() ? (
@@ -437,6 +516,34 @@ function Home() {
         onComplete={handleCompletarPerfil}
         isNewUser={false}
       />
+
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <form className="home-create-modal-form" onSubmit={handleCreateSubmit}>
+          <h2 style={{textAlign:'center',marginBottom:18}}>
+            {createType === 'material' ? '📚 Compartir Material' : createType === 'question' ? '❓ Hacer Pregunta' : '📎 Subir Archivo'}
+          </h2>
+          {formError && <div className="modal-error">{formError}</div>}
+          <label>Aula:
+            <select name="aulaId" value={formData.aulaId} onChange={handleFormChange} required ref={firstInputRef}>
+              <option value="">Selecciona un aula</option>
+              {aulasDisponibles.map(a => <option key={a.id} value={a.id}>{a.nombre || a.titulo}</option>)}
+            </select>
+          </label>
+          <label>Título:
+            <input name="titulo" value={formData.titulo} onChange={handleFormChange} required maxLength={255} />
+          </label>
+          <label>Contenido:
+            <textarea name="contenido" value={formData.contenido} onChange={handleFormChange} required rows={4} />
+          </label>
+          {createType === 'upload' && (
+            <label>Archivo:
+              <input type="file" name="archivo" onChange={handleFormChange} accept="*" required />
+              <span className="modal-file-info">{formData.archivo ? formData.archivo.name : ''}</span>
+            </label>
+          )}
+          <button className="home-button" type="submit" style={{marginTop:16}}>Publicar</button>
+        </form>
+      </Modal>
     </div>
   );
 }

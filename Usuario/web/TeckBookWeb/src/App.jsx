@@ -8,6 +8,7 @@ import Aulas from "./components/Aula"; // 🆕 IMPORTAR
 import CrearAula from "./pages/CrearAula"; // 🆕 IMPORTAR
 import AulaDetalle from "./pages/AulaDetalle";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import AnunciosGeneral from "./pages/AnunciosGeneral";
 
 function App() {
   return (
@@ -47,6 +48,12 @@ function App() {
         <Route path="/aulas/:aulaId" element={
           <ProtectedRoute>
             <AulaDetalle />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/anuncios-general" element={
+          <ProtectedRoute>
+            <AnunciosGeneral />
           </ProtectedRoute>
         } />
       </Routes>

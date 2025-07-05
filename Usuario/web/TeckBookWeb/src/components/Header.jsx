@@ -88,6 +88,10 @@ function Header() {
               Crear Aula
             </NavLink>
           )}
+          {/* ENLACE A ANUNCIOS GENERALES */}
+          <NavLink to="/anuncios-general" className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
+            Anuncios Generales
+          </NavLink>
           {/* BOTÓN DE INVITACIONES GLOBAL */}
           <button 
             onClick={() => setShowInvitaciones(true)} 

@@ -156,6 +156,13 @@ public class AulaVirtualService {
     }
 
     /**
+     * Sobrecarga de puedeAccederAAula que acepta Integer para aulaId
+     */
+    public boolean puedeAccederAAula(Long usuarioId, String rol, Integer aulaId) {
+        return puedeAccederAAula(usuarioId, rol, aulaId != null ? aulaId.longValue() : null);
+    }
+
+    /**
      * 🔥 BUSCAR AULAS POR NOMBRE (para el usuario específico)
      */
     public List<AulaVirtual> buscarAulasPorNombre(Long usuarioId, String rol, String nombre) {

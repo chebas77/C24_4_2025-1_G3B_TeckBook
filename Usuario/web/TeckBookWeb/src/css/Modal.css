@@ -1,0 +1,82 @@
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(30, 41, 59, 0.35);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px 24px 24px 24px;
+  box-shadow: 0 8px 32px rgba(0,93,171,0.12);
+  min-width: 320px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #64748b;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.2s;
+}
+.modal-close:hover {
+  color: #005DAB;
+}
+.modal-error {
+  background: #ffe5e5;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 15px;
+  text-align: center;
+}
+.modal-file-info {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+  word-break: break-all;
+}
+.home-create-modal-form label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.home-create-modal-form input,
+.home-create-modal-form select,
+.home-create-modal-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 15px;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  background: #f8fafc;
+  color: #1e293b;
+  transition: border 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.home-create-modal-form input:focus,
+.home-create-modal-form select:focus,
+.home-create-modal-form textarea:focus {
+  border-color: #005DAB;
+  box-shadow: 0 0 0 2px rgba(0,93,171,0.10);
+}
+.home-create-modal-form button[type="submit"] {
+  width: 100%;
+}

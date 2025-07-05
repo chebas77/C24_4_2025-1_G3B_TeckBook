@@ -1,4 +1,4 @@
-package com.usuario.backend.controller.aula;
+package com.usuario.backend.controller;
 
 import com.usuario.backend.model.entity.Anuncio;
 import com.usuario.backend.service.aula.AnuncioService;
@@ -14,30 +14,29 @@ import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/aulas/{aulaId}/anuncios")
-public class AnuncioController {
+@RequestMapping("/api/anuncios/general")
+public class AnuncioGeneralController {
     @Autowired
     private AnuncioService anuncioService;
 
     @Autowired
     private UsuarioService usuarioService;
 
-    // GET: anuncios de un aula (solo para usuarios autorizados)
+    // GET: anuncios generales (es_general = true)
     @GetMapping
-    public List<Anuncio> getAnunciosDeAula(@PathVariable Integer aulaId, Principal principal) {
-        String email = principal.getName();
-        var usuario = usuarioService.findByCorreoInstitucional(email);
-        Long usuarioId = usuario.getId();
-        String rol = usuario.getRol().toString(); // El rol real del usuario autenticado
-        List<Anuncio> anuncios = anuncioService.getAnunciosDeAula(usuarioId, rol, aulaId);
-        System.out.println("[AnuncioController] usuarioId=" + usuarioId + ", rol=" + rol + ", aulaId=" + aulaId + ", anuncios retornados=" + (anuncios != null ? anuncios.size() : 0));
-        return anuncios;
+    public List<Anuncio> getAnunciosGenerales() {
+        return anuncioService.getAnunciosGenerales();
     }
 
-    // POST: crear un nuevo anuncio en un aula (con soporte para archivo y tipo)
+    // GET: todos los anuncios (generales y de aula)
+    @GetMapping("/todos")
+    public List<Anuncio> getTodosLosAnuncios() {
+        return anuncioService.getTodosLosAnuncios();
+    }
+
+    // POST: crear un nuevo anuncio general (sin aulaId, es_general = true)
     @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
-    public ResponseEntity<Anuncio> crearAnuncioConArchivo(
-        @PathVariable Integer aulaId,
+    public ResponseEntity<Anuncio> crearAnuncioGeneral(
         @RequestPart("titulo") String titulo,
         @RequestPart("contenido") String contenido,
         @RequestPart("tipo") String tipo,
@@ -51,15 +50,16 @@ public class AnuncioController {
         Anuncio anuncio = new Anuncio();
         anuncio.setTitulo(titulo);
         anuncio.setContenido(contenido);
-        anuncio.setTipo(tipo); // Ahora tipo es String
+        anuncio.setTipo(tipo);
+        anuncio.setEsGeneral(true);
+        anuncio.setAulaId(null);
         if (archivo != null && !archivo.isEmpty()) {
             anuncio.setArchivoNombre(archivo.getOriginalFilename());
             anuncio.setArchivoTipo(archivo.getContentType());
             anuncio.setArchivoTamaño(archivo.getSize());
-            // Aquí podrías guardar el archivo en disco o en la nube
         }
         anuncio.setAutorId(usuarioId != null ? usuarioId.intValue() : null);
-        Anuncio creado = anuncioService.crearAnuncio(usuarioId, rol, aulaId, anuncio);
+        Anuncio creado = anuncioService.crearAnuncioGeneral(usuarioId, rol, anuncio);
         return new ResponseEntity<>(creado, HttpStatus.CREATED);
     }
 }

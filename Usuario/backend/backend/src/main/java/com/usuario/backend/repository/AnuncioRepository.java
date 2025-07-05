@@ -7,5 +7,6 @@ import java.util.List;
 
 @Repository
 public interface AnuncioRepository extends JpaRepository<Anuncio, Long> {
-    List<Anuncio> findByAulaIdAndActivoTrueOrderByFechaPublicacionDesc(Long aulaId);
+    List<Anuncio> findByAulaIdAndActivoTrueOrderByFechaPublicacionDesc(Integer aulaId);
+    List<Anuncio> findByEsGeneralTrueAndActivoTrueOrderByFechaPublicacionDesc();
 }

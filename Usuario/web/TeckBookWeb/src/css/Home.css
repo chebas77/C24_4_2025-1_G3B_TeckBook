@@ -540,6 +540,57 @@
   box-shadow: 0 8px 24px rgba(0, 93, 171, 0.3);
 }
 
+/* Filtro de orden de anuncios */
+.home-anuncios-sort-filter {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 93, 171, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.home-anuncios-sort-filter label {
+  font-size: 15px;
+  color: #005DAB;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.home-anuncios-sort-select {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 15px;
+  background: #fff;
+  color: #1e293b;
+  font-weight: 600;
+  transition: border 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(0,93,171,0.04);
+  outline: none;
+}
+
+.home-anuncios-sort-select:focus {
+  border-color: #005DAB;
+  box-shadow: 0 0 0 2px rgba(0,93,171,0.10);
+}
+
+@media (max-width: 600px) {
+  .home-anuncios-sort-filter {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 16px 10px;
+  }
+  .home-anuncios-sort-select {
+    width: 100%;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .home-main-layout {
@@ -594,251 +645,5 @@
   .home-create-post-input {
     font-size: 14px;
   }
-  /* ============================
-   ESTILOS MEJORADOS PARA HOME
-   Agregar estos estilos al final de Home.css
-   ============================ */
-
-/* ACCIONES ACADÉMICAS MEJORADAS */
-.academic-action {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  border: 1px solid #cbd5e1;
-  color: #374151;
-  transition: all 0.3s ease;
-}
-
-.academic-action:hover {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-  border-color: #3b82f6;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-}
-
-/* ESTADOS DEL BOTÓN DE LIKE */
-.home-post-action-btn.liked {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-  transform: scale(1.02);
-}
-
-.home-post-action-btn.liked:hover {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-}
-
-/* ESTADOS DEL BOTÓN DE COMPARTIR */
-.home-post-action-btn.sharing {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  cursor: not-allowed;
-}
-
-.home-post-action-btn.sharing:hover {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  transform: none;
-}
-
-/* MEJORAS EN LA INFORMACIÓN DEL POST */
-.home-post-aula {
-  color: #6366f1;
-  font-weight: 600;
-  font-size: 13px;
-  margin: 2px 0;
-}
-
-.home-post-date {
-  color: #64748b;
-  font-size: 12px;
-  margin: 2px 0;
-}
-
-.home-post-title-link {
-  transition: color 0.3s ease;
-}
-
-.home-post-title-link:hover {
-  color: #3b82f6 !important;
-}
-
-/* ESTADO VACÍO MEJORADO */
-.home-empty-state {
-  background: white;
-  border-radius: 16px;
-  padding: 60px 40px;
-  text-align: center;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.home-empty-state h3 {
-  margin: 16px 0 8px 0;
-  color: #334155;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.home-empty-state p {
-  margin: 0;
-  color: #64748b;
-  font-size: 14px;
-}
-
-/* ANUNCIOS FIJADOS MEJORADOS */
-.home-chat-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-}
-
-.home-chat-aula {
-  color: #6366f1;
-  font-size: 12px;
-  font-weight: 600;
-  margin: 2px 0 4px 0;
-}
-
-.home-empty-announcements {
-  padding: 20px;
-  text-align: center;
-  color: #64748b;
-  font-style: italic;
-}
-
-/* MEJORAS EN LAS ACCIONES DE POST */
-.home-post-actions {
-  display: flex;
-  justify-content: space-around;
-  padding: 12px 16px;
-  border-top: 1px solid #f1f5f9;
-  gap: 8px;
-}
-
-.home-post-action-btn {
-  background: transparent;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  flex: 1;
-  justify-content: center;
-}
-
-.home-post-action-btn:hover {
-  background: #f1f5f9;
-  color: #374151;
-  transform: translateY(-1px);
-}
-
-.home-post-action-btn:active {
-  transform: translateY(0);
-}
-
-/* ANIMACIONES SUAVES */
-@keyframes likeAnimation {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1.02); }
-}
-
-.home-post-action-btn.liked {
-  animation: likeAnimation 0.3s ease;
-}
-
-@keyframes shareSuccess {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.home-post-action-btn.sharing {
-  animation: shareSuccess 0.5s ease;
-}
-
-/* PLACEHOLDER MEJORADO */
-.home-create-post-input::placeholder {
-  color: #64748b;
-  font-style: italic;
-}
-
-/* RESPONSIVE PARA NUEVAS FUNCIONALIDADES */
-@media (max-width: 768px) {
-  .home-post-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
   
-  .home-post-action-btn {
-    justify-content: flex-start;
-    padding: 12px 16px;
-  }
-  
-  .academic-action {
-    font-size: 13px;
-    padding: 10px 14px;
-  }
-  
-  .home-empty-state {
-    padding: 40px 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .home-create-post-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .academic-action {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .home-post-info h4 {
-    font-size: 16px;
-  }
-  
-  .home-post-aula,
-  .home-post-date {
-    font-size: 11px;
-  }
-}
-
-/* MEJORAS DE ACCESIBILIDAD */
-@media (prefers-reduced-motion: reduce) {
-  .home-post-action-btn:hover,
-  .academic-action:hover {
-    transform: none;
-  }
-  
-  .home-post-action-btn.liked,
-  .home-post-action-btn.sharing {
-    animation: none;
-  }
-}
-
-/* ESTADOS DE FOCUS MEJORADOS */
-.home-post-action-btn:focus,
-.academic-action:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* INDICADORES VISUALES */
-.home-post-action-btn[disabled] {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.home-post-action-btn[disabled]:hover {
-  background: transparent;
-  transform: none;
-}
 }
