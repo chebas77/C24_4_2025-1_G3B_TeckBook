@@ -1,26 +1,25 @@
 package com.usuario.backend.security.oauth2;
 
+import com.usuario.backend.config.UrlConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Component
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(OAuth2AuthenticationFailureHandler.class);
     
-    @Value("${app.frontend.url:http://localhost:5173}")
-    private String frontendUrl;
+    @Autowired
+    private UrlConfig urlConfig;  // ✅ Inyectar configuración de URLs
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
@@ -31,11 +30,8 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
         // Determinar el tipo de error
         String errorMessage = determineErrorMessage(exception);
         
-        // Codificar el mensaje de error para la URL
-        String encodedError = URLEncoder.encode(errorMessage, StandardCharsets.UTF_8);
-        
-        // Construir URL de redirección con error
-        String targetUrl = frontendUrl + "/?error=" + encodedError;
+        // ✅ Usar UrlConfig para construir URL de error
+        String targetUrl = urlConfig.buildErrorUrl(errorMessage);
         
         logger.info("🔀 Redirigiendo después de error OAuth2 a: {}", targetUrl);
         

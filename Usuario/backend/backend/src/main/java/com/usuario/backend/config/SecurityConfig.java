@@ -1,6 +1,3 @@
-// ===============================================
-// SECURITY CONFIG ACTUALIZADO
-// ===============================================
 package com.usuario.backend.config;
 
 import com.usuario.backend.security.oauth2.CustomOAuth2UserService;
@@ -32,6 +29,9 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+    
+    @Autowired
+    private UrlConfig urlConfig;  // ✅ Inyectar configuración de URLs
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -52,17 +52,17 @@ public class SecurityConfig {
                         // 🔥 ENDPOINTS PARA FILTROS EN CASCADA (PÚBLICOS PARA CREAR AULAS)
                         .requestMatchers("/api/departamentos/activos").permitAll()
                         .requestMatchers("/api/carreras/activas").permitAll()
-                        .requestMatchers("/api/carreras/departamento/*/activas").permitAll() // 🆕 NUEVO
-                        .requestMatchers("/api/ciclos/todos").permitAll() // 🆕 NUEVO
-                        .requestMatchers("/api/ciclos/carrera/*").permitAll() // 🆕 NUEVO
-                        .requestMatchers("/api/secciones/carrera/*").permitAll() // 🆕 NUEVO
-                        .requestMatchers("/api/secciones/carrera/*/ciclo/*").permitAll() // 🆕 NUEVO
+                        .requestMatchers("/api/carreras/departamento/*/activas").permitAll()
+                        .requestMatchers("/api/ciclos/todos").permitAll()
+                        .requestMatchers("/api/ciclos/carrera/*").permitAll()
+                        .requestMatchers("/api/secciones/carrera/*").permitAll()
+                        .requestMatchers("/api/secciones/carrera/*/ciclo/*").permitAll()
                         
                         // 🔥 HEALTH CHECKS PÚBLICOS
                         .requestMatchers("/api/carreras/health").permitAll()
-                        .requestMatchers("/api/departamentos/health").permitAll() // 🆕 NUEVO
-                        .requestMatchers("/api/ciclos/health").permitAll() // 🆕 NUEVO
-                        .requestMatchers("/api/secciones/health").permitAll() // 🆕 NUEVO
+                        .requestMatchers("/api/departamentos/health").permitAll()
+                        .requestMatchers("/api/ciclos/health").permitAll()
+                        .requestMatchers("/api/secciones/health").permitAll()
                         
                         // 🔥 ENDPOINTS QUE REQUIEREN AUTENTICACIÓN
                         .requestMatchers("/api/usuarios/me", "/api/usuarios/{id}").authenticated()
@@ -74,20 +74,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/aulas-virtuales", "/api/aulas-virtuales/**").authenticated()
                         
                         // 🔥 INVITACIONES - REQUIERE AUTENTICACIÓN 
-                        .requestMatchers("/api/invitaciones/**").authenticated() // 🆕 AGREGADO
-                        
-                        // 🔥 ENDPOINTS DE CARRERAS QUE REQUIEREN AUTENTICACIÓN (ADMINISTRACIÓN)
-                        .requestMatchers("/api/carreras/{id}", "/api/carreras/departamento/**", 
-                                        "/api/carreras/buscar").authenticated()
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/carreras").authenticated()
-                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/carreras/**").authenticated()
-                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/carreras/**").authenticated()
-                        
-                        // 🔥 ENDPOINTS DE DEPARTAMENTOS QUE REQUIEREN AUTENTICACIÓN (ADMINISTRACIÓN)
-                        .requestMatchers("/api/departamentos/{id}").authenticated() // 🆕 NUEVO
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/departamentos").authenticated() // 🆕 NUEVO
-                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/departamentos/**").authenticated() // 🆕 NUEVO
-                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/departamentos/**").authenticated() // 🆕 NUEVO
+                        .requestMatchers("/api/invitaciones/**").authenticated()
                         
                         // 🔥 DEBUG ENDPOINTS (TEMPORALES)
                         .requestMatchers("/api/debug/**").permitAll()
@@ -120,8 +107,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 🔥 CONFIGURACIÓN CORS MEJORADA
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
+        // ✅ Usar UrlConfig para CORS dinámico
+        configuration.addAllowedOrigin(urlConfig.getFrontendBaseUrl());
+        configuration.addAllowedOrigin("http://localhost:5173");  // Para desarrollo
+        configuration.addAllowedOrigin("http://localhost:3000");  // Para desarrollo
+        
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
         configuration.setAllowCredentials(true);

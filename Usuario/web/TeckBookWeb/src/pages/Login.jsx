@@ -4,6 +4,9 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle, HelpCircle } from 'lu
 import portalImage from "../assets/portal.png";
 import '../css/Login.css';
 
+// URL del backend desplegado en Koyeb
+const API_BASE_URL = 'https://rival-terra-chebas77-e06d6aa9.koyeb.app';
+
 function Login() {
   const [correoInstitucional, setCorreoInstitucional] = useState("");
   const [password, setPassword] = useState("");
@@ -13,8 +16,8 @@ function Login() {
   const navigate = useNavigate();
 
   const handleGoogleLogin = () => {
-    // Redirigir a la URL de autenticación de Google
-    window.location.href = 'http://localhost:8080/oauth2/authorize/google';
+    // Redirigir a la URL de autenticación de Google en Koyeb
+    window.location.href = `${API_BASE_URL}/oauth2/authorize/google`;
   };
 
   const handleLogin = async (e) => {
@@ -23,9 +26,13 @@ function Login() {
     setIsLoading(true);
     
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          // Agregar headers para CORS si es necesario
+          "Accept": "application/json"
+        },
         body: JSON.stringify({ 
           correoInstitucional: correoInstitucional, 
           password: password 
@@ -33,6 +40,7 @@ function Login() {
       });
       
       if (!response.ok) {
+        const errorData = await response.text();
         throw new Error('Credenciales incorrectas');
       }
 
@@ -49,6 +57,7 @@ function Login() {
         setError('Respuesta del servidor inválida');
       }
     } catch (error) {
+      console.error('Error de login:', error);
       setError(error.message || 'Error de conexión con el backend');
     } finally {
       setIsLoading(false);

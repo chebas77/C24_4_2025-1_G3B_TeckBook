@@ -1,5 +1,6 @@
 package com.usuario.backend.security.oauth2;
 
+import com.usuario.backend.config.UrlConfig;
 import com.usuario.backend.model.entity.Usuario;
 import com.usuario.backend.service.user.UsuarioService;
 import jakarta.servlet.ServletException;
@@ -8,7 +9,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -16,8 +16,6 @@ import org.springframework.stereotype.Component;
 import com.usuario.backend.security.jwt.JwtTokenProvider;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Component
@@ -31,8 +29,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     @Autowired
     private UsuarioService usuarioService;
     
-    @Value("${app.frontend.url:http://localhost:5173}")
-    private String frontendUrl;
+    @Autowired
+    private UrlConfig urlConfig;  // ✅ Inyectar configuración de URLs
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
@@ -57,8 +55,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             // 🔥 VALIDAR DOMINIO INSTITUCIONAL
             if (!email.endsWith("@tecsup.edu.pe")) {
                 logger.error("❌ Dominio no permitido: {}", email);
-                String errorMsg = URLEncoder.encode("Solo se permiten correos con dominio @tecsup.edu.pe", StandardCharsets.UTF_8);
-                response.sendRedirect(frontendUrl + "/?error=" + errorMsg);
+                String errorUrl = urlConfig.buildErrorUrl("Solo se permiten correos con dominio @tecsup.edu.pe");
+                response.sendRedirect(errorUrl);
                 return;
             }
 
@@ -79,36 +77,32 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 // ✅ GENERAR TOKEN Y REDIRIGIR SIEMPRE A HOME
                 String token = tokenProvider.generateToken(email);
                 
-                // 🔧 CONSTRUIR URL CON PARÁMETROS PARA EL FRONTEND
-                StringBuilder redirectUrl = new StringBuilder(frontendUrl + "/home?token=" + token);
+                // 🔍 Verificar si necesita completar datos
+                boolean needsCompletion = usuario.requiereCompletarDatos();
                 
-                // Agregar parámetros adicionales para el frontend
-                if (isNewUser) {
-                    redirectUrl.append("&new=true");
-                }
-                
-                // 🔍 Verificar si necesita completar datos y agregar parámetro
-                if (usuario.requiereCompletarDatos()) {
-                    redirectUrl.append("&incomplete=true");
+                if (needsCompletion) {
                     logger.info("📝 Usuario requiere completar datos: {}", email);
                 } else {
                     logger.info("✅ Usuario con perfil completo: {}", email);
                 }
 
-                logger.info("🔀 Redirigiendo a: {}", redirectUrl.toString());
-                response.sendRedirect(redirectUrl.toString());
+                // ✅ Usar UrlConfig para construir la URL de redirección
+                String redirectUrl = urlConfig.buildTokenRedirectUrl(token, isNewUser, needsCompletion);
+                
+                logger.info("🔀 Redirigiendo a: {}", redirectUrl);
+                response.sendRedirect(redirectUrl);
 
             } catch (Exception e) {
                 logger.error("❌ Error procesando usuario OAuth2: {}", e.getMessage(), e);
-                String errorMsg = URLEncoder.encode("Error al procesar usuario: " + e.getMessage(), StandardCharsets.UTF_8);
-                response.sendRedirect(frontendUrl + "/?error=" + errorMsg);
+                String errorUrl = urlConfig.buildErrorUrl("Error al procesar usuario: " + e.getMessage());
+                response.sendRedirect(errorUrl);
                 return;
             }
 
         } catch (Exception e) {
             logger.error("❌ Error general en OAuth2 Success Handler", e);
-            String errorMsg = URLEncoder.encode("Error general: " + e.getMessage(), StandardCharsets.UTF_8);
-            response.sendRedirect(frontendUrl + "/?error=" + errorMsg);
+            String errorUrl = urlConfig.buildErrorUrl("Error general: " + e.getMessage());
+            response.sendRedirect(errorUrl);
         }
     }
 
@@ -133,12 +127,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // 🚨 CAMPOS QUE QUEDARÁN NULL PARA FORZAR COMPLETAR DATOS:
         // carreraId = null (se completa en el modal)
         // cicloActual = null (se completa en el modal)
-        
-        // ✅ CAMPOS QUE NO REQUIEREN COMPLETAR (se asignan después):
-        // seccionId = null (se asigna por admin más tarde)
-        // telefono = null (opcional, se puede completar en el modal)
-        // direccion = null (opcional)
-        // fechaNacimiento = null (opcional)
         
         return usuarioService.registrarUsuarioOAuth(newUser);
     }

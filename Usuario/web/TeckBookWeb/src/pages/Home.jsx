@@ -19,6 +19,9 @@ import {
   Check
 } from 'lucide-react';
 
+// URL del backend desplegado en Koyeb
+const API_BASE_URL = 'https://rival-terra-chebas77-e06d6aa9.koyeb.app';
+
 function Home() {
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,8 +62,11 @@ function Home() {
 
     const fetchUserData = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/auth/user', {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const response = await fetch(`${API_BASE_URL}/api/auth/user`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
         });
 
         if (!response.ok) throw new Error('No se pudo obtener la información del usuario');
