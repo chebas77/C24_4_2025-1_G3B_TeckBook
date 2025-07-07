@@ -87,8 +87,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 }
 
                 // ✅ Usar UrlConfig para construir la URL de redirección
-                String redirectUrl = urlConfig.buildTokenRedirectUrl(token, isNewUser, needsCompletion);
-                
+                String redirectUrl = urlConfig.buildFrontendUrl("/oauth2/redirect") +
+    "?token=" + token +
+    (isNewUser ? "&new=true" : "") +
+    (needsCompletion ? "&incomplete=true" : "");
+    
                 logger.info("🔀 Redirigiendo a: {}", redirectUrl);
                 response.sendRedirect(redirectUrl);
 

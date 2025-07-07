@@ -57,19 +57,19 @@ public class UrlConfig {
      * 🔧 Construye URL de redirección con token y parámetros
      */
     public String buildTokenRedirectUrl(String token, boolean isNewUser, boolean isIncomplete) {
-        StringBuilder url = new StringBuilder(getFrontendHomeUrl());
-        url.append("?token=").append(token);
-        
-        if (isNewUser) {
-            url.append("&new=true");
-        }
-        if (isIncomplete) {
-            url.append("&incomplete=true");
-        }
-        
-        return url.toString();
+    StringBuilder url = new StringBuilder(getFrontendBaseUrl() + "/oauth2/redirect");
+    url.append("?token=").append(token);
+
+    if (isNewUser) {
+        url.append("&new=true");
     }
-    
+    if (isIncomplete) {
+        url.append("&incomplete=true");
+    }
+
+    return url.toString();
+}
+
     /**
      * 🔧 Construye URL de error con mensaje
      */

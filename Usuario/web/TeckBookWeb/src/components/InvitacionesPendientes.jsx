@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Clock, Check, X, User, BookOpen, AlertCircle } from 'lucide-react';
 import '../css/InvitacionesPendientes.css'; // Opcional: si prefieres mover los estilos a un archivo externo
+import { API_CONFIG } from '../config/apiConfig';
+
 
 function InvitacionesPendientes({ isOpen, onClose, onAulaAceptada }) {
   const [invitaciones, setInvitaciones] = useState([]);
@@ -14,87 +16,90 @@ function InvitacionesPendientes({ isOpen, onClose, onAulaAceptada }) {
   }, [isOpen]);
 
   const fetchInvitacionesPendientes = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/invitaciones/pendientes', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setInvitaciones(data.invitaciones || []);
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/invitaciones/pendientes`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-    } catch (error) {
-      console.error('Error al obtener invitaciones:', error);
-    } finally {
-      setIsLoading(false);
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setInvitaciones(data.invitaciones || []);
     }
-  };
+  } catch (error) {
+    console.error('Error al obtener invitaciones:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const aceptarInvitacion = async (codigo) => {
-    try {
-      setProcesando(codigo);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/invitaciones/aceptar/${codigo}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        alert('¡Te has unido al aula exitosamente!');
-        if (onAulaAceptada) onAulaAceptada();
-        fetchInvitacionesPendientes();
-
-        setTimeout(() => {
-          if (invitaciones.length <= 1) {
-            onClose();
-          }
-        }, 1000);
-      } else {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.error}`);
+  try {
+    setProcesando(codigo);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/invitaciones/aceptar/${codigo}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-    } catch (error) {
-      alert('Error al aceptar invitación');
-    } finally {
-      setProcesando(null);
+    });
+
+    if (response.ok) {
+      alert('¡Te has unido al aula exitosamente!');
+      if (onAulaAceptada) onAulaAceptada();
+      fetchInvitacionesPendientes();
+
+      setTimeout(() => {
+        if (invitaciones.length <= 1) {
+          onClose();
+        }
+      }, 1000);
+    } else {
+      const errorData = await response.json();
+      alert(`Error: ${errorData.error}`);
     }
-  };
+  } catch (error) {
+    alert('Error al aceptar invitación');
+  } finally {
+    setProcesando(null);
+  }
+};
+
 
   const rechazarInvitacion = async (codigo) => {
-    try {
-      setProcesando(codigo);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/invitaciones/rechazar/${codigo}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        alert('Invitación rechazada correctamente.');
-        fetchInvitacionesPendientes();
-
-        setTimeout(() => {
-          if (invitaciones.length <= 1) {
-            onClose();
-          }
-        }, 1000);
-      } else {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.error}`);
+  try {
+    setProcesando(codigo);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/invitaciones/rechazar/${codigo}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-    } catch (error) {
-      alert('Error al rechazar invitación');
-    } finally {
-      setProcesando(null);
+    });
+
+    if (response.ok) {
+      alert('Invitación rechazada correctamente.');
+      fetchInvitacionesPendientes();
+
+      setTimeout(() => {
+        if (invitaciones.length <= 1) {
+          onClose();
+        }
+      }, 1000);
+    } else {
+      const errorData = await response.json();
+      alert(`Error: ${errorData.error}`);
     }
-  };
+  } catch (error) {
+    alert('Error al rechazar invitación');
+  } finally {
+    setProcesando(null);
+  }
+};
+
 
   const formatearFecha = (fechaString) => {
     const fecha = new Date(fechaString);

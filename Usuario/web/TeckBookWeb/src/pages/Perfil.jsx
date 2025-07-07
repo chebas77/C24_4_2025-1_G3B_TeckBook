@@ -18,6 +18,10 @@ import {
 } from 'lucide-react';
 import "../css/Perfil.css";
 import Header from '../components/Header';
+// ✅ Usar servicios centralizados
+import { API_CONFIG, ROUTES } from '../config/apiConfig';
+import apiService from '../services/apiService'; // Ajusta la ruta según tu estructura
+import { ENDPOINTS } from '../config/apiConfig';
 
 function Perfil() {
   const [userData, setUserData] = useState({
@@ -55,52 +59,53 @@ function Perfil() {
   const navigate = useNavigate();
 
   // Obtener datos del usuario al cargar
-  useEffect(() => {
-    let isMounted = true;
+useEffect(() => {
+  let isMounted = true;
+  const token = localStorage.getItem('token');
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/');
-      return;
+  if (!token) {
+    navigate(ROUTES.PUBLIC.LOGIN);
+    return;
+  }
+
+  const fetchUserData = async () => {
+  try {
+    const data = await apiService.get(ENDPOINTS.AUTH.GET_USER);
+
+    if (!isMounted) return;
+
+    setUserData({
+      ...data,
+      profileImageUrl: data.profileImageUrl || '',
+      cicloActual: data.cicloActual || data.ciclo || '',
+      telefono: data.telefono || '',
+      departamentoNombre: data.departamentoNombre || '',
+      carreraNombre: data.carreraNombre || '',
+      seccionNombre: data.seccionNombre || ''
+    });
+
+  } catch (error) {
+    if (isMounted) {
+      console.error('🔴 Error al obtener datos del usuario:', error.message);
+      setError(error.message);
+      setTimeout(() => {
+        localStorage.removeItem('token');
+        navigate(ROUTES.PUBLIC.LOGIN);
+      }, 3000);
     }
+  } finally {
+    if (isMounted) setIsLoading(false);
+  }
+};
 
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch('http://localhost:8080/api/auth/user', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+fetchUserData();
 
-        if (!response.ok) throw new Error('No se pudo obtener la información del usuario');
+return () => {
+  isMounted = false;
+};
+}, [navigate]);
 
-        const data = await response.json();
-        if (!isMounted) return;
 
-        setUserData({
-          ...data,
-          profileImageUrl: data.profileImageUrl || "",
-          cicloActual: data.cicloActual || data.ciclo || "",
-          telefono: data.telefono || "",
-          departamentoNombre: data.departamentoNombre || "",
-          carreraNombre: data.carreraNombre || "",
-          seccionNombre: data.seccionNombre || ""
-        });
-
-      } catch (error) {
-        if (isMounted) {
-          setError(error.message);
-          setTimeout(() => {
-            localStorage.removeItem('token');
-            navigate('/');
-          }, 3000);
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    fetchUserData();
-    return () => { isMounted = false; };
-  }, [navigate]);
 
   // Cargar datos para los selects cuando se abre el modal de edición
   useEffect(() => {
@@ -117,42 +122,30 @@ function Perfil() {
     }
   }, [isEditing, userData.profileImageUrl]); // Añadido userData.profileImageUrl para reaccionar a cambios iniciales
 
-  const fetchFormData = async () => {
-    try {
-      const token = localStorage.getItem('token');
+ const fetchFormData = async () => {
+  try {
+    // ✅ Cargar departamentos activos
+    const deptData = await apiService.get(ENDPOINTS.DEPARTAMENTOS.ACTIVOS);
+    setDepartamentos(deptData.departamentos || deptData || []);
 
-      // Cargar departamentos
-      const deptResponse = await fetch('http://localhost:8080/api/departamentos', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (deptResponse.ok) {
-        const deptData = await deptResponse.json();
-        setDepartamentos(deptData.departamentos || deptData || []);
-      }
+    // ✅ Cargar carreras activas
+    const carrerasData = await apiService.get(ENDPOINTS.CARRERAS.ACTIVAS);
+    setCarreras(carrerasData.carreras || carrerasData || []);
 
-      // Cargar carreras
-      const carrerasResponse = await fetch('http://localhost:8080/api/carreras/activas', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (carrerasResponse.ok) {
-        const carrerasData = await carrerasResponse.json();
-        setCarreras(carrerasData.carreras || carrerasData || []);
-      }
-
-      // Cargar secciones si hay departamento seleccionado
-      if (userData.departamentoId) {
-        const seccionesResponse = await fetch(`http://localhost:8080/api/departamentos/${userData.departamentoId}/secciones`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (seccionesResponse.ok) {
-          const seccionesData = await seccionesResponse.json();
-          setSecciones(seccionesData.secciones || seccionesData || []);
-        }
-      }
-    } catch (error) {
-      console.error('Error al cargar datos del formulario:', error);
+    // ✅ Cargar secciones si hay carrera y ciclo seleccionado
+    if (userData?.carreraId && userData?.cicloId) {
+      const seccionesData = await apiService.get(
+        ENDPOINTS.SECCIONES.BY_CARRERA_CICLO(userData.carreraId, userData.cicloId)
+      );
+      setSecciones(seccionesData.secciones || seccionesData || []);
     }
-  };
+
+  } catch (error) {
+    console.error('❌ Error al cargar datos del formulario:', error);
+  }
+};
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -170,136 +163,117 @@ function Perfil() {
   };
 
   const loadSecciones = async (departamentoId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/departamentos/${departamentoId}/secciones`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSecciones(data.secciones || data || []);
-      }
-    } catch (error) {
-      console.error('Error al cargar secciones:', error);
-    }
+  try {
+    const endpoint = ENDPOINTS.SECCIONES.BY_CARRERA(departamentoId); // o ajusta según tu backend si es BY_DEPARTAMENTO
+    const data = await apiService.get(endpoint);
+    setSecciones(data.secciones || data || []);
+  } catch (error) {
+    console.error('❌ Error al cargar secciones:', error);
+  }
+};
+
+  const handleImageSelect = (e) => {
+  const file = e.target.files[0];
+
+  if (!file) {
+    setSelectedFile(null);
+    setPreviewUrl(userData.profileImageUrl || null);
+    return;
+  }
+
+  const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (!validTypes.includes(file.type)) {
+    setError('Formato de imagen no válido. Usa JPG, PNG, GIF o WebP.');
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    setError('La imagen es demasiado grande. Máximo 5MB.');
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    return;
+  }
+
+  setError(null);
+  setSuccess(null);
+  setSelectedFile(file);
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    setPreviewUrl(e.target.result);
   };
+  reader.readAsDataURL(file);
 
-  // Función para manejar la selección de imágenes (sin subir todavía)
-  const handleImageSelect = (e) => { // Removed async since no API call here
-    const file = e.target.files[0];
-    if (!file) {
-      setSelectedFile(null);
-      setPreviewUrl(userData.profileImageUrl || null); // Revert to original or null
-      return;
-    }
+  console.log(`📷 Imagen seleccionada: ${file.name} | Tamaño: ${(file.size / 1024).toFixed(2)} KB`);
+};
 
-    // Validar tipo y tamaño
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      setError('Formato de imagen no válido. Usa JPG, PNG, GIF o WebP.');
-      setSelectedFile(null); // Clear selected file
-      setPreviewUrl(null); // Clear preview
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) { // 5MB
-      setError('La imagen es demasiado grande. Máximo 5MB.');
-      setSelectedFile(null); // Clear selected file
-      setPreviewUrl(null); // Clear preview
-      return;
-    }
-
-    // Clear previous errors/success related to image
-    setError(null);
-    setSuccess(null);
-
-    // Guardar el archivo seleccionado
-    setSelectedFile(file);
-
-    // Crear preview de la imagen
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewUrl(e.target.result);
-    };
-    reader.readAsDataURL(file);
-
-    console.log('Imagen seleccionada:', file.name, 'Tamaño:', file.size);
-  };
 
   // Función para subir la imagen al servidor
-  const uploadImageToServer = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
+  
+  
+const uploadImageToServer = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
 
-    const token = localStorage.getItem('token');
-    console.log('Subiendo imagen al servidor:', file.name);
+  const token = localStorage.getItem('token'); // 🔧 aseguramos que el token esté definido
 
-    const response = await fetch('http://localhost:8080/api/upload/profile-image', {
+  try {
+    const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/upload/profile-image`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
       body: formData
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
-      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al subir imagen');
     }
 
     const data = await response.json();
-    console.log('Imagen subida exitosamente:', data);
-    return data.imageUrl || data.url || data.profileImageUrl;
-  };
+    return data.imageUrl;
 
-  // Corrección: Encapsular el contenido en la función
-  const handleRemovePhoto = async () => {
-    if (!confirm("¿Estás seguro de que deseas eliminar tu foto de perfil?")) {
-      return;
-    }
+  } catch (err) {
+    console.error('❌ Error al subir imagen:', err);
+    throw err;
+  }
+};
 
-    try {
-      setIsUploading(true);
-      setError(null);
-      setSuccess(null);
 
-      const token = localStorage.getItem('token');
-      console.log('Eliminando imagen con token:', token ? 'Token presente' : 'Sin token');
+const handleRemovePhoto = async () => {
+  if (!confirm("¿Estás seguro de que deseas eliminar tu foto de perfil?")) {
+    return;
+  }
 
-      const response = await fetch('http://localhost:8080/api/upload/profile-image', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+  try {
+    setIsUploading(true);
+    setError(null);
+    setSuccess(null);
 
-      console.log('Respuesta del servidor (eliminar):', response.status, response.statusText);
+    console.log('🗑️ Eliminando imagen de perfil...');
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
-        console.error('Error del servidor:', errorData);
-        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
-      }
+    await apiService.delete(ENDPOINTS.UPLOAD.IMAGE);
 
-      console.log('Imagen eliminada exitosamente');
+    console.log('✅ Imagen eliminada exitosamente');
 
-      // Actualizar el estado local para reflejar la eliminación
-      setUserData(prev => ({
-        ...prev,
-        profileImageUrl: null
-      }));
-      setSelectedFile(null); // Clear selected file
-      setPreviewUrl(null); // Clear preview
+    setUserData(prev => ({
+      ...prev,
+      profileImageUrl: null
+    }));
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setSuccess('Foto de perfil eliminada correctamente');
+  } catch (error) {
+    console.error('❌ Error al eliminar imagen:', error);
+    setError(`Error al eliminar imagen: ${error.message}`);
+  } finally {
+    setIsUploading(false);
+  }
+};
 
-      setSuccess('Foto de perfil eliminada correctamente');
-
-    } catch (error) {
-      console.error('Error completo:', error);
-      setError(`Error al eliminar imagen: ${error.message}`);
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   // Función para obtener iniciales del usuario
   const getUserInitials = () => {
@@ -340,159 +314,129 @@ function Perfil() {
     );
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError(null);
+  setSuccess(null);
 
-    try {
-      setIsUploading(true); // Activar carga al iniciar el submit
-      const token = localStorage.getItem('token');
-      let finalProfileImageUrl = userData.profileImageUrl; // Imagen actual como base
+  try {
+    setIsUploading(true);
 
-      // 1. Si hay una nueva imagen seleccionada, subirla
-      if (selectedFile) {
-        console.log('Subiendo nueva imagen antes de guardar perfil...');
-        finalProfileImageUrl = await uploadImageToServer(selectedFile);
-        console.log('Nueva imagen subida y URL:', finalProfileImageUrl);
-      } else if (previewUrl === null && userData.profileImageUrl !== null) {
-        // 2. Si el previewUrl es null pero userData.profileImageUrl NO es null (es decir, se eliminó la foto existente)
-        console.log('Se ha marcado para eliminar la foto de perfil existente.');
-        // No necesitamos llamar a la API DELETE aquí, ya que el backend debería manejar
-        // la eliminación si profileImageUrl se envía como null en la actualización del usuario.
-        finalProfileImageUrl = null;
-      }
-      // Si previewUrl es igual a userData.profileImageUrl y no hay selectedFile,
-      // significa que no se cambió la foto, entonces finalProfileImageUrl ya es correcta.
+    let finalProfileImageUrl = userData.profileImageUrl;
 
-      // 3. Preparar datos para enviar (incluir la URL final de la imagen)
-      const dataToSend = {
-        nombre: userData.nombre,
-        apellidos: userData.apellidos,
-        telefono: userData.telefono,
-        cicloActual: userData.cicloActual,
-        departamentoId: userData.departamentoId ? parseInt(userData.departamentoId) : null,
-        carreraId: userData.carreraId ? parseInt(userData.carreraId) : null,
-        seccionId: userData.seccionId ? parseInt(userData.seccionId) : null,
-        profileImageUrl: finalProfileImageUrl // Enviar la URL final (nueva, existente, o null si se eliminó)
-      };
-
-      console.log('Enviando datos del perfil:', dataToSend);
-
-      // 4. Actualizar el perfil en el backend
-      const response = await fetch(`http://localhost:8080/api/usuarios/${userData.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(dataToSend)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Error al actualizar el perfil');
-      }
-
-      const updatedUserData = await response.json();
-
-      // 5. Actualizar estado local con datos actualizados
-      setUserData(prev => ({
-        ...prev,
-        ...updatedUserData,
-        profileImageUrl: finalProfileImageUrl // Asegurar que la imagen se actualice con la URL final
-      }));
-
-      // 6. Limpiar estados temporales de imagen
-      setSelectedFile(null);
-      setPreviewUrl(finalProfileImageUrl); // Establecer la preview a la imagen final
-
-      setSuccess('Perfil actualizado correctamente');
-      setIsEditing(false);
-
-      // Limpiar el input file si no es necesario (se limpia al cerrar el modal)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-
-    } catch (err) {
-      console.error('Error al guardar perfil:', err);
-      setError(`Error al actualizar perfil: ${err.message}`);
-    } finally {
-      setIsUploading(false); // Desactivar carga al finalizar
+    // 1. Subir nueva imagen si se seleccionó
+    if (selectedFile) {
+      console.log('📤 Subiendo nueva imagen antes de guardar perfil...');
+      finalProfileImageUrl = await uploadImageToServer(selectedFile);
+      console.log('✅ Nueva imagen subida:', finalProfileImageUrl);
+    } else if (!previewUrl && userData.profileImageUrl) {
+      // Si se eliminó la imagen (previewUrl === null)
+      console.log('🗑️ Se eliminará la imagen existente');
+      finalProfileImageUrl = null;
     }
-  };
 
-  const handleCancel = () => {
-    // Limpiar estados temporales de imagen y errores/éxitos
+    // 2. Preparar los datos a enviar
+    const dataToSend = {
+      nombre: userData.nombre,
+      apellidos: userData.apellidos,
+      telefono: userData.telefono,
+      cicloActual: userData.cicloActual,
+      departamentoId: userData.departamentoId ? parseInt(userData.departamentoId) : null,
+      carreraId: userData.carreraId ? parseInt(userData.carreraId) : null,
+      seccionId: userData.seccionId ? parseInt(userData.seccionId) : null,
+      profileImageUrl: finalProfileImageUrl
+    };
+
+    console.log('📦 Enviando datos del perfil:', dataToSend);
+
+    // 3. Enviar datos al backend
+    const updatedUser = await apiService.put(
+      ENDPOINTS.USERS.UPDATE(userData.id),
+      dataToSend
+    );
+
+    // 4. Actualizar estado local
+    setUserData(prev => ({
+      ...prev,
+      ...updatedUser,
+      profileImageUrl: finalProfileImageUrl
+    }));
+
+    // 5. Limpiar imagen
     setSelectedFile(null);
-    setPreviewUrl(null); // Importante limpiar para no mostrar la preview de una imagen no guardada
-    setError(null);
-    setSuccess(null);
-    // Limpiar el input file si no se ha guardado
+    setPreviewUrl(finalProfileImageUrl);
+
+    setSuccess('Perfil actualizado correctamente');
+    setIsEditing(false);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
 
-    // Recargar datos originales del usuario
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:8080/api/auth/user', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('No se pudo obtener la información del usuario');
-        }
-
-        const data = await response.json();
-        setUserData({
-          ...data,
-          profileImageUrl: data.profileImageUrl || "",
-          cicloActual: data.cicloActual || data.ciclo || "",
-          telefono: data.telefono || ""
-        });
-        setIsEditing(false); // Cerrar el modal de edición
-      } catch (error) {
-        setError(error.message);
-      }
-    };
-
-    fetchUserData();
-  };
-
-  // Funciones para obtener nombres de IDs
-  const getDepartamentoNombre = () => {
-    if (userData.departamentoNombre) return userData.departamentoNombre;
-    const dept = departamentos.find(d => d.id === parseInt(userData.departamentoId));
-    return dept ? dept.nombre : userData.departamentoId || "No especificado";
-  };
-
-  const getCarreraNombre = () => {
-    if (userData.carreraNombre) return userData.carreraNombre;
-    const carrera = carreras.find(c => c.id === parseInt(userData.carreraId));
-    return carrera ? carrera.nombre : userData.carreraId || "No especificado";
-  };
-
-  const getSeccionNombre = () => {
-    if (userData.seccionNombre) return userData.seccionNombre;
-    const seccion = secciones.find(s => s.id === parseInt(userData.seccionId));
-    return seccion ? seccion.nombre : userData.seccionId || "No especificado";
-  };
-
-  if (isLoading) {
-    return (
-      <div className="full-page">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Cargando información del perfil...</p>
-        </div>
-      </div>
-    );
+  } catch (err) {
+    console.error('❌ Error al guardar perfil:', err);
+    setError(`Error al actualizar perfil: ${err.message}`);
+  } finally {
+    setIsUploading(false);
   }
+};
+
+
+  
+const handleCancel = () => {
+  // Limpiar estados temporales de imagen y errores/éxitos
+  setSelectedFile(null);
+  setPreviewUrl(null);
+  setError(null);
+  setSuccess(null);
+
+  if (fileInputRef.current) {
+    fileInputRef.current.value = '';
+  }
+
+  // Recargar datos originales del usuario
+  const fetchUserData = async () => {
+    try {
+      const data = await apiService.get(ENDPOINTS.AUTH.GET_USER);
+
+      setUserData({
+        ...data,
+        profileImageUrl: data.profileImageUrl || "",
+        cicloActual: data.cicloActual || data.ciclo || "",
+        telefono: data.telefono || ""
+      });
+
+      setIsEditing(false); // Cerrar edición
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  fetchUserData();
+};
+
+  // Fu// Funciones para obtener nombres desde IDs
+const getDepartamentoNombre = () => {
+  if (userData?.departamentoNombre) return userData.departamentoNombre;
+
+  const dept = departamentos?.find(d => d.id === parseInt(userData?.departamentoId));
+  return dept ? dept.nombre : userData?.departamentoId || "No especificado";
+};
+
+const getCarreraNombre = () => {
+  if (userData?.carreraNombre) return userData.carreraNombre;
+
+  const carrera = carreras?.find(c => c.id === parseInt(userData?.carreraId));
+  return carrera ? carrera.nombre : userData?.carreraId || "No especificado";
+};
+
+const getSeccionNombre = () => {
+  if (userData?.seccionNombre) return userData.seccionNombre;
+
+  const seccion = secciones?.find(s => s.id === parseInt(userData?.seccionId));
+  return seccion ? seccion.nombre : userData?.seccionId || "No especificado";
+};
+
 
   return (
     <>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FileText, Upload, Filter, Search, Calendar, MessageCircle, Heart, Eye, X, Plus, File, HelpCircle, User, BookOpen, ThumbsUp, Share2, MoreHorizontal, Check, Copy } from 'lucide-react';
 import Header from '../components/Header';
 import '../css/AnunciosGeneral.css';
+import { API_CONFIG, ENDPOINTS } from '../config/apiConfig';
 
 export default function AnunciosGeneral() {
   const [anuncios, setAnuncios] = useState([]);
@@ -31,8 +32,8 @@ export default function AnunciosGeneral() {
   const fetchUserData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/auth/user', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await fetch(`${API_CONFIG.API_BASE_URL}${ENDPOINTS.AUTH.GET_USER}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
         const data = await response.json();
@@ -42,54 +43,65 @@ export default function AnunciosGeneral() {
       console.error('Error al obtener datos del usuario:', error);
     }
   };
-
   const fetchAnuncios = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/anuncios/general', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('No se pudieron cargar los anuncios generales');
-      setAnuncios(await res.json());
-    } catch (e) {
-      setError(e.message);
-      setAnuncios([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  setIsLoading(true);
+  setError(null);
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_CONFIG.API_BASE_URL}/api/anuncios/general`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('No se pudieron cargar los anuncios generales');
+    setAnuncios(await res.json());
+  } catch (e) {
+    setError(e.message);
+    setAnuncios([]);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleCreateAnuncio = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      const formData = new FormData();
-      formData.append('titulo', newAnuncio.titulo);
-      formData.append('contenido', newAnuncio.contenido);
-      formData.append('tipo', newAnuncio.tipo);
-      formData.append('categoria', newAnuncio.categoria);
-      formData.append('etiquetas', newAnuncio.etiquetas);
-      if (newAnuncio.archivo) formData.append('archivo', newAnuncio.archivo);
-      
-      const res = await fetch('http://localhost:8080/api/anuncios/general', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
+  e.preventDefault();
+  try {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('titulo', newAnuncio.titulo);
+    formData.append('contenido', newAnuncio.contenido);
+    formData.append('tipo', newAnuncio.tipo);
+    formData.append('categoria', newAnuncio.categoria);
+    formData.append('etiquetas', newAnuncio.etiquetas);
+    if (newAnuncio.archivo) formData.append('archivo', newAnuncio.archivo);
+
+    const res = await fetch(`${API_CONFIG.API_BASE_URL}/api/anuncios/general`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+        // ⚠️ No agregues Content-Type aquí, fetch lo hace solo con FormData
+      },
+      body: formData
+    });
+
+    if (res.ok) {
+      setShowCreateModal(false);
+      setNewAnuncio({
+        titulo: '',
+        contenido: '',
+        tipo: 'anuncio',
+        categoria: '',
+        etiquetas: '',
+        archivo: null
       });
-      
-      if (res.ok) {
-        setShowCreateModal(false);
-        setNewAnuncio({ titulo: '', contenido: '', tipo: 'anuncio', categoria: '', etiquetas: '', archivo: null });
-        fetchAnuncios();
-      } else {
-        alert('Error al crear el anuncio general');
-      }
-    } catch (e) {
-      alert('Error al crear el anuncio general');
+      fetchAnuncios(); // recarga lista
+    } else {
+      alert('❌ Error al crear el anuncio general');
     }
-  };
+  } catch (e) {
+    console.error('❌ Error en handleCreateAnuncio:', e);
+    alert('❌ Error inesperado al crear el anuncio general');
+  }
+};
 
   const anunciosFiltrados = anuncios.filter(a => {
     const coincideBusqueda = a.titulo?.toLowerCase().includes(busqueda.toLowerCase()) || 
@@ -155,34 +167,32 @@ export default function AnunciosGeneral() {
   };
 
   const handleShare = async (post) => {
-    try {
-      const shareUrl = `${window.location.origin}/anuncios-generales/${post.id}`;
-      const shareText = `📢 ${post.titulo}\n\n${post.contenido}\n\nVía TecBook - ${shareUrl}`;
+  const shareUrl = `${window.location.origin}/anuncios-generales/${post.id}`;
+  const shareText = `📢 ${post.titulo}\n\n${post.contenido}\n\nVía ${API_CONFIG.APP_NAME} - ${shareUrl}`;
 
-      if (navigator.share) {
-        await navigator.share({
-          title: post.titulo,
-          text: post.contenido,
-          url: shareUrl
-        });
-        setShareStatus({ [post.id]: 'shared' });
-      } else {
-        await navigator.clipboard.writeText(shareText);
-        setShareStatus({ [post.id]: 'copied' });
-      }
-
-      setTimeout(() => {
-        setShareStatus(prev => ({ ...prev, [post.id]: null }));
-      }, 2000);
-
-    } catch (error) {
-      console.error('Error al compartir:', error);
-      setShareStatus({ [post.id]: 'error' });
-      setTimeout(() => {
-        setShareStatus(prev => ({ ...prev, [post.id]: null }));
-      }, 2000);
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: post.titulo,
+        text: post.contenido,
+        url: shareUrl
+      });
+      setShareStatus({ [post.id]: 'shared' });
+    } else {
+      await navigator.clipboard.writeText(shareText);
+      setShareStatus({ [post.id]: 'copied' });
     }
-  };
+  } catch (error) {
+    console.error('Error al compartir:', error);
+    setShareStatus({ [post.id]: 'error' });
+  } finally {
+    // Limpiar estado después de 2 segundos
+    setTimeout(() => {
+      setShareStatus(prev => ({ ...prev, [post.id]: null }));
+    }, 2000);
+  }
+};
+
 
   const formatFileSize = (bytes) => {
     if (!bytes) return '';

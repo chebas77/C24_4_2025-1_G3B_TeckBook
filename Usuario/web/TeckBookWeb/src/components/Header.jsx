@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import InvitacionesPendientes from './InvitacionesPendientes';
 import './Header.css';
+import { ENDPOINTS, ROUTES } from '../config/apiConfig';
+import apiService from '../services/apiService';
 
 function Header() {
   const navigate = useNavigate();
@@ -14,34 +16,20 @@ function Header() {
     fetchUserData();
   }, []);
 
-  const fetchUserData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await fetch('http://localhost:8080/api/auth/user', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUserData(data);
-      }
-    } catch (error) {
-      console.error('Error al obtener datos del usuario:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+const fetchUserData = async () => {
+  try {
+    const data = await apiService.get(ENDPOINTS.AUTH.GET_USER);
+    setUserData(data);
+  } catch (error) {
+    console.error('Error al obtener datos del usuario:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    navigate('/login');
+    navigate(ROUTES.PUBLIC.LOGIN);
   };
 
   const handleAulaAceptada = () => {
@@ -73,23 +61,23 @@ function Header() {
           <h1 className="header-logo">TecBook</h1>
         </div>
         <nav className="header-nav">
-          <NavLink to="/home" className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
+          <NavLink to={ROUTES.PROTECTED.DASHBOARD} className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
             Inicio
           </NavLink>
-          <NavLink to="/perfil" className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
+          <NavLink to={ROUTES.PROTECTED.PROFILE} className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
             Perfil
           </NavLink>
-          <NavLink to="/aulas" className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
+          <NavLink to={ROUTES.PROTECTED.AULAS} className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
             Aulas
           </NavLink>
           {/* MOSTRAR "CREAR AULA" SOLO PARA PROFESORES */}
           {isProfesor() && (
-            <NavLink to="/crear-aula" className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
+            <NavLink to={ROUTES.PROTECTED.CREATE_AULA} className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
               Crear Aula
             </NavLink>
           )}
           {/* ENLACE A ANUNCIOS GENERALES */}
-          <NavLink to="/anuncios-general" className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
+          <NavLink to={ROUTES.PROTECTED.ANNOUNCEMENTS} className={({ isActive }) => isActive ? 'header-link active' : 'header-link'}>
             Anuncios Generales
           </NavLink>
           {/* BOTÓN DE INVITACIONES GLOBAL */}

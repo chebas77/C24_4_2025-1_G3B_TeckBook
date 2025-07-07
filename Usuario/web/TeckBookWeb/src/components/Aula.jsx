@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import InvitarEstudiantesModal from './InvitarEstudiantesModal';
 import Header from '../components/Header';
-import InvitacionesPendientes from './InvitacionesPendientes';
-
+import { ENDPOINTS, ROUTES } from '../config/apiConfig';
+import apiService from '../services/apiService';
 import './Aula.css';
 
 function Aulas() {
@@ -34,75 +34,63 @@ function Aulas() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/');
+      navigate(ROUTES.PUBLIC.LOGIN);
       return;
     }
     fetchUserData();
     fetchAulas();
   }, [navigate]);
 
-  const fetchUserData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/auth/user', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+ const fetchUserData = async () => {
+  try {
+    const data = await apiService.get(ENDPOINTS.AUTH.GET_USER);
+    setUserData(data);
+  } catch (error) {
+    console.error('❌ Error al obtener datos del usuario:', error);
+    setError(error.message || 'Error desconocido al obtener datos del usuario');
+  }
+};
 
-      if (!response.ok) {
-        throw new Error('No se pudo obtener la información del usuario');
-      }
-
-      const data = await response.json();
-      setUserData(data);
-    } catch (error) {
-      console.error("Error al obtener datos del usuario:", error);
-      setError(error.message);
-    }
-  };
 
   const fetchAulas = async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/aulas', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) {
-        throw new Error('Error al obtener las aulas');
-      }
-      const data = await response.json();
-      setAulas(data.aulas || []);
-    } catch (error) {
-      console.error("Error al cargar las aulas:", error);
-      setError("Error al cargar las aulas: " + error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    setIsLoading(true);
+    const data = await apiService.get(ENDPOINTS.AULAS.BASE);
+    setAulas(data.aulas || data || []);
+  } catch (error) {
+    console.error("❌ Error al cargar las aulas:", error);
+    setError("Error al cargar las aulas: " + (error.message || "Error desconocido"));
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-  const handleInviteStudents = (aula) => {
-    setSelectedAula(aula);
-    setShowInviteModal(true);
-  };
+  // 👉 Cuando se hace clic en "Invitar", se selecciona el aula y se muestra el modal
+const handleInviteStudents = (aula) => {
+  setSelectedAula(aula);
+  setShowInviteModal(true);
+};
 
-  const handleCreateAula = () => {
-    navigate('/crear-aula');
-  };
+// 👉 Redirige al formulario para crear un aula
+const handleCreateAula = () => {
+  navigate(ROUTES.PROTECTED.CREATE_AULA);
+};
 
-  const handleAulaAceptada = () => {
-    fetchAulas();
-  };
+// 👉 Se llama cuando se acepta/crea una aula (por ejemplo, después de guardar)
+const handleAulaAceptada = () => {
+  fetchAulas(); // Refresca la lista
+};
 
-  const filteredAulas = aulas.filter(aula => {
-    const matchesSearch = (aula.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (aula.titulo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (aula.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+// 👉 Filtro de búsqueda en base al nombre, título o descripción del aula
+const filteredAulas = aulas.filter((aula) => {
+  const search = searchTerm.toLowerCase();
+  return (
+    (aula.nombre || '').toLowerCase().includes(search) ||
+    (aula.titulo || '').toLowerCase().includes(search) ||
+    (aula.descripcion || '').toLowerCase().includes(search)
+  );
+});
+  
 
   const getUserInitials = () => {
     if (userData?.nombre && userData?.apellidos) {
@@ -270,7 +258,7 @@ function Aulas() {
                     </div>
 
                     <div className="aula-actions">
-                      <button className="aula-btn primary" onClick={() => navigate(`/aulas/${aula.id}`)}>
+                      <button className="aula-btn primary" onClick={() => navigate(ROUTES.PROTECTED.AULA_DETAIL(aula.id))}>
                         Ingresar al Aula
                       </button>
                       <button className="aula-btn secondary">

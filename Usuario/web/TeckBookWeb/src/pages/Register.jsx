@@ -1,9 +1,12 @@
-// Usuario/web/TeckBookWeb/src/Register.jsx - CON IMAGEN LATERAL
+// Usuario/web/TeckBookWeb/src/Register.jsx - CON RUTAS CENTRALIZADAS
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, User, Mail, Lock, BookOpen, Database, GraduationCap, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import portalImage from "../assets/portal.png";
 import "../css/Register.css";
+import apiService from '../services/apiService';
+import { API_CONFIG, ENDPOINTS, ROUTES } from '../config/apiConfig';
+
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -29,41 +32,36 @@ function Register() {
   }, []);
 
   const fetchCarreras = async () => {
-    try {
-      setIsLoadingCarreras(true);
-      console.log('Obteniendo carreras desde el backend...');
-      
-      const response = await fetch('http://localhost:8080/api/carreras/activas');
-      
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Carreras obtenidas:', data);
-      
-      if (data.carreras && Array.isArray(data.carreras)) {
-        setCarreras(data.carreras);
-        console.log(`Se cargaron ${data.carreras.length} carreras`);
-      } else {
-        console.warn('Respuesta de carreras no tiene el formato esperado:', data);
-        setCarreras([]);
-      }
-      
-    } catch (error) {
-      console.error('Error al obtener carreras:', error);
-      setError('Error al cargar las carreras. Por favor, recarga la página.');
-      
-      // Fallback con carreras predeterminadas
-      setCarreras([
-        { id: 1, nombre: 'Desarrollo de Software' },
-        { id: 2, nombre: 'Administración de Redes y Comunicaciones' },
-        { id: 3, nombre: 'Electrónica y Automatización Industrial' }
-      ]);
-    } finally {
-      setIsLoadingCarreras(false);
+  try {
+    setIsLoadingCarreras(true);
+    console.log('Obteniendo carreras desde el backend...');
+
+    const data = await apiService.get(ENDPOINTS.CARRERAS.ACTIVAS);
+
+    console.log('Carreras obtenidas:', data);
+
+    if (data.carreras && Array.isArray(data.carreras)) {
+      setCarreras(data.carreras);
+      console.log(`Se cargaron ${data.carreras.length} carreras`);
+    } else {
+      console.warn('Respuesta de carreras no tiene el formato esperado:', data);
+      setCarreras([]);
     }
-  };
+    
+  } catch (error) {
+    console.error('Error al obtener carreras:', error);
+    setError('Error al cargar las carreras. Por favor, recarga la página.');
+
+    // Fallback
+    setCarreras([
+      { id: 1, nombre: 'Desarrollo de Software' },
+      { id: 2, nombre: 'Administración de Redes y Comunicaciones' },
+      { id: 3, nombre: 'Electrónica y Automatización Industrial' }
+    ]);
+  } finally {
+    setIsLoadingCarreras(false);
+  }
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -100,72 +98,55 @@ function Register() {
     return null;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+
+  const validationError = validateForm();
+  if (validationError) {
+    setError(validationError);
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    const usuarioData = {
+      nombre: formData.nombre.trim(),
+      apellidos: formData.apellidos.trim(),
+      codigo: formData.codigo.trim(),
+      correoInstitucional: formData.correoInstitucional.trim().toLowerCase(),
+      password: formData.password,
+      ciclo: formData.ciclo.trim(),
+      rol: 'ESTUDIANTE',
+      carreraId: parseInt(formData.carreraId),
+      departamentoId: 1,
+      seccionId: null,
+      telefono: null,
+      direccion: null,
+      fechaNacimiento: null,
+      profileImageUrl: null
+    };
+
+    console.log('Enviando datos de registro:', usuarioData);
+
+    const response = await apiService.post(ENDPOINTS.USERS.REGISTER, usuarioData);
+
+    console.log('Usuario registrado exitosamente:', response);
+
+    const carreraSeleccionada = carreras.find(c => c.id === parseInt(formData.carreraId));
+    const nombreCarrera = carreraSeleccionada ? carreraSeleccionada.nombre : 'la carrera seleccionada';
+
+    alert(`¡Registro exitoso! Bienvenido ${formData.nombre}.\nCarrera: ${nombreCarrera}\nYa puedes iniciar sesión.`);
+    navigate(ROUTES.PUBLIC.LOGIN);
     
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-    
-    setIsLoading(true);
-
-    try {
-      // Preparar datos para envío
-      const usuarioData = {
-        nombre: formData.nombre.trim(),
-        apellidos: formData.apellidos.trim(),
-        codigo: formData.codigo.trim(),
-        correoInstitucional: formData.correoInstitucional.trim().toLowerCase(),
-        password: formData.password,
-        ciclo: formData.ciclo.trim(),
-        rol: 'ESTUDIANTE',
-        carreraId: parseInt(formData.carreraId),
-        departamentoId: 1,
-        seccionId: null,
-        telefono: null,
-        direccion: null,
-        fechaNacimiento: null,
-        profileImageUrl: null
-      };
-
-      console.log('Enviando datos de registro:', usuarioData);
-
-      const response = await fetch('http://localhost:8080/api/usuarios/register', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify(usuarioData)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Usuario registrado exitosamente:', result);
-        
-        // Encontrar el nombre de la carrera seleccionada
-        const carreraSeleccionada = carreras.find(c => c.id === parseInt(formData.carreraId));
-        const nombreCarrera = carreraSeleccionada ? carreraSeleccionada.nombre : 'la carrera seleccionada';
-        
-        // Mostrar mensaje de éxito
-        alert(`¡Registro exitoso! Bienvenido ${formData.nombre}.\nCarrera: ${nombreCarrera}\nYa puedes iniciar sesión.`);
-        
-        // Redireccionar al login
-        navigate('/');
-      } else {
-        const errorText = await response.text();
-        console.error('Error en el registro:', errorText);
-        setError('Error al registrar usuario: ' + errorText);
-      }
-    } catch (err) {
-      console.error('Error de conexión:', err);
-      setError('Error de conexión con el servidor. Por favor, intenta nuevamente.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  } catch (err) {
+    console.error('Error al registrar usuario:', err);
+    setError(err.message || 'Error de conexión con el servidor. Por favor, intenta nuevamente.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="wrapper">
@@ -337,7 +318,7 @@ function Register() {
                 ¿Ya tienes cuenta?{' '}
                 <button
                   type="button"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate(ROUTES.PUBLIC.LOGIN)}
                   className="link-button"
                 >
                   Inicia sesión aquí

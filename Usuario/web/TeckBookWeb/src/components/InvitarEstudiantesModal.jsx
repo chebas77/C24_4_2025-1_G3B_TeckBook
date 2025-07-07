@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Send, Users, AlertCircle, CheckCircle } from 'lucide-react';
+import { API_CONFIG } from '../config/apiConfig';
 
 function InvitarEstudiantesModal({ isOpen, onClose, aulaId, aulaNombre }) {
   const [correos, setCorreos] = useState('');
@@ -9,58 +10,57 @@ function InvitarEstudiantesModal({ isOpen, onClose, aulaId, aulaNombre }) {
   const [errores, setErrores] = useState([]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setInvitacionesEnviadas([]);
-    setErrores([]);
+  e.preventDefault();
+  setIsLoading(true);
+  setInvitacionesEnviadas([]);
+  setErrores([]);
 
-    // Separar correos por líneas o comas
-    const listaCorreos = correos
-      .split(/[,\n]/)
-      .map(email => email.trim())
-      .filter(email => email.length > 0);
+  const listaCorreos = correos
+    .split(/[,\n]/)
+    .map(email => email.trim())
+    .filter(email => email.length > 0);
 
-    if (listaCorreos.length === 0) {
-      setErrores(['Debe ingresar al menos un correo electrónico']);
-      setIsLoading(false);
-      return;
-    }
-
-    const token = localStorage.getItem('token');
-    const exitosas = [];
-    const fallidas = [];
-
-    // Enviar invitaciones una por una
-    for (const correo of listaCorreos) {
-      try {
-        const response = await fetch('http://localhost:8080/api/invitaciones/enviar', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            aulaId: aulaId,
-            correoInvitado: correo,
-            mensaje: mensaje
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          exitosas.push({ correo, data });
-        } else {
-          const errorData = await response.json();
-          fallidas.push({ correo, error: errorData.error || 'Error desconocido' });
-        }
-      } catch (error) {
-        fallidas.push({ correo, error: 'Error de conexión' });
-      }
-    }
-
-    setInvitacionesEnviadas(exitosas);
-    setErrores(fallidas);
+  if (listaCorreos.length === 0) {
+    setErrores(['Debe ingresar al menos un correo electrónico']);
     setIsLoading(false);
+    return;
+  }
+
+  const token = localStorage.getItem('token');
+  const exitosas = [];
+  const fallidas = [];
+
+  for (const correo of listaCorreos) {
+    try {
+      const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/invitaciones/enviar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          aulaId: aulaId,
+          correoInvitado: correo,
+          mensaje: mensaje
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        exitosas.push({ correo, data });
+      } else {
+        const errorData = await response.json();
+        fallidas.push({ correo, error: errorData.error || 'Error desconocido' });
+      }
+    } catch (error) {
+      fallidas.push({ correo, error: 'Error de conexión' });
+    }
+  }
+
+  setInvitacionesEnviadas(exitosas);
+  setErrores(fallidas.map(f => `❌ ${f.correo}: ${f.error}`));
+  setIsLoading(false);
+
 
     // Si todas fueron exitosas, limpiar el formulario
     if (fallidas.length === 0) {

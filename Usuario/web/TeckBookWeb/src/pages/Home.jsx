@@ -18,9 +18,9 @@ import {
   ExternalLink,
   Check
 } from 'lucide-react';
-
-// URL del backend desplegado en Koyeb
-const API_BASE_URL = 'https://rival-terra-chebas77-e06d6aa9.koyeb.app';
+import { ENDPOINTS, ROUTES } from '../config/apiConfig';
+import apiService from '../services/apiService';
+import aulasService from '../services/aulasService';
 
 function Home() {
   const [userData, setUserData] = useState(null);
@@ -31,9 +31,9 @@ function Home() {
   const [anunciosFijados, setAnunciosFijados] = useState([]);
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [shareStatus, setShareStatus] = useState({});
-  const [sortOrder, setSortOrder] = useState('recientes'); // 'recientes' o 'antiguos'
+  const [sortOrder, setSortOrder] = useState('recientes');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createType, setCreateType] = useState(null); // 'material', 'question', 'upload'
+  const [createType, setCreateType] = useState(null);
   const [formData, setFormData] = useState({ aulaId: '', titulo: '', contenido: '', archivo: null });
   const [aulasDisponibles, setAulasDisponibles] = useState([]);
   const [formError, setFormError] = useState("");
@@ -49,95 +49,132 @@ function Home() {
     const isNewUserParam = queryParams.get('new') === 'true';
     const isIncompleteParam = queryParams.get('incomplete') === 'true';
 
+    // 1️⃣ Guardar token si viene por URL
     if (tokenFromUrl) {
       localStorage.setItem('token', tokenFromUrl);
       window.history.replaceState({}, document.title, '/home');
+
+      // Esperar un poco para que esté disponible el token
+      setTimeout(() => {
+        fetchUserData();
+        fetchAnuncios();
+      }, 100);
+
+      return;
     }
 
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/');
+      navigate(ROUTES.PUBLIC.LOGIN);
       return;
     }
 
-    const fetchUserData = async () => {
+    fetchUserData();
+    fetchAnuncios();
+
+   async function fetchUserData() {
+  try {
+    const data = await apiService.get(ENDPOINTS.AUTH.GET_USER);
+
+    if (!isMounted) return;
+
+    setUserData({
+      ...data,
+      profileImageUrl: data.profileImageUrl || ''
+    });
+
+    const datosIncompletos = 
+      !data.carreraId ||
+      !data.cicloActual ||
+      !data.departamentoId ||
+      !data.telefono ||
+      !data.correoInstitucional;
+
+    const needsCompletion =
+      data.requiresCompletion ||
+      isNewUserParam ||
+      isIncompleteParam ||
+      datosIncompletos;
+
+    // Pequeña espera para cargar correctamente el modal
+    if (needsCompletion) {
+      setTimeout(() => setShowCompletarPerfil(true), 300);
+    }
+
+  } catch (error) {
+    if (isMounted) {
+      console.error("❌ Error al obtener datos del usuario:", error);
+      setError(error.message || 'Error al obtener datos del usuario');
+    }
+  } finally {
+    if (isMounted) setIsLoading(false);
+  }
+}
+
+// 🔥 NUEVA FUNCIÓN: Cargar anuncios de todas las aulas del usuario
+async function fetchAnuncios() {
+  try {
+    console.log('🔍 Cargando anuncios de las aulas...');
+    
+    // Primero obtener las aulas del usuario
+    const aulas = await aulasService.getAll();
+    console.log('📚 Aulas obtenidas:', aulas.length);
+    
+    if (aulas.length === 0) {
+      console.log('ℹ️ El usuario no pertenece a ninguna aula');
+      return;
+    }
+
+    // Obtener anuncios de todas las aulas
+    const todosLosAnuncios = [];
+    const anunciosFijadosTemp = [];
+
+    for (const aula of aulas) {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/user`, {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
+        const anunciosAula = await aulasService.getAnuncios(aula.id);
+        console.log(`📋 Anuncios del aula ${aula.nombre}:`, anunciosAula.length);
+        
+        // Agregar nombre del aula a cada anuncio
+        const anunciosConAula = anunciosAula.map(anuncio => ({
+          ...anuncio,
+          aulaNombre: aula.nombre || aula.titulo,
+          aulaId: aula.id
+        }));
 
-        if (!response.ok) throw new Error('No se pudo obtener la información del usuario');
+        todosLosAnuncios.push(...anunciosConAula);
 
-        const data = await response.json();
-        if (!isMounted) return;
-
-        setUserData({ ...data, profileImageUrl: data.profileImageUrl || "" });
-
-        const needsCompletion = isNewUserParam || 
-          isIncompleteParam || 
-          !data.carreraId || 
-          !data.cicloActual || 
-          !data.departamentoId;
-
-        if (needsCompletion) setShowCompletarPerfil(true);
+        // Separar anuncios fijados
+        const fijados = anunciosConAula.filter(a => a.fijado);
+        anunciosFijadosTemp.push(...fijados);
 
       } catch (error) {
-        if (isMounted) {
-          setError(error.message);
-          localStorage.removeItem('token');
-          setTimeout(() => navigate('/'), 2000);
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
+        console.error(`❌ Error al cargar anuncios del aula ${aula.id}:`, error);
       }
-    };
+    }
 
-    // Obtener anuncios de todas las aulas del usuario
-    const fetchAnunciosDeUsuario = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const token = localStorage.getItem('token');
-        // 1. Obtener aulas del usuario
-        const aulasRes = await fetch('http://localhost:8080/api/aulas', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!aulasRes.ok) throw new Error('No se pudieron obtener las aulas del usuario');
-        const aulasData = await aulasRes.json();
-        const aulas = aulasData.aulas || aulasData;
-        // 2. Obtener anuncios de cada aula
-        let allAnuncios = [];
-        for (const aula of aulas) {
-          const res = await fetch(`http://localhost:8080/api/aulas/${aula.id}/anuncios`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const anunciosAula = await res.json();
-            // Enriquecer con datos del aula
-            (anunciosAula || []).forEach(anuncio => {
-              allAnuncios.push({ ...anuncio, aulaNombre: aula.nombre, aulaTitulo: aula.titulo });
-            });
-          }
-        }
-        // Separar fijados y normales
-        setAnunciosFijados(allAnuncios.filter(a => a.fijado));
-        setAnuncios(allAnuncios.filter(a => !a.fijado));
-      } catch (e) {
-        setError(e.message);
-        setAnuncios([]);
-        setAnunciosFijados([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    console.log('📊 Total anuncios cargados:', todosLosAnuncios.length);
+    console.log('📌 Anuncios fijados:', anunciosFijadosTemp.length);
 
-    fetchUserData();
-    fetchAnunciosDeUsuario();
-    return () => { isMounted = false; };
-  }, [navigate]);
+    if (isMounted) {
+      setAnuncios(todosLosAnuncios);
+      setAnunciosFijados(anunciosFijadosTemp);
+    }
+
+  } catch (error) {
+    console.error('❌ Error al cargar anuncios:', error);
+    if (isMounted) {
+      setError('Error al cargar los anuncios');
+    }
+  }
+}
+
+  
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
 
   const handleCompletarPerfil = (result) => {
     setUserData(prev => ({ ...prev, ...result }));
@@ -156,7 +193,6 @@ function Home() {
       : <div className={className}>{getUserInitials()}</div>;
   };
 
-  // Funcionalidad del Like
   const handleLike = (postId) => {
     setLikedPosts(prev => {
       const newLiked = new Set(prev);
@@ -169,13 +205,11 @@ function Home() {
     });
   };
 
-  // Funcionalidad de Compartir
   const handleShare = async (post) => {
     try {
       const shareUrl = `${window.location.origin}/aulas/${post.aulaId}?anuncio=${post.id}`;
       const shareText = `📚 ${post.titulo}\n\n${post.contenido}\n\nVía TecBook - ${shareUrl}`;
 
-      // Intentar usar Web Share API si está disponible
       if (navigator.share) {
         await navigator.share({
           title: post.titulo,
@@ -184,12 +218,10 @@ function Home() {
         });
         setShareStatus({ [post.id]: 'shared' });
       } else {
-        // Fallback: copiar al portapapeles
         await navigator.clipboard.writeText(shareText);
         setShareStatus({ [post.id]: 'copied' });
       }
 
-      // Resetear estado después de 2 segundos
       setTimeout(() => {
         setShareStatus(prev => ({ ...prev, [post.id]: null }));
       }, 2000);
@@ -203,15 +235,13 @@ function Home() {
     }
   };
 
-  // Obtener aulas para el formulario al abrir modal
+  // ✅ Usar aulasService
   const fetchAulasForForm = async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch('http://localhost:8080/api/aulas', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setAulasDisponibles(data.aulas || data);
+    try {
+      const aulas = await aulasService.getAll();
+      setAulasDisponibles(aulas);
+    } catch (error) {
+      console.error('Error obteniendo aulas:', error);
     }
   };
 
@@ -247,6 +277,7 @@ function Home() {
     return "";
   };
 
+  // ✅ Usar aulasService
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     const errorMsg = validateForm();
@@ -255,25 +286,24 @@ function Home() {
       if (firstInputRef.current) firstInputRef.current.focus();
       return;
     }
-    const token = localStorage.getItem('token');
-    const form = new FormData();
-    form.append('titulo', formData.titulo);
-    form.append('contenido', formData.contenido);
-    form.append('tipo', createType === 'question' ? 'PREGUNTA' : createType === 'material' ? 'MATERIAL' : 'ARCHIVO');
-    if (formData.archivo) form.append('archivo', formData.archivo);
-    // POST al backend
-    const res = await fetch(`http://localhost:8080/api/aulas/${formData.aulaId}/anuncios`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: form
-    });
-    if (res.ok) {
+
+    try {
+      const form = new FormData();
+      form.append('titulo', formData.titulo);
+      form.append('contenido', formData.contenido);
+      form.append('tipo', createType === 'question' ? 'PREGUNTA' : createType === 'material' ? 'MATERIAL' : 'ARCHIVO');
+      if (formData.archivo) form.append('archivo', formData.archivo);
+
+      await aulasService.createAnuncio(formData.aulaId, form);
+      
       setShowCreateModal(false);
       setCreateType(null);
       setFormData({ aulaId: '', titulo: '', contenido: '', archivo: null });
-      // Refrescar anuncios
+      
+      // Refrescar página
       window.location.reload();
-    } else {
+    } catch (error) {
+      console.error('Error creando anuncio:', error);
       alert('Error al crear el anuncio');
     }
   };
@@ -288,13 +318,11 @@ function Home() {
   });
 
   if (isLoading) return <div className="home-loading-container"><div className="home-loading-spinner"></div><p>Cargando información del usuario...</p></div>;
-  if (error) return <div className="home-error-container"><h2>Error al cargar datos</h2><p>{error}</p><button onClick={() => navigate('/')} className="home-button">Volver al inicio</button></div>;
+  if (error) return <div className="home-error-container"><h2>Error al cargar datos</h2><p>{error}</p><button onClick={() => navigate(ROUTES.PUBLIC.LOGIN)} className="home-button">Volver al inicio</button></div>;
 
   return (
     <div className="home-wrapper">
-      {/* USAR EL HEADER UNIFICADO */}
       <Header />
-      {/* LAYOUT DE 3 COLUMNAS */}
       <div className="home-main-layout">
         <aside className="home-left-sidebar">
           <div className="home-welcome-card">
@@ -311,14 +339,14 @@ function Home() {
           <div className="home-quick-actions">
             <h3 className="home-section-title">Acciones Rápidas</h3>
             <div className="home-action-buttons">
-              <div className="home-action-button" onClick={() => navigate('/perfil')}>
+              <div className="home-action-button" onClick={() => navigate(ROUTES.PROTECTED.PROFILE)}>
                 <User className="home-action-icon" />
                 <div className="home-action-text">
                   <span className="home-action-title">Mi Perfil</span>
                   <span className="home-action-subtitle">Actualiza tus datos</span>
                 </div>
               </div>
-              <div className="home-action-button" onClick={() => navigate('/aulas')}>
+              <div className="home-action-button" onClick={() => navigate(ROUTES.PROTECTED.AULAS)}>
                 <BookOpen className="home-action-icon" />
                 <div className="home-action-text">
                   <span className="home-action-title">Mis Aulas</span>
@@ -335,8 +363,8 @@ function Home() {
             </div>
           </div>
         </aside>
+        
         <main className="home-main-content">
-          {/* SECCIÓN DE CREAR CONTENIDO ACADÉMICO */}
           <div className="home-create-post">
             <div className="home-create-post-header">
               {renderPostAvatar()}

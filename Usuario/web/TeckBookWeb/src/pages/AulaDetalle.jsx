@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import './AulaDetalle.css';
 import ListaIntegrantes from '../components/ListaIntegrantes';
+import { API_CONFIG, ENDPOINTS, ROUTES } from '../config/apiConfig'
 
 function AulaDetalle() {
   const { aulaId } = useParams();
@@ -50,40 +51,33 @@ function AulaDetalle() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/login');
+      navigate(ROUTES.PUBLIC.LOGIN);
       return;
     }
     setError(null);
-    fetchAula();
-    fetchAnuncios();
-  }, [aulaId, navigate]);
+    fetchAula(token);
+    fetchAnuncios(token);
+  }, [aulaId]);
 
-  const fetchAula = async () => {
+  const fetchAula = async (token) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/aulas/${aulaId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await fetch(`${API_CONFIG.API_BASE_URL}${ENDPOINTS.AULAS.BY_ID(aulaId)}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('No se pudo cargar el aula');
       const data = await res.json();
-      // Si la respuesta tiene un objeto 'aula', úsalo, si no, usa el objeto raíz
-      if (data.aula) {
-        setAula(data.aula);
-      } else {
-        setAula(data);
-      }
+      setAula(data?.aula || data);
     } catch (e) {
       setError(e.message);
     }
   };
 
-  const fetchAnuncios = async () => {
+  const fetchAnuncios = async (token) => {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/aulas/${aulaId}/anuncios`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await fetch(`${API_CONFIG.API_BASE_URL}${ENDPOINTS.AULAS.ANUNCIOS.BY_AULA(aulaId)}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('No tienes acceso o no hay anuncios');
       setAnuncios(await res.json());
@@ -96,26 +90,46 @@ function AulaDetalle() {
   };
 
   const handleCreateAnuncio = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/aulas/${aulaId}/anuncios`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newAnuncio)
-      });
-      if (res.ok) {
-        setShowCreateModal(false);
-        setNewAnuncio({ titulo: '', contenido: '', fijado: false });
-        fetchAnuncios();
-      }
-    } catch (e) {
-      console.error('Error creating announcement:', e);
+  e.preventDefault();
+
+  if (!aulaId) return console.error('aulaId no definido');
+  if (!newAnuncio.titulo.trim() || !newAnuncio.contenido.trim()) return console.error('Título o contenido vacío');
+
+  try {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('titulo', newAnuncio.titulo);
+    formData.append('contenido', newAnuncio.contenido);
+    formData.append('fijado', newAnuncio.fijado || false);
+    formData.append('tipo', newAnuncio.tipo || 'anuncio'); // si aplica
+    formData.append('categoria', newAnuncio.categoria || '');
+    formData.append('etiquetas', newAnuncio.etiquetas || '');
+    if (newAnuncio.archivo) {
+      formData.append('archivo', newAnuncio.archivo);
     }
-  };
+
+    const res = await fetch(`${API_CONFIG.API_BASE_URL}${ENDPOINTS.AULAS.ANUNCIOS.CREATE(aulaId)}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+        // ⚠️ NO pongas 'Content-Type', el navegador lo setea automáticamente
+      },
+      body: formData
+    });
+
+    if (res.ok) {
+      setShowCreateModal(false);
+      setNewAnuncio({ titulo: '', contenido: '', fijado: false });
+      fetchAnuncios(token);
+    } else {
+      const errorData = await res.json();
+      console.error('Error en el POST:', errorData);
+    }
+  } catch (e) {
+    console.error('Error creando anuncio:', e);
+  }
+};
+
 
   // Funciones para la calculadora de notas
   const agregarNotaTeoria = () => {

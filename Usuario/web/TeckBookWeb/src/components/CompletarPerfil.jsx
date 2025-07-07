@@ -10,6 +10,9 @@ import {
   Phone 
 } from 'lucide-react';
 import "../css/CompletarPerfil.css";
+import { ENDPOINTS, ROUTES } from '../config/apiConfig';
+import apiService from '../services/apiService';
+
 
 function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUser = false }) {
   const navigate = useNavigate();
@@ -64,202 +67,186 @@ function CompletarPerfil({ isOpen, onClose, token, userData, onComplete, isNewUs
     }
   }, [isOpen]);
 
-  const fetchCarreras = async () => {
-    try {
-      setIsLoadingCarreras(true);
-      console.log('Cargando carreras...');
-      const response = await fetch('http://localhost:8080/api/carreras/activas');
-      if (response.ok) {
-        const data = await response.json();
-        const carrerasList = data.carreras || [];
-        setCarreras(carrerasList);
-        console.log('Carreras cargadas:', carrerasList.length);
-        
-        // Si el usuario ya tiene una carrera, verificar que existe en la lista
-        if (userData?.carreraId) {
-          const carreraExiste = carrerasList.find(c => c.id === parseInt(userData.carreraId));
-          if (!carreraExiste) {
-            console.warn('La carrera del usuario no está en la lista de carreras activas');
-          }
-        }
-      } else {
-        console.error('Error al cargar carreras:', response.status);
-        setError('Error al cargar carreras');
+
+const fetchCarreras = async () => {
+  try {
+    setIsLoadingCarreras(true);
+    console.log('Cargando carreras...');
+
+    const data = await apiService.get(ENDPOINTS.CARRERAS.ACTIVAS);
+    const carrerasList = data.carreras || [];
+    setCarreras(carrerasList);
+    console.log('Carreras cargadas:', carrerasList.length);
+
+    if (userData?.carreraId) {
+      const carreraExiste = carrerasList.find(c => c.id === parseInt(userData.carreraId));
+      if (!carreraExiste) {
+        console.warn('La carrera del usuario no está en la lista de carreras activas');
       }
-    } catch (err) {
-      console.error('Error de conexión:', err);
-      setError('Error de conexión al cargar carreras');
-    } finally {
-      setIsLoadingCarreras(false);
     }
-  };
+  } catch (err) {
+    console.error('Error al cargar carreras:', err);
+    setError('Error al cargar carreras');
+  } finally {
+    setIsLoadingCarreras(false);
+  }
+};
+
 
   const fetchDepartamentos = async () => {
-    try {
-      setIsLoadingDepartamentos(true);
-      const response = await fetch('http://localhost:8080/api/departamentos/activos');
-      if (response.ok) {
-        const data = await response.json();
-        const departamentosList = data.departamentos || [];
-        setDepartamentos(departamentosList);
-        console.log('Departamentos cargados:', departamentosList.length);
-        
-        // Si el usuario ya tiene un departamento, verificar que existe en la lista
-        if (userData?.departamentoId) {
-          const departamentoExiste = departamentosList.find(d => d.id === parseInt(userData.departamentoId));
-          if (!departamentoExiste) {
-            console.warn('El departamento del usuario no está en la lista de departamentos activos');
-          }
-        }
-      } else {
-        setError('Error al cargar departamentos');
-      }
-    } catch (err) {
-      setError('Error de conexión al cargar departamentos');
-    } finally {
-      setIsLoadingDepartamentos(false);
-    }
-  };
+  try {
+    setIsLoadingDepartamentos(true);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    if (error) setError('');
-  };
+    const data = await apiService.get(ENDPOINTS.DEPARTAMENTOS.ACTIVOS);
+    const departamentosList = data.departamentos || [];
+    setDepartamentos(departamentosList);
+    console.log('Departamentos cargados:', departamentosList.length);
+
+    if (userData?.departamentoId) {
+      const departamentoExiste = departamentosList.find(d => d.id === parseInt(userData.departamentoId));
+      if (!departamentoExiste) {
+        console.warn('El departamento del usuario no está en la lista de departamentos activos');
+      }
+    }
+  } catch (err) {
+    console.error('Error al cargar departamentos:', err);
+    setError('Error al cargar departamentos');
+  } finally {
+    setIsLoadingDepartamentos(false);
+  }
+};
+
+
+  const handleChange = ({ target: { name, value } }) => {
+  setFormData(prev => ({
+    ...prev,
+    [name]: value
+  }));
+
+  if (error) {
+    setError('');
+  }
+};
 
   const validateForm = () => {
-    if (!formData.carreraId) {
-      setError('Por favor selecciona una carrera');
-      return false;
-    }
-    
-    if (!formData.cicloActual) {
-      setError('Por favor selecciona tu ciclo actual');
-      return false;
-    }
-    
-    if (!formData.departamentoId) {
-      setError('Por favor selecciona un departamento');
-      return false;
-    }
+  if (!formData.carreraId) {
+    setError('Por favor selecciona una carrera');
+    return false;
+  }
 
-    return true;
-  };
+  if (!formData.cicloActual) {
+    setError('Por favor selecciona tu ciclo actual');
+    return false;
+  }
 
+  if (!formData.departamentoId) {
+    setError('Por favor selecciona un departamento');
+    return false;
+  }
+
+  if (!userData?.correoInstitucional) {
+    setError('Falta tu correo institucional. Comunícate con soporte.');
+    return false;
+  }
+
+  return true;
+};
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setIsLoading(true);
-    setError('');
+  e.preventDefault();
 
-    try {
-      // Preparar datos para enviar
-      const dataToUpdate = {
-        ...userData,
-        carreraId: parseInt(formData.carreraId),
-        cicloActual: formData.cicloActual, // Mantener como string o convertir según necesidad del backend
-        departamentoId: parseInt(formData.departamentoId),
-        telefono: formData.telefono.trim() || null
-      };
+  if (!validateForm()) return;
 
-      console.log('Enviando datos actualizados:', dataToUpdate);
+  setIsLoading(true);
+  setError('');
 
-      // Endpoint para completar perfil
-      const response = await fetch(`http://localhost:8080/api/usuarios/${userData.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(dataToUpdate)
-      });
+  try {
+    // Preparar datos para enviar
+    const dataToUpdate = {
+      ...userData,
+      carreraId: parseInt(formData.carreraId),
+      cicloActual: formData.cicloActual, // string o convertir según tu backend
+      departamentoId: parseInt(formData.departamentoId),
+      telefono: formData.telefono.trim() || null
+    };
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Perfil completado exitosamente:', result);
-        
-        // Callback para el padre con los datos actualizados
-        if (onComplete) {
-          onComplete(result);
-        }
-        
-        // Guardar token si es nuevo usuario
-        if (isNewUser && token) {
-          localStorage.setItem('token', token);
-        }
+    console.log('Enviando datos actualizados:', dataToUpdate);
 
-        // Cerrar modal
-        onClose();
-        
-        // Navegar si es nuevo usuario
-        if (isNewUser) {
-          setTimeout(() => {
-            navigate('/home');
-          }, 500);
-        }
-      } else {
-        const errorData = await response.text();
-        console.error('Error del servidor:', errorData);
-        setError('Error al completar perfil: ' + errorData);
-      }
-    } catch (err) {
-      console.error('Error de red:', err);
-      setError('Error de conexión. Intenta nuevamente.');
-    } finally {
-      setIsLoading(false);
+    // Usar apiService
+    const result = await apiService.put(`/api/usuarios/${userData.id}`, dataToUpdate);
+
+    console.log('Perfil completado exitosamente:', result);
+
+    if (onComplete) {
+      onComplete(result);
     }
-  };
+
+    if (isNewUser && token) {
+      localStorage.setItem('token', token);
+    }
+
+    onClose();
+
+    if (isNewUser) {
+      setTimeout(() => {
+        navigate(ROUTES.PROTECTED.DASHBOARD);
+      }, 500);
+    }
+    
+  } catch (err) {
+    console.error('Error en el servidor o conexión:', err);
+    setError('Error al completar perfil: ' + (err.message || 'Intenta nuevamente.'));
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleClose = () => {
-    if (!isLoading) {
-      onClose();
-    }
-  };
+  if (!isLoading) {
+    onClose();
+  }
+};
 
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget && !isLoading) {
-      handleClose();
-    }
-  };
+const handleBackdropClick = (e) => {
+  if (e.target === e.currentTarget && !isLoading) {
+    handleClose();
+  }
+};
 
-  // Función para obtener iniciales del usuario
-  const getUserInitials = () => {
-    if (userData?.nombre && userData?.apellidos) {
-      return `${userData.nombre.charAt(0)}${userData.apellidos.charAt(0)}`.toUpperCase();
-    }
-    return 'GS';
-  };
+// Obtener iniciales del usuario
+const getUserInitials = () => {
+  if (userData?.nombre && userData?.apellidos) {
+    return `${userData.nombre.charAt(0)}${userData.apellidos.charAt(0)}`.toUpperCase();
+  }
+  return 'GS'; // Valor por defecto si falta info
+};
 
-  // Función para verificar qué campos faltan
-  const getMissingFields = () => {
-    const missing = [];
-    if (!userData?.carreraId && !formData.carreraId) missing.push('carrera');
-    if (!userData?.cicloActual && !userData?.ciclo && !formData.cicloActual) missing.push('ciclo');
-    if (!userData?.departamentoId && !formData.departamentoId) missing.push('departamento');
-    return missing;
-  };
+// Verificar qué campos faltan
+const getMissingFields = () => {
+  const missing = [];
+  if (!userData?.carreraId && !formData.carreraId) missing.push('carrera');
+  if (!userData?.cicloActual && !userData?.ciclo && !formData.cicloActual) missing.push('ciclo');
+  if (!userData?.departamentoId && !formData.departamentoId) missing.push('departamento');
+  if (!userData?.correoInstitucional) missing.push('correo institucional');
+  return missing;
+};
 
-  // Función para verificar si el formulario tiene cambios
-  const hasChanges = () => {
-    return (
-      formData.carreraId !== (userData?.carreraId || '') ||
-      formData.cicloActual !== (userData?.cicloActual || userData?.ciclo || '') ||
-      formData.departamentoId !== (userData?.departamentoId || '') ||
-      formData.telefono !== (userData?.telefono || '')
-    );
-  };
+// Verificar si el formulario tiene cambios
+const hasChanges = () => {
+  return (
+    formData.carreraId !== (userData?.carreraId || '') ||
+    formData.cicloActual !== (userData?.cicloActual || userData?.ciclo || '') ||
+    formData.departamentoId !== (userData?.departamentoId || '') ||
+    formData.telefono !== (userData?.telefono || '')
+  );
+};
 
-  // No renderizar si no está abierto
-  if (!isOpen) return null;
+// No renderizar si el modal está cerrado
+if (!isOpen) return null;
 
-  const missingFields = getMissingFields();
-  const isFormComplete = missingFields.length === 0 && hasChanges();
+// Calcular campos faltantes y si el formulario está listo para enviar
+const missingFields = getMissingFields();
+const isFormComplete = missingFields.length === 0 && hasChanges();
+
 
   return (
     <div className="perfil-modal-overlay" onClick={handleBackdropClick}>

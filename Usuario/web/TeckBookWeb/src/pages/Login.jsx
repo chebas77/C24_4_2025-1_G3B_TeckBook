@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle, HelpCircle } from 'lucide-react';
+import { ROUTES } from '../config/apiConfig';
 import portalImage from "../assets/portal.png";
 import '../css/Login.css';
 
@@ -52,7 +53,7 @@ function Login() {
         
         // Mensaje de éxito
         alert("Inicio de sesión exitoso");
-        navigate("/home");
+        navigate(ROUTES.PROTECTED.DASHBOARD);
       } else {
         setError('Respuesta del servidor inválida');
       }
@@ -118,7 +119,7 @@ function Login() {
             </div>
 
             <div className="forgot-password-container">
-              <Link to="/recuperar" className="forgot-password-link">
+              <Link to={ROUTES.PUBLIC.RECOVER_PASSWORD} className="forgot-password-link">
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
@@ -135,7 +136,7 @@ function Login() {
             </button>
           </form>
 
-          <Link to="/register" className="register-button">
+          <Link to={ROUTES.PUBLIC.REGISTER} className="register-button">
             ¿No tienes cuenta? <span className="register-highlight">Regístrate aquí</span>
           </Link>
 

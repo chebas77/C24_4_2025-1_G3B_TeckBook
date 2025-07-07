@@ -18,7 +18,9 @@ import {
 import InvitarEstudiantesModal from '../components/InvitarEstudiantesModal';
 import "../css/CrearAula.css";
 import Header from '../components/Header';
-
+import apiService from '../services/apiService';
+import { ENDPOINTS, ROUTES } from '../config/apiConfig';
+import { API_CONFIG } from '../config/apiConfig'; 
 
 function CrearAula() {
   const navigate = useNavigate();
@@ -61,172 +63,188 @@ function CrearAula() {
 
   // 🔥 EFECTO: Verificar autenticación y cargar datos iniciales
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/');
-      return;
-    }
+  const token = localStorage.getItem('token');
+  if (!token) {
+    navigate(ROUTES.PUBLIC.LOGIN);
+    return;
+  }
 
-    fetchUserData();
-    fetchDepartamentos();
-  }, [navigate]);
+  fetchUserData(token);
+  fetchDepartamentos(token);
+}, [navigate]);
 
   // 🔥 FUNCIÓN: Obtener datos del usuario
-  const fetchUserData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/auth/user', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+  const fetchUserData = async (token) => {
+  try {
+    const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/auth/user`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
 
-      if (!response.ok) {
-        throw new Error('No se pudo obtener la información del usuario');
-      }
-
-      const data = await response.json();
-      console.log('🔍 Datos del usuario obtenidos:', data);
-      console.log('🔍 Rol específico:', data.rol, 'Tipo:', typeof data.rol);
-      setUserData(data);
-      
-      // Verificar que sea profesor
-      if (data.rol !== 'PROFESOR' && data.rol !== 'profesor') {
-        console.log('❌ Rol detectado:', data.rol, 'Tipo:', typeof data.rol);
-        setError('Solo los profesores pueden crear aulas. Tu rol actual es: ' + data.rol);
-        setTimeout(() => navigate('/aulas'), 3000);
-        return;
-      }
-      
-      console.log('✅ Usuario es profesor:', data.rol);
-      
-    } catch (error) {
-      console.error("Error al obtener datos del usuario:", error);
-      setError(error.message);
-      setTimeout(() => navigate('/'), 3000);
+    if (!response.ok) {
+      throw new Error('No se pudo obtener la información del usuario');
     }
-  };
+
+    const data = await response.json();
+    console.log('🔍 Usuario obtenido:', data);
+
+    setUserData(data);
+
+    const rol = data.rol?.toUpperCase();
+    if (rol !== 'PROFESOR') {
+      setError(`Solo los profesores pueden crear aulas. Tu rol actual es: ${data.rol}`);
+      setTimeout(() => navigate(ROUTES.PROTECTED.AULAS), 3000);
+      return;
+    }
+
+  } catch (error) {
+    console.error("Error al obtener datos del usuario:", error);
+    setError(error.message || 'Error desconocido');
+    setTimeout(() => navigate(ROUTES.PUBLIC.LOGIN), 3000);
+  }
+};
 
   // 🔥 FUNCIÓN: Cargar departamentos desde el backend
-  const fetchDepartamentos = async () => {
-    try {
-      setLoadingDepartamentos(true);
-      setError(null);
-      
-      console.log('🏢 Cargando departamentos...');
-      const response = await fetch('http://localhost:8080/api/departamentos/activos');
-      
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
+  const fetchDepartamentos = async (token) => {
+  try {
+    setLoadingDepartamentos(true);
+    setError(null);
+
+    console.log('🏢 Cargando departamentos...');
+    const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/departamentos/activos`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
-      
-      const data = await response.json();
-      console.log('🏢 Departamentos obtenidos:', data.departamentos);
-      
-      setDepartamentos(data.departamentos || []);
-      
-    } catch (error) {
-      console.error('❌ Error al cargar departamentos:', error);
-      setError('Error al cargar departamentos: ' + error.message);
-      setDepartamentos([]);
-    } finally {
-      setLoadingDepartamentos(false);
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
     }
-  };
+
+    const data = await response.json();
+    console.log('🏢 Departamentos obtenidos:', data.departamentos);
+
+    setDepartamentos(data.departamentos || []);
+
+  } catch (error) {
+    console.error('❌ Error al cargar departamentos:', error);
+    setError('Error al cargar departamentos: ' + error.message);
+    setDepartamentos([]);
+  } finally {
+    setLoadingDepartamentos(false);
+  }
+};
 
   // 🔥 FUNCIÓN: Cargar carreras por departamento
-  const fetchCarreras = async (departamentoId) => {
-    if (!departamentoId) {
-      setCarreras([]);
-      return;
+  const fetchCarreras = async (departamentoId, token) => {
+  if (!departamentoId) {
+    setCarreras([]);
+    return;
+  }
+
+  try {
+    setLoadingCarreras(true);
+    setError(null);
+
+    console.log(`🎓 Cargando carreras del departamento ${departamentoId}...`);
+    const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/carreras/departamento/${departamentoId}/activas`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
     }
 
-    try {
-      setLoadingCarreras(true);
-      setError(null);
-      
-      console.log(`🎓 Cargando carreras del departamento ${departamentoId}...`);
-      const response = await fetch(`http://localhost:8080/api/carreras/departamento/${departamentoId}/activas`);
-      
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log(`🎓 Carreras obtenidas:`, data.carreras);
-      
-      setCarreras(data.carreras || []);
-      
-    } catch (error) {
-      console.error(`❌ Error al cargar carreras del departamento ${departamentoId}:`, error);
-      setError('Error al cargar carreras: ' + error.message);
-      setCarreras([]);
-    } finally {
-      setLoadingCarreras(false);
-    }
-  };
+    const data = await response.json();
+    console.log(`🎓 Carreras obtenidas:`, data.carreras);
+
+    setCarreras(data.carreras || []);
+
+  } catch (error) {
+    console.error(`❌ Error al cargar carreras del departamento ${departamentoId}:`, error);
+    setError('Error al cargar carreras: ' + error.message);
+    setCarreras([]);
+  } finally {
+    setLoadingCarreras(false);
+  }
+};
 
   // 🔥 FUNCIÓN: Cargar ciclos por carrera
-  const fetchCiclos = async (carreraId) => {
-    if (!carreraId) {
-      setCiclos([]);
-      return;
+  const fetchCiclos = async (carreraId, token) => {
+  if (!carreraId) {
+    setCiclos([]);
+    return;
+  }
+
+  try {
+    setLoadingCiclos(true);
+    setError(null);
+
+    console.log(`📚 Cargando ciclos de la carrera ${carreraId}...`);
+    const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/ciclos/carrera/${carreraId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
     }
 
-    try {
-      setLoadingCiclos(true);
-      setError(null);
-      
-      console.log(`📚 Cargando ciclos de la carrera ${carreraId}...`);
-      const response = await fetch(`http://localhost:8080/api/ciclos/carrera/${carreraId}`);
-      
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log(`📚 Ciclos obtenidos:`, data.ciclos);
-      
-      setCiclos(data.ciclos || []);
-      
-    } catch (error) {
-      console.error(`❌ Error al cargar ciclos de la carrera ${carreraId}:`, error);
-      setError('Error al cargar ciclos: ' + error.message);
-      setCiclos([]);
-    } finally {
-      setLoadingCiclos(false);
-    }
-  };
+    const data = await response.json();
+    console.log(`📚 Ciclos obtenidos:`, data.ciclos);
+
+    setCiclos(data.ciclos || []);
+
+  } catch (error) {
+    console.error(`❌ Error al cargar ciclos de la carrera ${carreraId}:`, error);
+    setError('Error al cargar ciclos: ' + error.message);
+    setCiclos([]);
+  } finally {
+    setLoadingCiclos(false);
+  }
+};
 
   // 🔥 FUNCIÓN: Cargar secciones por carrera y ciclo
-  const fetchSecciones = async (carreraId, cicloId) => {
-    if (!carreraId || !cicloId) {
-      setSecciones([]);
-      return;
+  const fetchSecciones = async (carreraId, cicloId, token) => {
+  if (!carreraId || !cicloId) {
+    setSecciones([]);
+    return;
+  }
+
+  try {
+    setLoadingSecciones(true);
+    setError(null);
+
+    console.log(`🏫 Cargando secciones de carrera ${carreraId} y ciclo ${cicloId}...`);
+    const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/secciones/carrera/${carreraId}/ciclo/${cicloId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
     }
 
-    try {
-      setLoadingSecciones(true);
-      setError(null);
-      
-      console.log(`🏫 Cargando secciones de carrera ${carreraId} y ciclo ${cicloId}...`);
-      const response = await fetch(`http://localhost:8080/api/secciones/carrera/${carreraId}/ciclo/${cicloId}`);
-      
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log(`🏫 Secciones obtenidas:`, data.secciones);
-      
-      setSecciones(data.secciones || []);
-      
-    } catch (error) {
-      console.error(`❌ Error al cargar secciones:`, error);
-      setError('Error al cargar secciones: ' + error.message);
-      setSecciones([]);
-    } finally {
-      setLoadingSecciones(false);
-    }
-  };
+    const data = await response.json();
+    console.log(`🏫 Secciones obtenidas:`, data.secciones);
+
+    setSecciones(data.secciones || []);
+
+  } catch (error) {
+    console.error(`❌ Error al cargar secciones:`, error);
+    setError('Error al cargar secciones: ' + error.message);
+    setSecciones([]);
+  } finally {
+    setLoadingSecciones(false);
+  }
+};
 
   // 🔥 FUNCIÓN: Manejar cambios en el formulario con lógica de cascada
   const handleChange = (e) => {
@@ -339,124 +357,123 @@ function CrearAula() {
   };
 
   // 🔥 FUNCIÓN: Enviar formulario
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    
-    // Validar formulario
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError(null);
+  setSuccess(null);
+
+  // Validar formulario
+  const validationError = validateForm();
+  if (validationError) {
+    setError(validationError);
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    const token = localStorage.getItem('token');
+
+    // Preparar datos del aula
+    const aulaData = {
+      nombre: formData.nombre.trim(),
+      titulo: formData.titulo.trim(),
+      descripcion: formData.descripcion.trim(),
+      codigoAcceso: generateCodigoAcceso(),
+      profesorId: userData.id,
+      seccionId: formData.seccionId ? parseInt(formData.seccionId) : null,
+      estado: 'activa',
+      fechaInicio: formData.fechaInicio || null,
+      fechaFin: formData.fechaFin || null,
+      departamentoId: parseInt(formData.departamentoId),
+      carreraId: parseInt(formData.carreraId),
+      cicloId: parseInt(formData.cicloId)
+    };
+
+    console.log('📤 Enviando datos del aula:', aulaData);
+
+    const response = await fetch(`${API_CONFIG.API_BASE_URL}/api/aulas`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(aulaData)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Error al crear aula');
     }
-    
-    setIsLoading(true);
 
-    try {
-      const token = localStorage.getItem('token');
-      
-      // Preparar datos para el backend
-      const aulaData = {
-        nombre: formData.nombre.trim(),
-        titulo: formData.titulo.trim(),
-        descripcion: formData.descripcion.trim(),
-        codigoAcceso: generateCodigoAcceso(),
-        profesorId: userData.id,
-        seccionId: formData.seccionId ? parseInt(formData.seccionId) : null,
-        estado: 'activa',
-        fechaInicio: formData.fechaInicio || null,
-        fechaFin: formData.fechaFin || null,
-        // Datos académicos adicionales
-        departamentoId: parseInt(formData.departamentoId),
-        carreraId: parseInt(formData.carreraId),
-        cicloId: parseInt(formData.cicloId)
-      };
+    const result = await response.json();
+    console.log('✅ Aula creada exitosamente:', result);
 
-      console.log('📤 Enviando datos del aula:', aulaData);
+    setAulaCreada(result.aula || result);
+    setSuccess(`¡Aula "${formData.nombre}" creada exitosamente! Código de acceso: ${aulaData.codigoAcceso}`);
 
-      const response = await fetch('http://localhost:8080/api/aulas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(aulaData)
-      });
+    // Limpiar formulario
+    setFormData({
+      nombre: '',
+      titulo: '',
+      descripcion: '',
+      departamentoId: '',
+      carreraId: '',
+      cicloId: '',
+      seccionId: '',
+      fechaInicio: '',
+      fechaFin: ''
+    });
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Error al crear aula');
-      }
+    // Limpiar filtros relacionados
+    setCarreras([]);
+    setCiclos([]);
+    setSecciones([]);
 
-      const result = await response.json();
-      console.log('✅ Aula creada exitosamente:', result);
-      
-      setAulaCreada(result.aula || result);
-      setSuccess(`¡Aula "${formData.nombre}" creada exitosamente! Código de acceso: ${aulaData.codigoAcceso}`);
-      
-      // Limpiar formulario
-      setFormData({
-        nombre: '',
-        titulo: '',
-        descripcion: '',
-        departamentoId: '',
-        carreraId: '',
-        cicloId: '',
-        seccionId: '',
-        fechaInicio: '',
-        fechaFin: ''
-      });
-      
-      // Limpiar filtros
-      setCarreras([]);
-      setCiclos([]);
-      setSecciones([]);
-      
-    } catch (err) {
-      console.error('❌ Error al crear aula:', err);
-      setError('Error al crear el aula: ' + err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  } catch (err) {
+    console.error('❌ Error al crear aula:', err);
+    setError('Error al crear el aula: ' + err.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleInviteStudents = () => {
-    if (aulaCreada) {
-      setShowInviteModal(true);
-    }
-  };
+  if (aulaCreada) {
+    setShowInviteModal(true);
+  }
+};
 
   const handleCloseInviteModal = () => {
     setShowInviteModal(false);
     setAulaCreada(null);
     setSuccess(null);
-    navigate('/aulas');
+    navigate(ROUTES.PROTECTED.AULAS);
   };
-
+  
   const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (token) {
-        await fetch('http://localhost:8080/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-      }
-      
-      localStorage.removeItem('token');
-      navigate('/');
-      
-    } catch (error) {
-      console.error("❌ Error durante logout:", error);
-      localStorage.removeItem('token');
-      navigate('/');
+  try {
+    const token = localStorage.getItem('token');
+
+    if (token) {
+      await fetch(`${API_CONFIG.API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
     }
-  };
+
+    localStorage.removeItem('token');
+    navigate(ROUTES.PUBLIC.LOGIN);
+    
+  } catch (error) {
+    console.error("❌ Error durante logout:", error);
+    localStorage.removeItem('token');
+    navigate(ROUTES.PUBLIC.LOGIN);
+  }
+};
 
   return (
     <div className="full-page">
@@ -468,7 +485,7 @@ function CrearAula() {
               <BookOpen size={24} style={{ marginRight: '8px' }} />
               Crear Nueva Aula Virtual
             </h3>
-            <button onClick={() => navigate('/aulas')} className="close-button">
+            <button onClick={() => navigate(ROUTES.PROTECTED.AULAS)} className="close-button">
               <ArrowLeft size={20} />
             </button>
           </div>
@@ -697,7 +714,7 @@ function CrearAula() {
             <div className="form-actions">
               <button 
                 type="button" 
-                onClick={() => navigate('/aulas')} 
+                onClick={() => navigate(ROUTES.PROTECTED.AULAS)}
                 className="cancel-button"
               >
                 Cancelar
@@ -747,7 +764,7 @@ function CrearAula() {
                   </button>
                   <button 
                     type="button"
-                    onClick={() => navigate('/aulas')}
+                    onClick={() => navigate(ROUTES.PROTECTED.AULAS)}
                     className="continue-button"
                   >
                     Ir a Mis Aulas

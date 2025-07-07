@@ -421,7 +421,7 @@ body, html {
 :root {
   --aula-btn-bg: linear-gradient(135deg, #005DAB 0%, #0066c7 100%);
   --aula-btn-bg-hover: linear-gradient(135deg, #0066c7 0%, #005DAB 100%);
-  --aula-btn-color: #fff;
+  --aula-btn-color: #af0000;
   --aula-btn-radius: 12px;
   --aula-btn-shadow: 0 4px 12px rgba(0, 93, 171, 0.2);
   --aula-btn-shadow-hover: 0 8px 24px rgba(0, 93, 171, 0.3);
@@ -453,5 +453,254 @@ body, html {
   .aulas-create-main-btn {
     padding: 10px 16px;
     font-size: 13px;
+  }
+}/* ===== MEJORAS PARA EL LAYOUT DE AULAS ===== */
+/* Agrega esto a tu Aula.css o reemplaza las secciones correspondientes */
+
+.aulas-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: 32px;
+  /* 🎯 Mejorar la distribución vertical */
+  min-height: 80px;
+}
+
+.aulas-title-section {
+  flex: 1;
+  /* 🎯 Centrar verticalmente el contenido del título */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.aulas-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #1e293b 0%, #005DAB 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.aulas-subtitle {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.aulas-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  /* 🎯 Asegurar que los controles estén centrados verticalmente */
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.aulas-search {
+  position: relative;
+  min-width: 320px; /* 🎯 Aumentar ancho mínimo */
+  max-width: 400px; /* 🎯 Limitar ancho máximo */
+  flex: 1;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  z-index: 2;
+}
+
+.search-input {
+  width: 100%;
+  padding: 16px 16px 16px 48px; /* 🎯 Aumentar padding vertical */
+  font-size: 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  outline: none;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  height: 52px; /* 🎯 Altura fija */
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  border-color: #005DAB;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 93, 171, 0.1);
+}
+
+/* 🎯 BOTÓN CREAR AULA MEJORADO */
+.aulas-create-main-btn {
+  background: linear-gradient(135deg, #005DAB 0%, #0066c7 100%);
+  color: white;
+  border: none;
+  padding: 16px 24px; /* 🎯 Aumentar padding para igualar altura */
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 93, 171, 0.2);
+  text-decoration: none;
+  font-family: inherit;
+  white-space: nowrap; /* 🎯 Evitar que el texto se divida */
+  height: 52px; /* 🎯 Misma altura que el input */
+  box-sizing: border-box;
+  min-width: 180px; /* 🎯 Ancho mínimo */
+}
+
+.aulas-create-main-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 93, 171, 0.3);
+  background: linear-gradient(135deg, #0066c7 0%, #005DAB 100%);
+  color: white;
+}
+
+.aulas-create-main-btn:focus {
+  outline: 3px solid rgba(0, 93, 171, 0.3);
+  outline-offset: 2px;
+}
+
+/* 🎯 RESPONSIVE MEJORADO */
+@media (max-width: 1024px) {
+  .aulas-top {
+    gap: 24px;
+  }
+  
+  .aulas-search {
+    min-width: 280px;
+    max-width: 350px;
+  }
+  
+  .aulas-create-main-btn {
+    min-width: 160px;
+    padding: 14px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .aulas-top {
+    flex-direction: column;
+    gap: 20px;
+    align-items: stretch;
+    min-height: auto;
+  }
+  
+  .aulas-title-section {
+    text-align: center;
+  }
+  
+  .aulas-controls {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    align-self: stretch;
+  }
+  
+  .aulas-search {
+    min-width: 100%;
+    max-width: 100%;
+  }
+  
+  .aulas-create-main-btn {
+    width: 100%;
+    min-width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .aulas-title {
+    font-size: 28px;
+  }
+  
+  .aulas-subtitle {
+    font-size: 15px;
+  }
+  
+  .search-input,
+  .aulas-create-main-btn {
+    height: 48px;
+  }
+  
+  .search-input {
+    padding: 14px 16px 14px 48px;
+  }
+  
+  .aulas-create-main-btn {
+    padding: 14px 20px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .aulas-top {
+    gap: 16px;
+  }
+  
+  .aulas-title {
+    font-size: 24px;
+  }
+  
+  .aulas-subtitle {
+    font-size: 14px;
+  }
+  
+  .aulas-controls {
+    gap: 12px;
+  }
+}
+
+/* 🎯 MEJORAS ADICIONALES PARA CONSISTENCIA */
+.aulas-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 20px; /* 🎯 Agregar padding lateral */
+}
+
+/* 🎯 MEJORA PARA EL GRID DE AULAS */
+.aulas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
+  margin-top: 8px; /* 🎯 Pequeño margen para separar del header */
+}
+
+@media (max-width: 440px) {
+  .aulas-grid {
+    grid-template-columns: 1fr; /* 🎯 Una columna en móviles pequeños */
+    gap: 16px;
+  }
+}
+
+/* 🎯 ESTILO PARA CUANDO ESTÁN LADO A LADO */
+@media (min-width: 769px) {
+  .aulas-controls {
+    /* 🎯 Asegurar que search y botón tengan buena proporción */
+    max-width: 600px; /* 🎯 Limitar ancho total de controles */
+  }
+  
+  .aulas-search {
+    flex: 2; /* 🎯 El search ocupa 2/3 del espacio */
+  }
+  
+  .aulas-create-main-btn {
+    flex: 0 0 auto; /* 🎯 El botón mantiene su tamaño natural */
   }
 }
