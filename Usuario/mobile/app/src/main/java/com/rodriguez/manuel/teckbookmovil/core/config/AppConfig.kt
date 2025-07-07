@@ -90,7 +90,7 @@ object AppConfig {
 
     object Google {
         // Web client ID de tu configuración OAuth2
-        const val WEB_CLIENT_ID = "YOUR_GOOGLE_WEB_CLIENT_ID"
+        const val WEB_CLIENT_ID = "343545013418-fcq56rtiia2nc2qlhkijsgthio9erd4c.apps.googleusercontent.com"
         const val OAUTH_SCOPES = "email profile"
         const val REDIRECT_URI = "${BASE_URL}/oauth2/callback/google"
     }
@@ -98,6 +98,8 @@ object AppConfig {
     // ========== CONFIGURACIÓN DE ALMACENAMIENTO LOCAL ==========
 
     object Storage {
+        const val CACHE_VALIDITY_TIME = 3600L  // en segundos o milisegundos
+        const val DEFAULT_THEME_MODE = Theme.DEFAULT_MODE
         const val PREFERENCES_NAME = "tecbook_prefs"
         const val KEY_JWT_TOKEN = "jwt_token"
         const val KEY_USER_EMAIL = "user_email"
@@ -133,6 +135,14 @@ object AppConfig {
         const val MIN_PASSWORD_LENGTH = 6
         const val MAX_FILE_SIZE_MB = 5
         val ALLOWED_IMAGE_TYPES = listOf("image/jpeg", "image/png", "image/webp")
+    }
+    object Theme {
+        const val DEFAULT_MODE = "light"  // Ejemplo
+    }
+
+    object Debug {
+        const val LOG_NETWORK_REQUESTS = true
+        const val SHOW_DEBUG_INFO = true
     }
 
     // ========== ROLES DE USUARIO ==========

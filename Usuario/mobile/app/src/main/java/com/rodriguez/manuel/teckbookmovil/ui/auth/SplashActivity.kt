@@ -24,7 +24,7 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
-        Logger.lifecycle("SplashActivity", "onCreate")
+        Logger.lifecycle("SplashActivity", "Activity","onCreate")
 
         // Inicializar verificación de sesión
         initializeApp()
@@ -74,6 +74,6 @@ class SplashActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Logger.lifecycle("SplashActivity", "onDestroy")
+        Logger.lifecycle("SplashActivity", "Activity","onDestroy")
     }
 }

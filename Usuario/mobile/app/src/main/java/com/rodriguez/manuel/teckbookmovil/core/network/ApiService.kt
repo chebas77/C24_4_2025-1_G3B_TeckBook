@@ -18,6 +18,10 @@ interface ApiService {
 
     // ========== ENDPOINTS DE AUTENTICACIÓN ==========
 
+    // Login con Google
+    @POST("/api/auth/google") // o usa AppConfig.Endpoints.GOOGLE_LOGIN si el path es '/google-login'
+    suspend fun loginWithGoogle(@Body request: GoogleLoginRequest): Response<LoginResponse>
+
     /**
      * Login tradicional con email y contraseña
      * POST /api/auth/login

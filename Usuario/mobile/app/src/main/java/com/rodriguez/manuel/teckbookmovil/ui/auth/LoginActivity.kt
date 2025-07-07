@@ -2,7 +2,6 @@ package com.rodriguez.manuel.teckbookmovil.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
@@ -12,7 +11,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import com.rodriguez.manuel.teckbookmovil.R
 import com.rodriguez.manuel.teckbookmovil.TecBookApplication
 import com.rodriguez.manuel.teckbookmovil.core.config.AppConfig
 import com.rodriguez.manuel.teckbookmovil.core.config.Constants
@@ -20,10 +18,12 @@ import com.rodriguez.manuel.teckbookmovil.core.utils.Logger
 import com.rodriguez.manuel.teckbookmovil.core.utils.showToast
 import com.rodriguez.manuel.teckbookmovil.core.utils.visible
 import com.rodriguez.manuel.teckbookmovil.core.utils.gone
+import com.rodriguez.manuel.teckbookmovil.data.repositories.AuthRepository
 import com.rodriguez.manuel.teckbookmovil.databinding.ActivityLoginBinding
 import com.rodriguez.manuel.teckbookmovil.ui.auth.viewmodels.AuthViewModel
 import com.rodriguez.manuel.teckbookmovil.ui.main.MainActivity
 import kotlinx.coroutines.launch
+import com.rodriguez.manuel.teckbookmovil.core.network.ApiService
 
 /**
  * Pantalla de login principal
@@ -57,7 +57,7 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        Logger.lifecycle("LoginActivity", "onCreate")
+        Logger.lifecycle("LoginActivity", "Activity", "onCreate")
 
         setupViewModel()
         setupGoogleSignIn()
@@ -67,15 +67,16 @@ class LoginActivity : AppCompatActivity() {
 
     private fun setupViewModel() {
         val application = application as TecBookApplication
-        val authService = com.rodriguez.manuel.teckbookmovil.data.services.AuthService(
-            publicApiService = application.publicRetrofit.create(com.rodriguez.manuel.teckbookmovil.core.network.PublicApiService::class.java),
-            authenticatedApiService = application.authenticatedRetrofit.create(com.rodriguez.manuel.teckbookmovil.core.network.ApiService::class.java),
+
+        val authRepository = AuthRepository(
+            apiService = application.authenticatedRetrofit.create(ApiService::class.java),
             tokenManager = application.tokenManager
         )
 
+
         authViewModel = ViewModelProvider(
             this,
-            AuthViewModel.Factory(authService)
+            AuthViewModel.Factory(authRepository) // 👈 Aquí debe coincidir con tu Factory
         )[AuthViewModel::class.java]
     }
 
@@ -130,13 +131,13 @@ class LoginActivity : AppCompatActivity() {
         // Observar resultado de login
         authViewModel.loginResult.observe(this) { result ->
             result?.let { response ->
-                if (response.isSuccess()) {
-                    val loginResponse = response.getDataOrNull()
+                if (response.isSuccess) {
+                    val loginResponse = response.getOrNull()
                     if (loginResponse != null) {
                         handleLoginSuccess(loginResponse)
                     }
                 } else {
-                    handleLoginError(response.getErrorMessage() ?: "Error desconocido")
+                    handleLoginError(response.exceptionOrNull()?.localizedMessage ?: "Error desconocido")
                 }
             }
         }
@@ -291,7 +292,7 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        Logger.lifecycle("LoginActivity", "onStart")
+        Logger.lifecycle("LoginActivity", "Acitivity","onStart")
 
         // Verificar si ya hay una cuenta de Google logueada
         val account = GoogleSignIn.getLastSignedInAccount(this)
@@ -303,6 +304,6 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Logger.lifecycle("LoginActivity", "onDestroy")
+        Logger.lifecycle("LoginActivity", "Activity","onDestroy")
     }
 }

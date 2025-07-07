@@ -450,7 +450,7 @@ class CarreraService(
             val json = gson.toJson(carreras)
             preferencesManager.saveString("${CARRERAS_CACHE_KEY}_data", json)
             preferencesManager.saveLong("${CARRERAS_CACHE_KEY}_timestamp", System.currentTimeMillis())
-            Logger.cache("CarreraService", "Carreras guardadas en cache")
+            Logger.cache("CarreraService", "SAVE", CARRERAS_CACHE_KEY)
         } catch (e: Exception) {
             Logger.w("CarreraService", "Error guardando carreras en cache", e)
         }
@@ -463,7 +463,7 @@ class CarreraService(
         return try {
             val timestamp = preferencesManager.getLong("${CARRERAS_CACHE_KEY}_timestamp", 0)
             if (System.currentTimeMillis() - timestamp > CACHE_EXPIRY_TIME) {
-                Logger.cache("CarreraService", "Cache de carreras expirado")
+                Logger.cache("CarreraService", "EXPIRED", CARRERAS_CACHE_KEY)
                 return null
             }
 
@@ -472,7 +472,7 @@ class CarreraService(
                 val gson = com.google.gson.Gson()
                 val type = object : com.google.gson.reflect.TypeToken<List<Carrera>>() {}.type
                 val carreras: List<Carrera> = gson.fromJson(json, type)
-                Logger.cache("CarreraService", "Carreras obtenidas desde cache")
+                Logger.cache("CarreraService", "LOAD", CARRERAS_CACHE_KEY)
                 carreras
             } else {
                 null
@@ -492,7 +492,7 @@ class CarreraService(
             val json = gson.toJson(departamentos)
             preferencesManager.saveString("${DEPARTAMENTOS_CACHE_KEY}_data", json)
             preferencesManager.saveLong("${DEPARTAMENTOS_CACHE_KEY}_timestamp", System.currentTimeMillis())
-            Logger.cache("CarreraService", "Departamentos guardados en cache")
+            Logger.cache("CarreraService", "SAVE", DEPARTAMENTOS_CACHE_KEY)
         } catch (e: Exception) {
             Logger.w("CarreraService", "Error guardando departamentos en cache", e)
         }
@@ -505,7 +505,7 @@ class CarreraService(
         return try {
             val timestamp = preferencesManager.getLong("${DEPARTAMENTOS_CACHE_KEY}_timestamp", 0)
             if (System.currentTimeMillis() - timestamp > CACHE_EXPIRY_TIME) {
-                Logger.cache("CarreraService", "Cache de departamentos expirado")
+                Logger.cache("CarreraService", "EXPIRED", DEPARTAMENTOS_CACHE_KEY)
                 return null
             }
 
@@ -514,7 +514,7 @@ class CarreraService(
                 val gson = com.google.gson.Gson()
                 val type = object : com.google.gson.reflect.TypeToken<List<Departamento>>() {}.type
                 val departamentos: List<Departamento> = gson.fromJson(json, type)
-                Logger.cache("CarreraService", "Departamentos obtenidos desde cache")
+                Logger.cache("CarreraService", "LOAD", DEPARTAMENTOS_CACHE_KEY)
                 departamentos
             } else {
                 null
@@ -534,7 +534,7 @@ class CarreraService(
             val json = gson.toJson(ciclos)
             preferencesManager.saveString("${CICLOS_CACHE_KEY}_data", json)
             preferencesManager.saveLong("${CICLOS_CACHE_KEY}_timestamp", System.currentTimeMillis())
-            Logger.cache("CarreraService", "Ciclos guardados en cache")
+            Logger.cache("CarreraService", "SAVE", CICLOS_CACHE_KEY)
         } catch (e: Exception) {
             Logger.w("CarreraService", "Error guardando ciclos en cache", e)
         }
@@ -547,7 +547,7 @@ class CarreraService(
         return try {
             val timestamp = preferencesManager.getLong("${CICLOS_CACHE_KEY}_timestamp", 0)
             if (System.currentTimeMillis() - timestamp > CACHE_EXPIRY_TIME) {
-                Logger.cache("CarreraService", "Cache de ciclos expirado")
+                Logger.cache("CarreraService", "EXPIRED", CICLOS_CACHE_KEY)
                 return null
             }
 
@@ -558,7 +558,7 @@ class CarreraService(
                 val gson = com.google.gson.Gson()
                 val type = object : com.google.gson.reflect.TypeToken<List<Ciclo>>() {}.type
                 val ciclos: List<Ciclo> = gson.fromJson(json, type)
-                Logger.cache("CarreraService", "Ciclos obtenidos desde cache")
+                Logger.cache("CarreraService", "LOAD", CICLOS_CACHE_KEY)
                 ciclos
             } else {
                 null
@@ -580,7 +580,7 @@ class CarreraService(
             preferencesManager.removeKey("${DEPARTAMENTOS_CACHE_KEY}_timestamp")
             preferencesManager.removeKey("${CICLOS_CACHE_KEY}_data")
             preferencesManager.removeKey("${CICLOS_CACHE_KEY}_timestamp")
-            Logger.cache("CarreraService", "Cache limpiado")
+            Logger.cache("CarreraService", "CLEAR", "ALL")
         } catch (e: Exception) {
             Logger.w("CarreraService", "Error limpiando cache", e)
         }

@@ -164,7 +164,7 @@ class PreferencesManager(context: Context) {
      * Obtiene configuración de tema
      */
     fun getThemeMode(): String {
-        return getString("theme_mode", AppConfig.App.DEFAULT_THEME_MODE) ?: AppConfig.App.DEFAULT_THEME_MODE
+        return getString("theme_mode", AppConfig.Storage.DEFAULT_THEME_MODE) ?: AppConfig.Storage.DEFAULT_THEME_MODE
     }
 
     /**
@@ -198,7 +198,7 @@ class PreferencesManager(context: Context) {
     /**
      * Verifica si los datos necesitan sincronización
      */
-    fun needsSync(maxAgeMs: Long = AppConfig.App.CACHE_VALIDITY_TIME): Boolean {
+    fun needsSync(maxAgeMs: Long = AppConfig.Storage.CACHE_VALIDITY_TIME): Boolean {
         val lastSync = getLastSyncTime()
         val currentTime = System.currentTimeMillis()
         return (currentTime - lastSync) > maxAgeMs

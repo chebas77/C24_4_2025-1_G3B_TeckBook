@@ -375,7 +375,7 @@ fun Long.toReadableBytes(): String {
         kb >= 1 -> "%.2f KB".format(kb)
         else -> "$this B"
     }
-}========== EXTENSIONES PARA CONTEXT ==========
+}
 
 /**
  * Muestra un Toast corto
