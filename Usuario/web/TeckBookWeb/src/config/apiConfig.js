@@ -4,8 +4,8 @@
 const API_CONFIG = {
   // URLs base
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://rival-terra-chebas77-e06d6aa9.koyeb.app',
-  FRONTEND_URL: import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173',
-  
+FRONTEND_URL: import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173',
+
   // Información de la app
   APP_NAME: import.meta.env.VITE_APP_NAME || 'TeckBook',
   APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
