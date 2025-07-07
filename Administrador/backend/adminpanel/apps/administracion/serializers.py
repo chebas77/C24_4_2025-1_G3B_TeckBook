@@ -10,7 +10,15 @@ from apps.usuarios.models import Usuario, Departamento, Carrera
 from apps.aulas.models import AulaVirtual, AulaEstudiante
 from apps.anuncios.models import Anuncio, Comentario, Like, Lectura
 from .models import LogModeracion, ConfiguracionSistema, EstadisticasSistema
+from .models import HistorialModeracion
 
+class HistorialModeracionSerializer(serializers.ModelSerializer):
+    moderador = serializers.StringRelatedField()
+
+    class Meta:
+        model = HistorialModeracion
+        fields = ['id', 'accion', 'comentario', 'fecha', 'moderador']
+        
 class UsuarioAdminSerializer(serializers.ModelSerializer):
     """Serializer para gestión de usuarios por administradores"""
     nombre_completo = serializers.CharField(read_only=True)

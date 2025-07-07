@@ -6,7 +6,18 @@ from django.db import models
 
 from django.db import models
 from apps.core.models import BaseModel
+from django.conf import settings
 
+class HistorialModeracion(models.Model):
+    anuncio = models.ForeignKey('anuncios.Anuncio', on_delete=models.CASCADE, related_name='historial_moderacion')
+    moderador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    accion = models.CharField(max_length=50)  # Ej: 'censurar', 'descensurar'
+    comentario = models.TextField(blank=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.anuncio.titulo} - {self.accion} - {self.fecha:%Y-%m-%d %H:%M}"
+        
 class LogModeracion(BaseModel):
     """Log de acciones de moderación realizadas por administradores"""
     ACCIONES = [

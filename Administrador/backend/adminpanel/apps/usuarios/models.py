@@ -65,7 +65,7 @@ class Ciclo(models.Model):
 class Seccion(models.Model):
     nombre = models.CharField(max_length=255)
     codigo = models.CharField(max_length=255, unique=True, null=True, blank=True)
-    ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, db_column='ciclo')
+    ciclo = models.IntegerField(db_column='ciclo')    
     carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE, null=True, blank=True)
     
     class Meta:

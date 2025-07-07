@@ -13,7 +13,9 @@ from apps.aulas.models import AulaVirtual, AulaEstudiante
 from apps.anuncios.models import Anuncio, Comentario, Like, Lectura
 from apps.anuncios.serializers import AnuncioSerializer  # Asegúrate de tenerlo
 from apps.usuarios.serializers import UsuarioSerializer  # Asegúrate de tenerlo
-from .models import ModeracionAnuncio
+from .serializers import HistorialModeracionSerializer
+
+from .models import ModeracionAnuncio, HistorialModeracion
 from datetime import timedelta
 from django.utils import timezone
 
@@ -254,6 +256,54 @@ class ModeracionViewSet(viewsets.GenericViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdministradorPermission]
 
+    def list(self, request):
+        """
+        Listar anuncios para moderación (GET /api/administracion/moderacion/)
+        Permite filtrar por estado (censurado/no censurado) y búsqueda por título/contenido.
+        """
+        estado = request.GET.get('estado')
+        buscar = request.GET.get('buscar')
+
+        queryset = Anuncio.objects.all()
+
+        if estado == 'oculto':
+            queryset = queryset.filter(censurado=True)
+        elif estado == 'visible':
+            queryset = queryset.filter(censurado=False)
+
+        if buscar:
+            queryset = queryset.filter(
+                Q(titulo__icontains=buscar) | Q(contenido__icontains=buscar)
+            )
+
+        queryset = queryset.select_related('autor', 'aula').order_by('-fecha_publicacion')
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request)
+
+        data = [{
+            'id': anuncio.id,
+            'titulo': anuncio.titulo,
+            'contenido': anuncio.contenido[:200] + '...' if len(anuncio.contenido) > 200 else anuncio.contenido,
+            'tipo': anuncio.tipo,
+            'autor_nombre': f'{anuncio.autor.nombre} {anuncio.autor.apellidos}',
+            'autor_rol': anuncio.autor.rol,
+            'aula_titulo': anuncio.aula.titulo if anuncio.aula else 'General',
+            'fecha_publicacion': anuncio.fecha_publicacion,
+            'total_likes': anuncio.total_likes,
+            'total_comentarios': anuncio.total_comentarios,
+            'activo': anuncio.activo,
+            'estado': 'oculto' if anuncio.censurado else 'visible'
+        } for anuncio in page]
+
+        return paginator.get_paginated_response(data)
+    
+    @action(detail=True, methods=['get'])
+    def historial_moderacion(self, request, pk=None):
+        anuncio = self.get_object()
+        historial = anuncio.historial_moderacion.order_by('-fecha')
+        serializer = HistorialModeracionSerializer(historial, many=True)
+        return Response({'historial': serializer.data})
+
     def retrieve(self, request, pk=None):
         """Obtener un anuncio específico"""
         try:
@@ -317,15 +367,27 @@ class ModeracionViewSet(viewsets.GenericViewSet):
             return Response({'error': 'El motivo es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Buscar el anuncio
-            anuncio = Anuncio.objects.get(pk=pk)
+            # Obtener el anuncio para verificaciones y obtener el autor
+            anuncio = Anuncio.objects.select_related('autor').get(pk=pk)
             
-            # Censurar el anuncio
-            anuncio.censurado = True
-            anuncio.motivo_censura = motivo
-            anuncio.admin_censurador_id = request.user.id
-            anuncio.fecha_censura = timezone.now()
-            anuncio.save()
+            if anuncio.censurado:
+                return Response({'error': 'El anuncio ya está censurado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # ✅ Usar update() para evitar problemas con campos binarios
+            Anuncio.objects.filter(pk=pk).update(
+                censurado=True,
+                motivo_censura=motivo,
+                admin_censurador_id=request.user.id,
+                fecha_censura=timezone.now()
+            )
+            
+            # Registrar SIEMPRE el historial de censura
+            HistorialModeracion.objects.create(
+                anuncio=anuncio,
+                moderador=request.user,
+                accion='censurar',
+                comentario=motivo
+            )
             
             # Aplicar strike al autor si se solicitó
             strike_aplicado = False
@@ -340,6 +402,7 @@ class ModeracionViewSet(viewsets.GenericViewSet):
                     anuncio.autor.fecha_suspension = timezone.now() + timedelta(days=7)
                     anuncio.autor.motivo_suspension = f"Suspensión automática por acumular {anuncio.autor.strikes} strikes"
                     anuncio.autor.save()
+                    # (Opcional) Puedes registrar otro historial aquí si quieres dejar constancia de la suspensión
 
             return Response({
                 'mensaje': 'Anuncio censurado exitosamente',
@@ -350,26 +413,44 @@ class ModeracionViewSet(viewsets.GenericViewSet):
         except Anuncio.DoesNotExist:
             return Response({'error': 'Anuncio no encontrado'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            # Para debugging
+            import traceback
+            print("ERROR AL CENSURAR:")
+            print(traceback.format_exc())
             return Response({'error': f'Error interno: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
     @action(detail=True, methods=['post'])
     def descensurar_anuncio(self, request, pk=None):
         try:
+            # Obtener el anuncio para verificaciones
             anuncio = Anuncio.objects.get(pk=pk)
             
-            # Descensurar el anuncio
-            anuncio.censurado = False
-            anuncio.motivo_censura = None
-            anuncio.admin_censurador_id = None
-            anuncio.fecha_censura = None
-            anuncio.save()
-            
+            if not anuncio.censurado:
+                return Response({'error': 'El anuncio ya está visible.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # ✅ Usar update() para evitar problemas con campos binarios
+            Anuncio.objects.filter(pk=pk).update(
+                censurado=False,
+                motivo_censura=None,
+                admin_censurador_id=None,
+                fecha_censura=None
+            )
+
+            # Registrar el historial de descensura
+            HistorialModeracion.objects.create(
+                anuncio=anuncio,
+                moderador=request.user,
+                accion='descensurar',
+                comentario='Anuncio reactivado por moderador'
+            )
+
             return Response({'mensaje': 'Anuncio reactivado exitosamente'})
             
         except Anuncio.DoesNotExist:
             return Response({'error': 'Anuncio no encontrado'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            import traceback
+            print("ERROR AL DESCENSURAR:")
+            print(traceback.format_exc())
             return Response({'error': f'Error interno: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ==================== GESTIÓN DE USUARIOS ====================
@@ -469,14 +550,23 @@ class GestionUsuariosViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=['post'])
     def reactivar_usuario(self, request, pk=None):
         try:
-            success = ModeracionAnuncio.reactivar_usuario(pk, request.user.id)
-            if success:
-                return Response({'mensaje': 'Usuario reactivado exitosamente'})
-            else:
-                return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-
+            usuario = Usuario.objects.get(id=pk)
+            
+            if usuario.rol == 'ADMINISTRADOR':
+                return Response({'error': 'No se puede reactivar a un administrador'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Reactivar usuario directamente
+            usuario.activo = True
+            usuario.fecha_suspension = None
+            usuario.motivo_suspension = None
+            usuario.save()
+            
+            return Response({'mensaje': 'Usuario reactivado exitosamente'})
+            
+        except Usuario.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'Error interno: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @action(detail=True, methods=['post'])
     def aplicar_strike(self, request, pk=None):

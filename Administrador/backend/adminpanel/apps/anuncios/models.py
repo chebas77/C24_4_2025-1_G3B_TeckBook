@@ -30,7 +30,7 @@ class Anuncio(models.Model):
     fecha_edicion = models.DateTimeField(null=True, blank=True)
     activo = models.BooleanField(default=True)
     es_general = models.BooleanField(default=False)  # Para anuncios generales
-    fijado = models.BooleanField(default=False)
+    fijado = models.BooleanField(default=False, null=True, blank=True)  # ✅ Agregar null=True
 
     censurado = models.BooleanField(default=False, help_text="Anuncio censurado por administrador")
     motivo_censura = models.TextField(null=True, blank=True, help_text="Motivo de la censura")
