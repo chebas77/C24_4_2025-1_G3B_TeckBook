@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#FFFFFF"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="32dp">
+
+    <TextView
+        android:id="@+id/tvLogo"
+        android:text="TecBook"
+        android:textColor="#1877F2"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="48dp" />
+
+    <EditText
+        android:id="@+id/etUsuario"
+        android:hint="Usuario"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/etContrasena"
+        android:hint="Contraseña"
+        android:inputType="textPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:layout_marginBottom="24dp"/>
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:text="Ingresar"
+        android:backgroundTint="#1877F2"
+        android:textColor="#FFFFFF"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>
