@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import './AulaDetalle.css';
 import ListaIntegrantes from '../components/ListaIntegrantes';
+import AnuncioInteractions from '../components/AnuncioInteractions';
 import { API_CONFIG, ENDPOINTS, ROUTES } from '../config/apiConfig'
 
 function AulaDetalle() {
@@ -90,46 +91,44 @@ function AulaDetalle() {
   };
 
   const handleCreateAnuncio = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!aulaId) return console.error('aulaId no definido');
-  if (!newAnuncio.titulo.trim() || !newAnuncio.contenido.trim()) return console.error('Título o contenido vacío');
+    if (!aulaId) return console.error('aulaId no definido');
+    if (!newAnuncio.titulo.trim() || !newAnuncio.contenido.trim()) return console.error('Título o contenido vacío');
 
-  try {
-    const token = localStorage.getItem('token');
-    const formData = new FormData();
-    formData.append('titulo', newAnuncio.titulo);
-    formData.append('contenido', newAnuncio.contenido);
-    formData.append('fijado', newAnuncio.fijado || false);
-    formData.append('tipo', newAnuncio.tipo || 'anuncio'); // si aplica
-    formData.append('categoria', newAnuncio.categoria || '');
-    formData.append('etiquetas', newAnuncio.etiquetas || '');
-    if (newAnuncio.archivo) {
-      formData.append('archivo', newAnuncio.archivo);
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('titulo', newAnuncio.titulo);
+      formData.append('contenido', newAnuncio.contenido);
+      formData.append('fijado', newAnuncio.fijado || false);
+      formData.append('tipo', newAnuncio.tipo || 'anuncio');
+      formData.append('categoria', newAnuncio.categoria || '');
+      formData.append('etiquetas', newAnuncio.etiquetas || '');
+      if (newAnuncio.archivo) {
+        formData.append('archivo', newAnuncio.archivo);
+      }
+
+      const res = await fetch(`${API_CONFIG.API_BASE_URL}${ENDPOINTS.AULAS.ANUNCIOS.CREATE(aulaId)}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (res.ok) {
+        setShowCreateModal(false);
+        setNewAnuncio({ titulo: '', contenido: '', fijado: false });
+        fetchAnuncios(token);
+      } else {
+        const errorData = await res.json();
+        console.error('Error en el POST:', errorData);
+      }
+    } catch (e) {
+      console.error('Error creando anuncio:', e);
     }
-
-    const res = await fetch(`${API_CONFIG.API_BASE_URL}${ENDPOINTS.AULAS.ANUNCIOS.CREATE(aulaId)}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-        // ⚠️ NO pongas 'Content-Type', el navegador lo setea automáticamente
-      },
-      body: formData
-    });
-
-    if (res.ok) {
-      setShowCreateModal(false);
-      setNewAnuncio({ titulo: '', contenido: '', fijado: false });
-      fetchAnuncios(token);
-    } else {
-      const errorData = await res.json();
-      console.error('Error en el POST:', errorData);
-    }
-  } catch (e) {
-    console.error('Error creando anuncio:', e);
-  }
-};
-
+  };
 
   // Funciones para la calculadora de notas
   const agregarNotaTeoria = () => {
@@ -207,7 +206,6 @@ function AulaDetalle() {
   // Utilidad para obtener la fecha de creación más probable
   const getFechaCreacion = () => {
     if (!aula) return null;
-    // Intenta varios nombres de campo posibles
     return (
       aula.fechaCreacion ||
       aula.fecha_creacion ||
@@ -265,7 +263,6 @@ function AulaDetalle() {
               )}
               <div className="aula-meta-info">
                 <span><BookOpen size={14} /> Código: {aula?.codigo || 'N/A'}</span>
-                {/* Se elimina la fecha de creación del header para mostrarla solo en la sidebar */}
               </div>
             </div>
           </div>
@@ -348,9 +345,6 @@ function AulaDetalle() {
                       <button className="aula-anuncio-btn" title="Ver">
                         <Eye size={16} />
                       </button>
-                      <button className="aula-anuncio-btn" title="Comentarios">
-                        <MessageCircle size={16} />
-                      </button>
                       <button className="aula-anuncio-btn" title="Fijar">
                         <Pin size={16} />
                       </button>
@@ -376,6 +370,14 @@ function AulaDetalle() {
                       Compartir
                     </button>
                   </div>
+
+                  {/* 🔥 NUEVO: Componente de interacciones */}
+                  <AnuncioInteractions 
+                    anuncioId={anuncio.id}
+                    onStatsChange={(stats) => {
+                      console.log(`Stats de anuncio aula ${anuncio.id}:`, stats);
+                    }}
+                  />
                 </div>
               ))
             )}

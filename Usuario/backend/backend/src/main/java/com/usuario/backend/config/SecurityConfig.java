@@ -4,6 +4,7 @@ import com.usuario.backend.security.oauth2.CustomOAuth2UserService;
 import com.usuario.backend.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.usuario.backend.security.jwt.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,6 +17,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -31,7 +33,17 @@ public class SecurityConfig {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
     
     @Autowired
-    private UrlConfig urlConfig;  // ✅ Inyectar configuración de URLs
+    private UrlConfig urlConfig;
+
+    // 🔧 URLs dinámicas según entorno
+    @Value("${app.frontend.local-url:http://localhost:5173}")
+    private String frontendLocalUrl;
+    
+    @Value("${app.frontend.production-url:https://c24-4-2025-1-g3-b-teck-book.vercel.app}")
+    private String frontendProductionUrl;
+    
+    @Value("${spring.profiles.active:development}")
+    private String activeProfile;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -104,24 +116,39 @@ public class SecurityConfig {
     }
 
     @Bean
-public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
-    
-    // ✅ Dominios frontend permitidos
-    configuration.setAllowedOrigins(Arrays.asList(
-        "https://c24-4-2025-1-g3-b-teck-book.vercel.app",
-        "http://localhost:5173",
-        "http://localhost:3000"
-    ));
-    
-    // ✅ Métodos y cabeceras permitidas
-    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
-    configuration.setAllowCredentials(true);
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        // 🔧 URLs dinámicas según entorno
+        List<String> allowedOrigins;
+        
+        if ("development".equals(activeProfile) || "local".equals(activeProfile)) {
+            // 🏠 DESARROLLO LOCAL
+            allowedOrigins = Arrays.asList(
+                frontendLocalUrl,
+                "http://localhost:3000",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:3000"
+            );
+            System.out.println("🔧 CORS configurado para DESARROLLO LOCAL: " + allowedOrigins);
+        } else {
+            // 🌐 PRODUCCIÓN
+            allowedOrigins = Arrays.asList(
+                frontendProductionUrl,
+                frontendLocalUrl // Mantener local para testing
+            );
+            System.out.println("🚀 CORS configurado para PRODUCCIÓN: " + allowedOrigins);
+        }
+        
+        configuration.setAllowedOrigins(allowedOrigins);
+        
+        // ✅ Métodos y cabeceras permitidas
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+        configuration.setAllowCredentials(true);
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration);
-    return source;
-}
-
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }

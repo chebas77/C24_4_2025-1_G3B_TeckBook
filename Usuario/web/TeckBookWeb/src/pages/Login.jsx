@@ -6,7 +6,7 @@ import portalImage from "../assets/portal.png";
 import '../css/Login.css';
 
 // URL del backend desplegado en Koyeb
-const API_BASE_URL = 'https://rival-terra-chebas77-e06d6aa9.koyeb.app';
+const API_BASE_URL = 'http://localhost:8080';
 
 function Login() {
   const [correoInstitucional, setCorreoInstitucional] = useState("");

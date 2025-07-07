@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import '../css/Home.css';
 import CompletarPerfil from '../components/CompletarPerfil';
 import Header from '../components/Header';
 import Modal from '../components/Modal';
+import AnuncioInteractions from '../components/AnuncioInteractions';
 import { 
   FileText,
   Upload,
@@ -29,7 +30,6 @@ function Home() {
   const [showCompletarPerfil, setShowCompletarPerfil] = useState(false);
   const [anuncios, setAnuncios] = useState([]);
   const [anunciosFijados, setAnunciosFijados] = useState([]);
-  const [likedPosts, setLikedPosts] = useState(new Set());
   const [shareStatus, setShareStatus] = useState({});
   const [sortOrder, setSortOrder] = useState('recientes');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -38,143 +38,172 @@ function Home() {
   const [aulasDisponibles, setAulasDisponibles] = useState([]);
   const [formError, setFormError] = useState("");
   const firstInputRef = useRef(null);
+  
+  // 🔥 Referencias para evitar peticiones duplicadas
+  const fetchingUserData = useRef(false);
+  const fetchingAnuncios = useRef(false);
+  const isMounted = useRef(true);
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    let isMounted = true;
+  // 🔥 Función memoizada para cargar datos del usuario
+  const fetchUserData = useCallback(async () => {
+    if (fetchingUserData.current) return;
+    fetchingUserData.current = true;
 
-    const queryParams = new URLSearchParams(window.location.search);
-    const tokenFromUrl = queryParams.get('token');
-    const isNewUserParam = queryParams.get('new') === 'true';
-    const isIncompleteParam = queryParams.get('incomplete') === 'true';
+    try {
+      const data = await apiService.get(ENDPOINTS.AUTH.GET_USER);
 
-    // 1️⃣ Guardar token si viene por URL
-    if (tokenFromUrl) {
-      localStorage.setItem('token', tokenFromUrl);
-      window.history.replaceState({}, document.title, '/home');
+      if (!isMounted.current) return;
 
-      // Esperar un poco para que esté disponible el token
-      setTimeout(() => {
-        fetchUserData();
-        fetchAnuncios();
-      }, 100);
+      setUserData({
+        ...data,
+        profileImageUrl: data.profileImageUrl || ''
+      });
 
-      return;
-    }
+      const datosIncompletos = 
+        !data.carreraId ||
+        !data.cicloActual ||
+        !data.departamentoId ||
+        !data.telefono ||
+        !data.correoInstitucional;
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate(ROUTES.PUBLIC.LOGIN);
-      return;
-    }
+      const queryParams = new URLSearchParams(window.location.search);
+      const isNewUserParam = queryParams.get('new') === 'true';
+      const isIncompleteParam = queryParams.get('incomplete') === 'true';
 
-    fetchUserData();
-    fetchAnuncios();
+      const needsCompletion =
+        data.requiresCompletion ||
+        isNewUserParam ||
+        isIncompleteParam ||
+        datosIncompletos;
 
-   async function fetchUserData() {
-  try {
-    const data = await apiService.get(ENDPOINTS.AUTH.GET_USER);
-
-    if (!isMounted) return;
-
-    setUserData({
-      ...data,
-      profileImageUrl: data.profileImageUrl || ''
-    });
-
-    const datosIncompletos = 
-      !data.carreraId ||
-      !data.cicloActual ||
-      !data.departamentoId ||
-      !data.telefono ||
-      !data.correoInstitucional;
-
-    const needsCompletion =
-      data.requiresCompletion ||
-      isNewUserParam ||
-      isIncompleteParam ||
-      datosIncompletos;
-
-    // Pequeña espera para cargar correctamente el modal
-    if (needsCompletion) {
-      setTimeout(() => setShowCompletarPerfil(true), 300);
-    }
-
-  } catch (error) {
-    if (isMounted) {
-      console.error("❌ Error al obtener datos del usuario:", error);
-      setError(error.message || 'Error al obtener datos del usuario');
-    }
-  } finally {
-    if (isMounted) setIsLoading(false);
-  }
-}
-
-// 🔥 NUEVA FUNCIÓN: Cargar anuncios de todas las aulas del usuario
-async function fetchAnuncios() {
-  try {
-    console.log('🔍 Cargando anuncios de las aulas...');
-    
-    // Primero obtener las aulas del usuario
-    const aulas = await aulasService.getAll();
-    console.log('📚 Aulas obtenidas:', aulas.length);
-    
-    if (aulas.length === 0) {
-      console.log('ℹ️ El usuario no pertenece a ninguna aula');
-      return;
-    }
-
-    // Obtener anuncios de todas las aulas
-    const todosLosAnuncios = [];
-    const anunciosFijadosTemp = [];
-
-    for (const aula of aulas) {
-      try {
-        const anunciosAula = await aulasService.getAnuncios(aula.id);
-        console.log(`📋 Anuncios del aula ${aula.nombre}:`, anunciosAula.length);
-        
-        // Agregar nombre del aula a cada anuncio
-        const anunciosConAula = anunciosAula.map(anuncio => ({
-          ...anuncio,
-          aulaNombre: aula.nombre || aula.titulo,
-          aulaId: aula.id
-        }));
-
-        todosLosAnuncios.push(...anunciosConAula);
-
-        // Separar anuncios fijados
-        const fijados = anunciosConAula.filter(a => a.fijado);
-        anunciosFijadosTemp.push(...fijados);
-
-      } catch (error) {
-        console.error(`❌ Error al cargar anuncios del aula ${aula.id}:`, error);
+      if (needsCompletion) {
+        setTimeout(() => setShowCompletarPerfil(true), 300);
       }
+
+    } catch (error) {
+      if (isMounted.current) {
+        console.error("❌ Error al obtener datos del usuario:", error);
+        setError(error.message || 'Error al obtener datos del usuario');
+      }
+    } finally {
+      fetchingUserData.current = false;
+      if (isMounted.current) setIsLoading(false);
     }
-
-    console.log('📊 Total anuncios cargados:', todosLosAnuncios.length);
-    console.log('📌 Anuncios fijados:', anunciosFijadosTemp.length);
-
-    if (isMounted) {
-      setAnuncios(todosLosAnuncios);
-      setAnunciosFijados(anunciosFijadosTemp);
-    }
-
-  } catch (error) {
-    console.error('❌ Error al cargar anuncios:', error);
-    if (isMounted) {
-      setError('Error al cargar los anuncios');
-    }
-  }
-}
-
-  
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
+  // 🔥 Función memoizada para cargar anuncios
+  const fetchAnuncios = useCallback(async () => {
+    if (fetchingAnuncios.current) return;
+    fetchingAnuncios.current = true;
+
+    try {
+      console.log('🔍 Cargando anuncios de las aulas...');
+      
+      const aulas = await aulasService.getAll();
+      console.log('📚 Aulas obtenidas:', aulas.length);
+      
+      if (aulas.length === 0) {
+        console.log('ℹ️ El usuario no pertenece a ninguna aula');
+        return;
+      }
+
+      // 🔥 Procesar anuncios por lotes para evitar sobrecarga
+      const todosLosAnuncios = [];
+      const anunciosFijadosTemp = [];
+      const batchSize = 3; // Procesar 3 aulas a la vez
+
+      for (let i = 0; i < aulas.length; i += batchSize) {
+        const batch = aulas.slice(i, i + batchSize);
+        
+        const batchPromises = batch.map(async (aula) => {
+          try {
+            const anunciosAula = await aulasService.getAnuncios(aula.id);
+            console.log(`📋 Anuncios del aula ${aula.nombre}:`, anunciosAula.length);
+            
+            return anunciosAula.map(anuncio => ({
+              ...anuncio,
+              aulaNombre: aula.nombre || aula.titulo,
+              aulaId: aula.id
+            }));
+          } catch (error) {
+            console.error(`❌ Error al cargar anuncios del aula ${aula.id}:`, error);
+            return [];
+          }
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+        batchResults.forEach(anunciosConAula => {
+          todosLosAnuncios.push(...anunciosConAula);
+          const fijados = anunciosConAula.filter(a => a.fijado);
+          anunciosFijadosTemp.push(...fijados);
+        });
+
+        // Pequeña pausa entre lotes para no saturar
+        if (i + batchSize < aulas.length) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+
+      console.log('📊 Total anuncios cargados:', todosLosAnuncios.length);
+      console.log('📌 Anuncios fijados:', anunciosFijadosTemp.length);
+
+      if (isMounted.current) {
+        setAnuncios(todosLosAnuncios);
+        setAnunciosFijados(anunciosFijadosTemp);
+      }
+
+    } catch (error) {
+      console.error('❌ Error al cargar anuncios:', error);
+      if (isMounted.current) {
+        setError('Error al cargar los anuncios');
+      }
+    } finally {
+      fetchingAnuncios.current = false;
+    }
+  }, []);
+
+  // 🔥 Effect optimizado - solo se ejecuta una vez
+  useEffect(() => {
+    isMounted.current = true;
+
+    const initializeHome = async () => {
+      const queryParams = new URLSearchParams(window.location.search);
+      const tokenFromUrl = queryParams.get('token');
+
+      // 1️⃣ Manejar token desde URL
+      if (tokenFromUrl) {
+        localStorage.setItem('token', tokenFromUrl);
+        window.history.replaceState({}, document.title, '/home');
+        
+        // Esperar para que el token esté disponible
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      // 2️⃣ Verificar autenticación
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate(ROUTES.PUBLIC.LOGIN);
+        return;
+      }
+
+      // 3️⃣ Cargar datos secuencialmente para evitar congestión
+      await fetchUserData();
+      if (isMounted.current) {
+        await fetchAnuncios();
+      }
+    };
+
+    initializeHome();
+
+    // Cleanup
+    return () => {
+      isMounted.current = false;
+      fetchingUserData.current = false;
+      fetchingAnuncios.current = false;
+    };
+  }, []); // 🔥 Array vacío - solo se ejecuta una vez
 
   const handleCompletarPerfil = (result) => {
     setUserData(prev => ({ ...prev, ...result }));
@@ -191,18 +220,6 @@ async function fetchAnuncios() {
     return userData?.profileImageUrl?.trim()
       ? <img src={userData.profileImageUrl} alt="avatar" className={className} />
       : <div className={className}>{getUserInitials()}</div>;
-  };
-
-  const handleLike = (postId) => {
-    setLikedPosts(prev => {
-      const newLiked = new Set(prev);
-      if (newLiked.has(postId)) {
-        newLiked.delete(postId);
-      } else {
-        newLiked.add(postId);
-      }
-      return newLiked;
-    });
   };
 
   const handleShare = async (post) => {
@@ -235,7 +252,6 @@ async function fetchAnuncios() {
     }
   };
 
-  // ✅ Usar aulasService
   const fetchAulasForForm = async () => {
     try {
       const aulas = await aulasService.getAll();
@@ -277,7 +293,6 @@ async function fetchAnuncios() {
     return "";
   };
 
-  // ✅ Usar aulasService
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     const errorMsg = validateForm();
@@ -300,8 +315,8 @@ async function fetchAnuncios() {
       setCreateType(null);
       setFormData({ aulaId: '', titulo: '', contenido: '', archivo: null });
       
-      // Refrescar página
-      window.location.reload();
+      // Refrescar anuncios en lugar de toda la página
+      await fetchAnuncios();
     } catch (error) {
       console.error('Error creando anuncio:', error);
       alert('Error al crear el anuncio');
@@ -317,8 +332,22 @@ async function fetchAnuncios() {
     }
   });
 
-  if (isLoading) return <div className="home-loading-container"><div className="home-loading-spinner"></div><p>Cargando información del usuario...</p></div>;
-  if (error) return <div className="home-error-container"><h2>Error al cargar datos</h2><p>{error}</p><button onClick={() => navigate(ROUTES.PUBLIC.LOGIN)} className="home-button">Volver al inicio</button></div>;
+  if (isLoading) return (
+    <div className="home-loading-container">
+      <div className="home-loading-spinner"></div>
+      <p>Cargando información del usuario...</p>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="home-error-container">
+      <h2>Error al cargar datos</h2>
+      <p>{error}</p>
+      <button onClick={() => navigate(ROUTES.PUBLIC.LOGIN)} className="home-button">
+        Volver al inicio
+      </button>
+    </div>
+  );
 
   return (
     <div className="home-wrapper">
@@ -463,22 +492,10 @@ async function fetchAnuncios() {
                   
                   <div className="home-post-actions">
                     <button 
-                      className={`home-post-action-btn ${likedPosts.has(post.id) ? 'liked' : ''}`}
-                      onClick={() => handleLike(post.id)}
-                    >
-                      <ThumbsUp size={18} />
-                      {likedPosts.has(post.id) ? 'Te gusta' : 'Me gusta'}
-                    </button>
-                    
-                    <button className="home-post-action-btn">
-                      <MessageCircle size={18} />
-                      Comentar
-                    </button>
-                    
-                    <button 
                       className={`home-post-action-btn ${shareStatus[post.id] ? 'sharing' : ''}`}
                       onClick={() => handleShare(post)}
                       disabled={shareStatus[post.id] === 'sharing'}
+                      style={{ marginLeft: 'auto' }}
                     >
                       {shareStatus[post.id] === 'copied' ? (
                         <>
@@ -503,6 +520,13 @@ async function fetchAnuncios() {
                       )}
                     </button>
                   </div>
+
+                  <AnuncioInteractions 
+                    anuncioId={post.id}
+                    onStatsChange={(stats) => {
+                      console.log(`Stats de anuncio ${post.id}:`, stats);
+                    }}
+                  />
                 </article>
               ))
             )}
