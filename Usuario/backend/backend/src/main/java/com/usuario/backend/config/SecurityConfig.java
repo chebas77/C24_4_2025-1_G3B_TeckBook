@@ -104,20 +104,24 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        
-        // ✅ Usar UrlConfig para CORS dinámico
-        configuration.addAllowedOrigin(urlConfig.getFrontendBaseUrl());
-        configuration.addAllowedOrigin("http://localhost:5173");  // Para desarrollo
-        configuration.addAllowedOrigin("http://localhost:3000");  // Para desarrollo
-        
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
-        configuration.setAllowCredentials(true);
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    
+    // ✅ Dominios frontend permitidos
+    configuration.setAllowedOrigins(Arrays.asList(
+        "https://c24-4-2025-1-g3-b-teck-book.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ));
+    
+    // ✅ Métodos y cabeceras permitidas
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+    configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+}
+
 }
