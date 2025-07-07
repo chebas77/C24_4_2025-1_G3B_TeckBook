@@ -1,9 +1,10 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.carrera
+
 import com.google.gson.annotations.SerializedName
 
 /**
  * Modelo de Ciclo
- * Basado en la entidad Ciclo del backend
+ * Basado en la entidad Ciclo del backend.
  */
 data class Ciclo(
     @SerializedName("id")
@@ -16,14 +17,14 @@ data class Ciclo(
     val nombre: String
 ) {
     /**
-     * Obtiene el nombre formateado del ciclo
+     * Obtiene el nombre formateado del ciclo.
      */
     fun getNombreFormateado(): String {
         return "$numero - $nombre"
     }
 
     /**
-     * Verifica si es un ciclo válido
+     * Verifica si es un ciclo válido (1 a 6).
      */
     fun isValid(): Boolean {
         return numero in 1..6

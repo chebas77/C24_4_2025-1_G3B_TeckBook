@@ -1,11 +1,10 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.aula
-import com.google.gson.annotations.SerializedName
 
-// ========== MODELOS DE INVITACIONES ==========
+import com.google.gson.annotations.SerializedName
 
 /**
  * Modelo de Invitación a Aula
- * Basado en la entidad InvitacionAula del backend
+ * Basado en la entidad InvitacionAula del backend.
  */
 data class InvitacionAula(
     @SerializedName("id")
@@ -38,9 +37,6 @@ data class InvitacionAula(
     @SerializedName("fechaRespuesta")
     val fechaRespuesta: String? = null
 ) {
-    /**
-     * Estados posibles de la invitación
-     */
     enum class EstadoInvitacion(val value: String) {
         PENDIENTE("pendiente"),
         ACEPTADA("aceptada"),
@@ -54,56 +50,24 @@ data class InvitacionAula(
         }
     }
 
-    /**
-     * Convierte estado string a enum
-     */
     fun getEstadoEnum(): EstadoInvitacion {
         return EstadoInvitacion.fromString(estado)
     }
 
-    /**
-     * Verifica si está pendiente
-     */
-    fun isPendiente(): Boolean {
-        return getEstadoEnum() == EstadoInvitacion.PENDIENTE
-    }
+    fun isPendiente() = getEstadoEnum() == EstadoInvitacion.PENDIENTE
+    fun isAceptada() = getEstadoEnum() == EstadoInvitacion.ACEPTADA
+    fun isRechazada() = getEstadoEnum() == EstadoInvitacion.RECHAZADA
+    fun isExpirada() = getEstadoEnum() == EstadoInvitacion.EXPIRADA
 
-    /**
-     * Verifica si fue aceptada
-     */
-    fun isAceptada(): Boolean {
-        return getEstadoEnum() == EstadoInvitacion.ACEPTADA
-    }
-
-    /**
-     * Verifica si fue rechazada
-     */
-    fun isRechazada(): Boolean {
-        return getEstadoEnum() == EstadoInvitacion.RECHAZADA
-    }
-
-    /**
-     * Verifica si expiró
-     */
-    fun isExpirada(): Boolean {
-        return getEstadoEnum() == EstadoInvitacion.EXPIRADA
-    }
-
-    /**
-     * Obtiene color del estado para UI
-     */
     fun getEstadoColor(): String {
         return when (getEstadoEnum()) {
-            EstadoInvitacion.PENDIENTE -> "#FF9800"    // Naranja
-            EstadoInvitacion.ACEPTADA -> "#4CAF50"     // Verde
-            EstadoInvitacion.RECHAZADA -> "#F44336"    // Rojo
-            EstadoInvitacion.EXPIRADA -> "#757575"     // Gris
+            EstadoInvitacion.PENDIENTE -> "#FF9800"
+            EstadoInvitacion.ACEPTADA -> "#4CAF50"
+            EstadoInvitacion.RECHAZADA -> "#F44336"
+            EstadoInvitacion.EXPIRADA -> "#757575"
         }
     }
 
-    /**
-     * Obtiene texto del estado para mostrar
-     */
     fun getEstadoDisplay(): String {
         return when (getEstadoEnum()) {
             EstadoInvitacion.PENDIENTE -> "Pendiente"

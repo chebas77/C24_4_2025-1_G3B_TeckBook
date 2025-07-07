@@ -1,9 +1,10 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.carrera
 
 import com.google.gson.annotations.SerializedName
+
 /**
  * Modelo de Departamento
- * Basado en la entidad Departamento del backend
+ * Basado en la entidad Departamento del backend.
  */
 data class Departamento(
     @SerializedName("id")
@@ -19,7 +20,7 @@ data class Departamento(
     val activo: Boolean = true
 ) {
     /**
-     * Verifica si el departamento está activo
+     * Verifica si el departamento está activo.
      */
     fun isActivo(): Boolean {
         return activo

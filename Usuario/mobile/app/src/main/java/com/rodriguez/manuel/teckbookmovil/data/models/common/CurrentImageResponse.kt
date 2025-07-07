@@ -1,8 +1,9 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.common
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Respuesta para obtener imagen actual
+ * Respuesta para obtener la imagen de perfil actual del usuario.
  */
 data class CurrentImageResponse(
     @SerializedName("imageUrl")

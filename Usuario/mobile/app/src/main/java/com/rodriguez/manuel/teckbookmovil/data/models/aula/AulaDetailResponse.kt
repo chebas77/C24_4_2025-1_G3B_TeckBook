@@ -1,8 +1,10 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.aula
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Respuesta para detalle de aula específica
+ * Respuesta del backend para obtener el detalle de un aula específica,
+ * incluyendo lista de estudiantes y rol del usuario.
  */
 data class AulaDetailResponse(
     @SerializedName("aula")

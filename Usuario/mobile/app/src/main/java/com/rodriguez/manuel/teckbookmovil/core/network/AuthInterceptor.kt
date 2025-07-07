@@ -20,48 +20,37 @@ class AuthInterceptor(
         val original = chain.request()
         val originalUrl = original.url.toString()
 
-        // Verificar si el endpoint requiere autenticación
         if (!requiresAuthentication(originalUrl)) {
-            Logger.d("AuthInterceptor", "Endpoint público, sin token: $originalUrl")
+            Logger.d("AuthInterceptor", "📢 Endpoint público, sin token: $originalUrl")
             return chain.proceed(original)
         }
 
-        // Obtener token
         val token = tokenManager.getBearerToken()
 
         if (token.isNullOrEmpty()) {
-            Logger.w("AuthInterceptor", "No hay token disponible para endpoint protegido: $originalUrl")
-            // Continuar sin token - el servidor debería responder 401
+            Logger.w("AuthInterceptor", "❌ No hay token para endpoint protegido: $originalUrl")
             return chain.proceed(original)
         }
 
-        // Agregar token a la petición
-        val requestBuilder = original.newBuilder()
+        val request = original.newBuilder()
             .header(AppConfig.Auth.HEADER_AUTHORIZATION, token)
             .method(original.method, original.body)
+            .build()
 
-        val request = requestBuilder.build()
-        Logger.d("AuthInterceptor", "Token agregado a petición: ${originalUrl}")
+        Logger.d("AuthInterceptor", "✅ Token agregado: $originalUrl")
 
-        try {
-            val response = chain.proceed(request)
+        val response = chain.proceed(request)
 
-            // Verificar si el token ha expirado
-            if (response.code == 401) {
-                Logger.w("AuthInterceptor", "Token expirado o inválido (401) para: $originalUrl")
-                handleTokenExpiration()
-            }
-
-            return response
-
-        } catch (e: IOException) {
-            Logger.e("AuthInterceptor", "Error en petición autenticada: $originalUrl", e)
-            throw e
+        if (response.code == 401) {
+            Logger.w("AuthInterceptor", "⚠️ Token expirado o inválido (401) para: $originalUrl")
+            handleTokenExpiration()
         }
+
+        return response
     }
 
     /**
-     * Determina si un endpoint requiere autenticación basado en la URL
+     * Determina si un endpoint requiere autenticación
      */
     private fun requiresAuthentication(url: String): Boolean {
         val publicEndpoints = listOf(
@@ -75,85 +64,26 @@ class AuthInterceptor(
             AppConfig.Endpoints.HEALTH_AULAS,
             AppConfig.Endpoints.ANUNCIOS_GENERAL,
             AppConfig.Endpoints.ANUNCIOS_TODOS,
-            "/oauth2/",
-            "/api/debug/",
-            "/api/public/"
+            "/oauth2/"
         )
 
-        // También verificar endpoints dinámicos públicos
         val publicPatterns = listOf(
             "/api/carreras/departamento/\\d+/activas",
             "/api/secciones/carrera/\\d+",
             "/api/secciones/carrera/\\d+/ciclo/\\d+"
         )
 
-        // Verificar endpoints exactos
-        for (endpoint in publicEndpoints) {
-            if (url.contains(endpoint)) {
-                return false
-            }
-        }
+        if (publicEndpoints.any { url.contains(it) }) return false
+        if (publicPatterns.any { url.matches(".*$it.*".toRegex()) }) return false
 
-        // Verificar patrones dinámicos
-        for (pattern in publicPatterns) {
-            if (url.matches(".*$pattern.*".toRegex())) {
-                return false
-            }
-        }
-
-        // Por defecto, requiere autenticación
-        return true
+        return true // Todo lo demás requiere auth
     }
 
     /**
      * Maneja la expiración del token
      */
     private fun handleTokenExpiration() {
-        Logger.auth("AUTH", "Token expirado, limpiando sesión local")
-
-        // Limpiar token local - esto forzará al usuario a hacer login nuevamente
-        tokenManager.clearToken()
-
-        // Aquí podrías emitir un evento para notificar a la UI que el token expiró
-        // Por ejemplo, usando EventBus, LiveData, o un callback
-        notifyTokenExpired()
-    }
-
-    /**
-     * Notifica que el token ha expirado
-     * Esta función puede ser extendida para enviar eventos a la UI
-     */
-    private fun notifyTokenExpired() {
-        // TODO: Implementar notificación a la UI cuando se integre con Activities/ViewModels
-        // Opciones:
-        // 1. EventBus.getDefault().post(TokenExpiredEvent())
-        // 2. Broadcast Intent
-        // 3. Callback interface
-        Logger.w("AuthInterceptor", "Token expirado - Usuario debe hacer login nuevamente")
-    }
-
-    /**
-     * Interface para manejar eventos de token expirado
-     */
-    interface TokenExpirationListener {
-        fun onTokenExpired()
-    }
-
-    companion object {
-        private var tokenExpirationListener: TokenExpirationListener? = null
-
-        /**
-         * Establece un listener para eventos de token expirado
-         */
-        fun setTokenExpirationListener(listener: TokenExpirationListener?) {
-            tokenExpirationListener = listener
-        }
-
-        /**
-         * Notifica token expirado a través del listener
-         */
-        private fun notifyTokenExpiredToListener() {
-            tokenExpirationListener?.onTokenExpired()
-        }
+        Logger.auth("🚫 Token expirado - limpiando sesión local")
+        tokenManager.logout()
     }
 }

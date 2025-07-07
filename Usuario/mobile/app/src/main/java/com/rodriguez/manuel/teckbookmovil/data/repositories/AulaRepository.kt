@@ -5,21 +5,23 @@ import com.rodriguez.manuel.teckbookmovil.data.models.aula.AulasResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class AulaRepository(private val apiService: ApiService) {
+class AulaRepository(
+    private val apiService: ApiService
+) {
 
+    /**
+     * Obtiene mis aulas desde la API.
+     */
     suspend fun getMyAulas(): Result<AulasResponse> {
         return withContext(Dispatchers.IO) {
-            try {
+            runCatching {
                 val response = apiService.getMyAulas()
+
                 if (response.isSuccessful) {
-                    response.body()?.let {
-                        Result.success(it)
-                    } ?: Result.failure(Exception("Respuesta vacía"))
+                    response.body() ?: throw Exception("Respuesta vacía")
                 } else {
-                    Result.failure(Exception("Error: ${response.code()} ${response.message()}"))
+                    throw Exception("Error: ${response.code()} ${response.message()}")
                 }
-            } catch (e: Exception) {
-                Result.failure(e)
             }
         }
     }

@@ -1,8 +1,9 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.common
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Estadísticas de usuario
+ * Estadísticas de usuario para dashboard o perfil.
  */
 data class UserStats(
     @SerializedName("aulasInscritas")
@@ -24,16 +25,14 @@ data class UserStats(
     val notificacionesNoLeidas: Int = 0
 ) {
     /**
-     * Verifica si hay notificaciones pendientes
+     * Verifica si hay notificaciones pendientes.
      */
     fun hasNotifications(): Boolean {
-        return anunciosPendientes > 0 ||
-                invitacionesPendientes > 0 ||
-                notificacionesNoLeidas > 0
+        return anunciosPendientes > 0 || invitacionesPendientes > 0 || notificacionesNoLeidas > 0
     }
 
     /**
-     * Obtiene total de notificaciones
+     * Obtiene el total de notificaciones para badges.
      */
     fun getTotalNotifications(): Int {
         return anunciosPendientes + invitacionesPendientes + notificacionesNoLeidas

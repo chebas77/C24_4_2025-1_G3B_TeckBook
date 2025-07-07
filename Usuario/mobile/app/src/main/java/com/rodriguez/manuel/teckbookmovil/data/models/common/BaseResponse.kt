@@ -2,10 +2,10 @@ package com.rodriguez.manuel.teckbookmovil.data.models.common
 
 import com.google.gson.annotations.SerializedName
 
-// ========== RESPUESTAS BASE ==========
+// ========== RESPUESTA BASE GENÉRICA ==========
 
 /**
- * Respuesta base para todos los endpoints
+ * Respuesta base para todos los endpoints.
  */
 data class BaseResponse<T>(
     @SerializedName("data")
@@ -24,21 +24,21 @@ data class BaseResponse<T>(
     val timestamp: Long = System.currentTimeMillis()
 ) {
     /**
-     * Verifica si la respuesta es exitosa
+     * Verifica si la respuesta es exitosa.
      */
     fun isSuccess(): Boolean {
-        return success && error == null && data != null
+        return success && error.isNullOrEmpty() && data != null
     }
 
     /**
-     * Verifica si hay error
+     * Verifica si hay error.
      */
     fun hasError(): Boolean {
-        return !success || error != null
+        return !success || !error.isNullOrEmpty()
     }
 
     /**
-     * Obtiene el mensaje de error o success
+     * Obtiene el mensaje de error o success.
      */
     fun getDisplayMessage(): String? {
         return error ?: message

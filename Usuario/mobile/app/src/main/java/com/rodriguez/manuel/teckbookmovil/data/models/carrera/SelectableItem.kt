@@ -1,7 +1,7 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.carrera
 
 /**
- * Modelo para elementos seleccionables en spinners/dropdowns
+ * Modelo para elementos seleccionables en spinners/dropdowns.
  */
 data class SelectableItem(
     val id: Long,
@@ -15,7 +15,7 @@ data class SelectableItem(
 
     companion object {
         /**
-         * Convierte Departamento a SelectableItem
+         * Convierte Departamento a SelectableItem.
          */
         fun fromDepartamento(departamento: Departamento): SelectableItem {
             return SelectableItem(
@@ -27,7 +27,7 @@ data class SelectableItem(
         }
 
         /**
-         * Convierte Carrera a SelectableItem
+         * Convierte Carrera a SelectableItem.
          */
         fun fromCarrera(carrera: Carrera): SelectableItem {
             return SelectableItem(
@@ -39,7 +39,7 @@ data class SelectableItem(
         }
 
         /**
-         * Convierte Ciclo a SelectableItem
+         * Convierte Ciclo a SelectableItem.
          */
         fun fromCiclo(ciclo: Ciclo): SelectableItem {
             return SelectableItem(
@@ -50,7 +50,7 @@ data class SelectableItem(
         }
 
         /**
-         * Convierte Seccion a SelectableItem
+         * Convierte Seccion a SelectableItem.
          */
         fun fromSeccion(seccion: Seccion): SelectableItem {
             return SelectableItem(

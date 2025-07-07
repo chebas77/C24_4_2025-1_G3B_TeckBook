@@ -1,8 +1,10 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.aula
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Request para crear aula virtual
+ * Request para crear un aula virtual.
+ * Compatible con el flujo actual.
  */
 data class CreateAulaRequest(
     @SerializedName("nombre")

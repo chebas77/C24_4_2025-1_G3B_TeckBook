@@ -16,6 +16,7 @@
         android:theme="@style/Theme.TeckBookMovil"
         tools:targetApi="31">
 
+        <!-- Pantalla de inicio: LoginActivity -->
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="true">
@@ -25,7 +26,24 @@
             </intent-filter>
         </activity>
 
-        <!-- Si tienes MainActivity, quítale el intent-filter de LAUNCHER -->
+        <!-- Nueva Activity para capturar el deep link OAuth2 -->
+        <activity
+            android:name=".ui.auth.OAuthCallbackActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Ajusta estos datos a tu scheme, host y path -->
+                <data
+                    android:scheme="tuapp"
+                    android:host="oauth"
+                    android:path="/callback" />
+            </intent-filter>
+        </activity>
+
+        <!-- MainActivity normal, sin LAUNCHER -->
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="true" />

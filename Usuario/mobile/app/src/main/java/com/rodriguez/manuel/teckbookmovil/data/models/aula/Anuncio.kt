@@ -1,6 +1,7 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.aula
+
 import com.google.gson.annotations.SerializedName
-import com.rodriguez.manuel.teckbookmovil.core.config.AppConfig
+import com.rodriguez.manuel.teckbookmovil.core.config.Constants
 
 /**
  * Modelo de Anuncio
@@ -68,10 +69,10 @@ data class Anuncio(
     val esGeneral: Boolean = false
 ) {
     /**
-     * Convierte tipo string a enum
+     * Convierte tipo string a enum usando Constants.AnuncioType
      */
-    fun getTipoEnum(): AppConfig.AnuncioType {
-        return AppConfig.AnuncioType.fromString(tipo)
+    fun getTipoEnum(): Constants.AnuncioType {
+        return Constants.AnuncioType.fromString(tipo)
     }
 
     /**
@@ -113,11 +114,11 @@ data class Anuncio(
      */
     fun getTipoIcon(): String {
         return when (getTipoEnum()) {
-            AppConfig.AnuncioType.INFORMATIVO -> "📢"
-            AppConfig.AnuncioType.TAREA -> "📝"
-            AppConfig.AnuncioType.EXAMEN -> "📊"
-            AppConfig.AnuncioType.MATERIAL -> "📚"
-            AppConfig.AnuncioType.EVENTO -> "📅"
+            Constants.AnuncioType.INFORMATIVO -> "📢"
+            Constants.AnuncioType.TAREA -> "📝"
+            Constants.AnuncioType.EXAMEN -> "📊"
+            Constants.AnuncioType.MATERIAL -> "📚"
+            Constants.AnuncioType.EVENTO -> "📅"
         }
     }
 }

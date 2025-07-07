@@ -1,8 +1,9 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.common
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Información de sesión activa
+ * Información de sesión activa de usuario.
  */
 data class SessionInfo(
     @SerializedName("isActive")
@@ -29,23 +30,17 @@ data class SessionInfo(
     @SerializedName("deviceInfo")
     val deviceInfo: String? = null
 ) {
-    /**
-     * Verifica si la sesión está activa
-     */
+    /** Verifica si la sesión sigue activa y no ha expirado */
     fun isValid(): Boolean {
         return isActive && System.currentTimeMillis() < expiresAt
     }
 
-    /**
-     * Obtiene tiempo restante de sesión
-     */
+    /** Tiempo restante en milisegundos */
     fun getTimeToExpire(): Long {
         return maxOf(0, expiresAt - System.currentTimeMillis())
     }
 
-    /**
-     * Verifica si la sesión está por expirar (menos de 5 minutos)
-     */
+    /** ¿La sesión expira pronto? (< 5 minutos) */
     fun isExpiringSoon(): Boolean {
         return getTimeToExpire() < 5 * 60 * 1000L
     }

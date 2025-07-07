@@ -1,8 +1,9 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.aula
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Información básica de invitación en respuestas
+ * Información básica de invitación en respuestas.
  */
 data class InvitacionInfo(
     @SerializedName("id")

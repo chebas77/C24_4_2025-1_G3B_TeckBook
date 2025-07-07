@@ -1,8 +1,10 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.aula
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Request para crear anuncio
+ * Request para crear un anuncio.
+ * Compatible con multipart si se adjunta archivo.
  */
 data class CreateAnuncioRequest(
     @SerializedName("titulo")

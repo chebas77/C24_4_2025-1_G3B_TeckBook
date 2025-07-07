@@ -1,8 +1,9 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.common
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Error de validación con detalles
+ * Respuesta de error de validación con detalles por campo.
  */
 data class ValidationErrorResponse(
     @SerializedName("error")
@@ -15,21 +16,21 @@ data class ValidationErrorResponse(
     val timestamp: Long = System.currentTimeMillis()
 ) {
     /**
-     * Obtiene errores por campo
+     * Obtiene todos los errores por campo.
      */
     fun getFieldErrors(): Map<String, String> {
         return details
     }
 
     /**
-     * Verifica si hay error en un campo específico
+     * Verifica si existe error para un campo específico.
      */
     fun hasFieldError(fieldName: String): Boolean {
         return details.containsKey(fieldName)
     }
 
     /**
-     * Obtiene error de un campo específico
+     * Obtiene el error de un campo específico.
      */
     fun getFieldError(fieldName: String): String? {
         return details[fieldName]

@@ -1,8 +1,9 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.carrera
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Respuesta para departamentos activos
+ * Respuesta para departamentos activos.
  */
 data class DepartamentosActivosResponse(
     @SerializedName("departamentos")

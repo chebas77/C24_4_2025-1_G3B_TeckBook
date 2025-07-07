@@ -1,4 +1,5 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.auth
+
 import com.google.gson.annotations.SerializedName
 
 /**

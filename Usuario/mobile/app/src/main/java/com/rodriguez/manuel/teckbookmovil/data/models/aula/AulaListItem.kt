@@ -1,7 +1,8 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.aula
 
 /**
- * Modelo para item de aula en lista/grid
+ * Modelo para item de aula en listas o grids.
+ * Es una capa de presentación para mostrar aulas con badges o estados de selección.
  */
 data class AulaListItem(
     val aula: AulaVirtual,
@@ -11,7 +12,7 @@ data class AulaListItem(
     val badgeColor: String? = null
 ) {
     /**
-     * Obtiene información resumida para mostrar en lista
+     * Devuelve información resumida del aula para mostrar en la lista.
      */
     fun getSummaryInfo(): String {
         val profesor = aula.getProfesorInfo()

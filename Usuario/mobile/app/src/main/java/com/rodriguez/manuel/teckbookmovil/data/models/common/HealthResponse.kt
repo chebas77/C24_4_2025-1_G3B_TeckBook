@@ -1,9 +1,11 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.common
+
 import com.google.gson.annotations.SerializedName
 
 /**
-* Respuesta de health check
-*/
+ * Respuesta de health check del backend.
+ * Compatible con endpoints tipo /health o /actuator/health.
+ */
 data class HealthResponse(
     @SerializedName("service")
     val service: String,
@@ -24,9 +26,16 @@ data class HealthResponse(
     val totalAulas: Long? = null
 ) {
     /**
-     * Verifica si el servicio está funcionando
+     * Verifica si el servicio está en estado OK.
      */
     fun isHealthy(): Boolean {
         return status.equals("OK", ignoreCase = true)
+    }
+
+    /**
+     * Devuelve estado legible para UI.
+     */
+    fun getStatusDisplay(): String {
+        return if (isHealthy()) "Disponible" else "No disponible"
     }
 }

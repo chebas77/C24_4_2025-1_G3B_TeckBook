@@ -1,9 +1,10 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.carrera
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Modelo de Sección
- * Basado en la entidad Seccion del backend
+ * Modelo de Sección.
+ * Basado en la entidad Seccion del backend.
  */
 data class Seccion(
     @SerializedName("id")
@@ -22,7 +23,7 @@ data class Seccion(
     val carreraId: Long? = null
 ) {
     /**
-     * Obtiene el nombre completo de la sección
+     * Devuelve el nombre completo con código si aplica.
      */
     fun getNombreCompleto(): String {
         return if (!codigo.isNullOrEmpty()) {
@@ -33,7 +34,7 @@ data class Seccion(
     }
 
     /**
-     * Obtiene información del ciclo
+     * Muestra información resumida del ciclo.
      */
     fun getCicloInfo(): String {
         return "Ciclo $ciclo"

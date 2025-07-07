@@ -1,7 +1,9 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.common
+
 import com.google.gson.annotations.SerializedName
+
 /**
- * Información de cache
+ * Información de caché para controlar expiración y tamaño.
  */
 data class CacheInfo(
     @SerializedName("key")
@@ -17,21 +19,21 @@ data class CacheInfo(
     val size: Long? = null
 ) {
     /**
-     * Verifica si el cache ha expirado
+     * Verifica si el caché ha expirado.
      */
     fun isExpired(): Boolean {
         return System.currentTimeMillis() > expiresAt
     }
 
     /**
-     * Obtiene tiempo restante en milisegundos
+     * Obtiene tiempo restante en milisegundos.
      */
     fun getTimeToLive(): Long {
         return maxOf(0, expiresAt - System.currentTimeMillis())
     }
 
     /**
-     * Verifica si es válido
+     * Verifica si es válido.
      */
     fun isValid(): Boolean {
         return !isExpired()

@@ -1,10 +1,11 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.auth
+
 import com.google.gson.annotations.SerializedName
+
 /**
-**
-* Modelo para registro de usuario
-* Basado en el endpoint /api/usuarios/register
-*/
+ * Modelo para registro de usuario
+ * Basado en el endpoint /api/usuarios/register
+ */
 data class RegisterRequest(
     @SerializedName("nombre")
     val nombre: String,

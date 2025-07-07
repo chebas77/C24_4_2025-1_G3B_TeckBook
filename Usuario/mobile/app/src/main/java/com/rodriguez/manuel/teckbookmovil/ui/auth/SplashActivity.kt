@@ -16,7 +16,6 @@ import kotlinx.coroutines.launch
  * Pantalla de splash que se muestra al iniciar la app
  * - Verifica si el usuario está logueado
  * - Redirige a Login o MainActivity según corresponda
- * - Muestra el logo de TecBook durante la carga
  */
 class SplashActivity : AppCompatActivity() {
 
@@ -24,9 +23,8 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
-        Logger.lifecycle("SplashActivity", "Activity","onCreate")
+        Logger.lifecycle("SplashActivity",  "onCreate")
 
-        // Inicializar verificación de sesión
         initializeApp()
     }
 
@@ -35,24 +33,21 @@ class SplashActivity : AppCompatActivity() {
             try {
                 Logger.d("SplashActivity", "Inicializando aplicación")
 
-                // Mostrar splash por mínimo tiempo
+                // Tiempo mínimo del splash
                 delay(Constants.Animation.SPLASH_DELAY)
 
-                // Obtener TokenManager
                 val tokenManager = TecBookApplication.getTokenManager(this@SplashActivity)
 
-                // Verificar si hay sesión activa
                 if (tokenManager.isLoggedIn()) {
-                    Logger.auth("SplashActivity", "Usuario logueado, redirigiendo a MainActivity")
+                    Logger.auth("Usuario logueado, redirigiendo a MainActivity")
                     navigateToMain()
                 } else {
-                    Logger.auth("SplashActivity", "Usuario no logueado, redirigiendo a Login")
+                    Logger.auth("Usuario no logueado, redirigiendo a Login")
                     navigateToLogin()
                 }
 
             } catch (e: Exception) {
                 Logger.e("SplashActivity", "Error en inicialización", e)
-                // En caso de error, ir a login
                 navigateToLogin()
             }
         }
@@ -74,6 +69,6 @@ class SplashActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Logger.lifecycle("SplashActivity", "Activity","onDestroy")
+        Logger.lifecycle("SplashActivity","onDestroy")
     }
 }

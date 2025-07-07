@@ -1,8 +1,9 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.carrera
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Respuesta para secciones por carrera y ciclo
+ * Respuesta para secciones por carrera y ciclo.
  */
 data class SeccionesResponse(
     @SerializedName("secciones")

@@ -1,7 +1,9 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.common
+
 import com.google.gson.annotations.SerializedName
+
 /**
- * Respuesta para upload de imagen de perfil
+ * Respuesta para la subida de imagen de perfil.
  */
 data class UploadImageResponse(
     @SerializedName("imageUrl")

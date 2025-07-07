@@ -1,8 +1,6 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.auth
 
 import com.google.gson.annotations.SerializedName
-import com.rodriguez.manuel.teckbookmovil.core.config.AppConfig
-import java.time.LocalDateTime
 
 /**
  * Modelo para respuesta de login exitoso

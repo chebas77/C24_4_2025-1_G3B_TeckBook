@@ -1,5 +1,7 @@
 package com.rodriguez.manuel.teckbookmovil.core.config
 
+import android.content.Context
+import com.rodriguez.manuel.teckbookmovil.BuildConfig
 import okhttp3.Cache
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -10,138 +12,112 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 object NetworkConfig {
+
+    /**
+     * Utilidades comunes de red.
+     * Puedes adaptarlas a tus necesidades.
+     */
     object NetworkUtils {
         fun isNetworkAvailable(): Boolean {
-            // Aquí puedes implementar la verificación real
-            // o devolver true como placeholder:
+            // TODO: Implementar verificación real de red
             return true
         }
 
-        fun isSuccessful(code: Int): Boolean {
-            return code in 200..299
-        }
+        fun isSuccessful(code: Int): Boolean = code in 200..299
 
-        fun isRetryableError(code: Int): Boolean {
-            return when (code) {
-                Constants.HttpCodes.INTERNAL_SERVER_ERROR,
-                Constants.HttpCodes.SERVICE_UNAVAILABLE,
-                408, 429 -> true
-                else -> false
-            }
-        }
-
-        fun getErrorMessage(code: Int): String {
-            return when (code) {
-                Constants.HttpCodes.BAD_REQUEST -> Constants.ErrorMessages.VALIDATION_ERROR
-                Constants.HttpCodes.UNAUTHORIZED -> Constants.ErrorMessages.UNAUTHORIZED_ERROR
-                Constants.HttpCodes.FORBIDDEN -> Constants.ErrorMessages.FORBIDDEN_ERROR
-                Constants.HttpCodes.NOT_FOUND -> Constants.ErrorMessages.NOT_FOUND_ERROR
-                Constants.HttpCodes.INTERNAL_SERVER_ERROR,
-                Constants.HttpCodes.SERVICE_UNAVAILABLE -> Constants.ErrorMessages.SERVER_ERROR
-                else -> Constants.ErrorMessages.UNKNOWN_ERROR
-            }
-        }
+        fun isRetryableError(code: Int): Boolean = code in listOf(408, 429, 500, 503)
     }
 
+    /**
+     * Crea un cliente HTTP con logging, caché opcional y autenticación opcional.
+     */
     fun createOkHttpClient(
-        cacheDir: File? = null,
+        context: Context? = null,
         authInterceptor: Interceptor? = null
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
-            .connectTimeout(AppConfig.Network.CONNECT_TIMEOUT, TimeUnit.SECONDS)
-            .readTimeout(AppConfig.Network.READ_TIMEOUT, TimeUnit.SECONDS)
-            .writeTimeout(AppConfig.Network.WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .connectTimeout(30L, TimeUnit.SECONDS)
+            .readTimeout(30L, TimeUnit.SECONDS)
+            .writeTimeout(30L, TimeUnit.SECONDS)
 
-        cacheDir?.let { dir ->
-            val cacheSize = AppConfig.App.CACHE_SIZE
-            val cache = Cache(dir, cacheSize)
+        // Si quieres caché de red
+        context?.let {
+            val cacheDir = File(it.cacheDir, "http_cache")
+            val cacheSize = 10 * 1024 * 1024L // 10 MB
+            val cache = Cache(cacheDir, cacheSize)
             builder.cache(cache)
         }
 
-        if (AppConfig.App.ENABLE_LOGGING) {
-            val loggingInterceptor = HttpLoggingInterceptor().apply {
-                level = if (AppConfig.getCurrentEnvironment() == AppConfig.Environment.PRODUCTION) {
-                    HttpLoggingInterceptor.Level.BASIC
-                } else {
-                    HttpLoggingInterceptor.Level.BODY
-                }
-            }
-            builder.addInterceptor(loggingInterceptor)
+        // Logging solo en DEBUG
+        val logging = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+            else HttpLoggingInterceptor.Level.BASIC
         }
+        builder.addInterceptor(logging)
 
+        // Interceptor para headers básicos
         builder.addInterceptor { chain ->
             val original = chain.request()
             val requestBuilder = original.newBuilder()
-                .header("Accept", AppConfig.Auth.CONTENT_TYPE_JSON)
-                .header("User-Agent", "TecBook-Mobile/${AppConfig.App.VERSION}")
+                .header("Accept", "application/json")
+                .header("User-Agent", "TecBook-Mobile/${BuildConfig.VERSION_NAME}")
                 .header("X-Platform", "Android")
-
             chain.proceed(requestBuilder.build())
         }
 
+        // Interceptor de autenticación (token JWT)
         authInterceptor?.let { builder.addInterceptor(it) }
-
-        builder.addInterceptor(createCacheInterceptor())
-        builder.addNetworkInterceptor(createNetworkCacheInterceptor())
 
         return builder.build()
     }
 
-    fun createRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(AppConfig.BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create(createGson()))
-            .build()
-    }
-
-    fun createPublicRetrofit(cacheDir: File? = null): Retrofit {
-        val okHttpClient = createOkHttpClient(cacheDir = cacheDir)
+    /**
+     * Crea un Retrofit público sin token.
+     */
+    fun createPublicRetrofit(context: Context? = null): Retrofit {
+        val okHttpClient = createOkHttpClient(context = context)
         return createRetrofit(okHttpClient)
     }
 
+    /**
+     * Crea un Retrofit protegido con token.
+     */
     fun createAuthenticatedRetrofit(
-        cacheDir: File? = null,
+        context: Context? = null,
         authInterceptor: Interceptor
     ): Retrofit {
-        val okHttpClient = createOkHttpClient(cacheDir = cacheDir, authInterceptor = authInterceptor)
+        val okHttpClient = createOkHttpClient(context = context, authInterceptor = authInterceptor)
         return createRetrofit(okHttpClient)
     }
 
-    fun createUploadRetrofit(authInterceptor: Interceptor): Retrofit {
-        val okHttpClient = OkHttpClient.Builder()
-            .connectTimeout(60, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
-            .addInterceptor(authInterceptor)
-            .build()
-
+    /**
+     * Crea una instancia de Retrofit con configuración común.
+     */
+    private fun createRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(AppConfig.BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL) // ✅ Usa siempre BuildConfig para evitar inconsistencias
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create(createGson()))
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    private fun createCacheInterceptor() = Interceptor { chain ->
+    /**
+     * Interceptor que aplica reglas de caché para offline si quieres usarlo.
+     */
+    fun createCacheInterceptor() = Interceptor { chain ->
         var request = chain.request()
         if (!NetworkUtils.isNetworkAvailable()) {
             request = request.newBuilder()
-                .header("Cache-Control", "public, only-if-cached, max-stale=${AppConfig.App.CACHE_MAX_STALE}")
+                .header("Cache-Control", "public, only-if-cached, max-stale=604800") // 7 días
                 .build()
         }
         chain.proceed(request)
     }
 
-    private fun createNetworkCacheInterceptor() = Interceptor { chain ->
+    fun createNetworkCacheInterceptor() = Interceptor { chain ->
         val response = chain.proceed(chain.request())
         response.newBuilder()
-            .header("Cache-Control", "public, max-age=${AppConfig.App.CACHE_MAX_AGE}")
+            .header("Cache-Control", "public, max-age=300") // 5 minutos
             .build()
     }
-
-    private fun createGson() = com.google.gson.GsonBuilder()
-        .setDateFormat(Constants.Format.SERVER_DATETIME_PATTERN)
-        .setLenient()
-        .create()
 }

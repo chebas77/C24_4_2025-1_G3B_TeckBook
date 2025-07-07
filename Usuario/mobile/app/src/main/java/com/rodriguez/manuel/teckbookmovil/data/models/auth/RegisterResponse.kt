@@ -1,7 +1,6 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.auth
-import com.google.gson.annotations.SerializedName
-import com.rodriguez.manuel.teckbookmovil.data.models.auth.CarreraInfo
 
+import com.google.gson.annotations.SerializedName
 
 /**
  * Modelo para respuesta de registro exitoso

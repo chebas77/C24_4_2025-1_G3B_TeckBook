@@ -2,10 +2,6 @@ package com.rodriguez.manuel.teckbookmovil.data.models.aula
 
 import com.google.gson.annotations.SerializedName
 import com.rodriguez.manuel.teckbookmovil.core.config.AppConfig
-import java.time.LocalDate
-import java.time.LocalDateTime
-
-// ========== MODELOS DE AULAS VIRTUALES ==========
 
 /**
  * Modelo de Aula Virtual
@@ -55,60 +51,26 @@ data class AulaVirtual(
     @SerializedName("totalEstudiantes")
     val totalEstudiantes: Int = 0
 ) {
-    /**
-     * Convierte el estado string a enum
-     */
     fun getEstadoEnum(): AppConfig.AulaState {
         return AppConfig.AulaState.fromString(estado)
     }
 
-    /**
-     * Verifica si el aula está activa
-     */
-    fun isActiva(): Boolean {
-        return getEstadoEnum() == AppConfig.AulaState.ACTIVA
+    fun isActiva(): Boolean = getEstadoEnum() == AppConfig.AulaState.ACTIVA
+    fun isFinalizada(): Boolean = getEstadoEnum() == AppConfig.AulaState.FINALIZADA
+
+    fun getTituloOrNombre(): String = titulo?.takeIf { it.isNotBlank() } ?: nombre
+
+    fun getProfesorInfo(): String = profesorNombreCompleto ?: "Profesor"
+
+    fun getEstadoDisplay(): String = when (getEstadoEnum()) {
+        AppConfig.AulaState.ACTIVA -> "Activa"
+        AppConfig.AulaState.INACTIVA -> "Inactiva"
+        AppConfig.AulaState.FINALIZADA -> "Finalizada"
     }
 
-    /**
-     * Verifica si el aula está finalizada
-     */
-    fun isFinalizada(): Boolean {
-        return getEstadoEnum() == AppConfig.AulaState.FINALIZADA
-    }
-
-    /**
-     * Obtiene el título o nombre como fallback
-     */
-    fun getTituloOrNombre(): String {
-        return titulo?.takeIf { it.isNotBlank() } ?: nombre
-    }
-
-    /**
-     * Obtiene información del profesor
-     */
-    fun getProfesorInfo(): String {
-        return profesorNombreCompleto ?: "Profesor"
-    }
-
-    /**
-     * Obtiene información del estado para mostrar en UI
-     */
-    fun getEstadoDisplay(): String {
-        return when (getEstadoEnum()) {
-            AppConfig.AulaState.ACTIVA -> "Activa"
-            AppConfig.AulaState.INACTIVA -> "Inactiva"
-            AppConfig.AulaState.FINALIZADA -> "Finalizada"
-        }
-    }
-
-    /**
-     * Obtiene color del estado para UI
-     */
-    fun getEstadoColor(): String {
-        return when (getEstadoEnum()) {
-            AppConfig.AulaState.ACTIVA -> "#4CAF50"      // Verde
-            AppConfig.AulaState.INACTIVA -> "#FF9800"    // Naranja
-            AppConfig.AulaState.FINALIZADA -> "#757575"  // Gris
-        }
+    fun getEstadoColor(): String = when (getEstadoEnum()) {
+        AppConfig.AulaState.ACTIVA -> "#4CAF50"      // Verde
+        AppConfig.AulaState.INACTIVA -> "#FF9800"    // Naranja
+        AppConfig.AulaState.FINALIZADA -> "#757575"  // Gris
     }
 }

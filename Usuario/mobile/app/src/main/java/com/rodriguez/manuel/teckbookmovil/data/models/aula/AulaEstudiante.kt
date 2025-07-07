@@ -1,9 +1,10 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.aula
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Modelo de Estudiante en Aula
- * Basado en la entidad AulaEstudiante del backend
+ * Modelo de Estudiante dentro de un Aula Virtual.
+ * Basado en la entidad AulaEstudiante del backend.
  */
 data class AulaEstudiante(
     @SerializedName("id")
@@ -24,7 +25,7 @@ data class AulaEstudiante(
     @SerializedName("fechaSalida")
     val fechaSalida: String? = null,
 
-    // Campos adicionales del controller
+    // Información adicional del usuario
     @SerializedName("nombre")
     val nombre: String? = null,
 
@@ -35,7 +36,7 @@ data class AulaEstudiante(
     val email: String? = null
 ) {
     /**
-     * Estados posibles del estudiante en aula
+     * Estados posibles del estudiante en el aula.
      */
     enum class EstadoEstudiante(val value: String) {
         INVITADO("invitado"),
@@ -50,21 +51,21 @@ data class AulaEstudiante(
     }
 
     /**
-     * Convierte estado string a enum
+     * Convierte el estado string a enum.
      */
     fun getEstadoEnum(): EstadoEstudiante {
         return EstadoEstudiante.fromString(estado)
     }
 
     /**
-     * Verifica si está activo en el aula
+     * Verifica si el estudiante está activo.
      */
     fun isActivo(): Boolean {
         return getEstadoEnum() == EstadoEstudiante.ACTIVO
     }
 
     /**
-     * Obtiene el nombre completo del estudiante
+     * Devuelve el nombre completo o email.
      */
     fun getNombreCompleto(): String {
         return if (!nombre.isNullOrBlank() && !apellidos.isNullOrBlank()) {

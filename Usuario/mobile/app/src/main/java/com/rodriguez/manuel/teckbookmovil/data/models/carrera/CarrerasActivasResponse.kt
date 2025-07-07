@@ -1,7 +1,6 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.carrera
-import com.google.gson.annotations.SerializedName
 
-// ========== RESPUESTAS DE API ==========
+import com.google.gson.annotations.SerializedName
 
 /**
  * Respuesta para carreras activas
@@ -11,11 +10,11 @@ data class CarrerasActivasResponse(
     val carreras: List<Carrera>,
 
     @SerializedName("count")
-    val count: Int,
+    val count: Int = carreras.size,
 
     @SerializedName("message")
-    val message: String,
+    val message: String? = null,
 
     @SerializedName("isEmpty")
-    val isEmpty: Boolean = false
+    val isEmpty: Boolean = carreras.isEmpty()
 )

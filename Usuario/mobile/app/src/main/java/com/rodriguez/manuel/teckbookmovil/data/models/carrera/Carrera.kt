@@ -2,8 +2,6 @@ package com.rodriguez.manuel.teckbookmovil.data.models.carrera
 
 import com.google.gson.annotations.SerializedName
 
-// ========== MODELOS ACADÉMICOS ==========
-
 /**
  * Modelo de Carrera
  * Basado en la entidad Carrera del backend
@@ -33,28 +31,14 @@ data class Carrera(
     @SerializedName("modalidad")
     val modalidad: String? = null
 ) {
-    /**
-     * Obtiene el nombre completo con código
-     */
+    /** Devuelve nombre completo con código */
     fun getNombreCompleto(): String {
-        return if (codigo.isNotEmpty()) {
-            "$nombre ($codigo)"
-        } else {
-            nombre
-        }
+        return if (codigo.isNotEmpty()) "$nombre ($codigo)" else nombre
     }
 
-    /**
-     * Verifica si la carrera está activa
-     */
-    fun isActiva(): Boolean {
-        return activo
-    }
+    /** Verifica si la carrera está activa */
+    fun isActiva(): Boolean = activo
 
-    /**
-     * Obtiene la duración en ciclos o valor por defecto
-     */
-    fun getDuracionCiclosOrDefault(): Int {
-        return duracionCiclos ?: 6
-    }
+    /** Obtiene duración en ciclos con fallback */
+    fun getDuracionCiclosOrDefault(): Int = duracionCiclos ?: 6
 }

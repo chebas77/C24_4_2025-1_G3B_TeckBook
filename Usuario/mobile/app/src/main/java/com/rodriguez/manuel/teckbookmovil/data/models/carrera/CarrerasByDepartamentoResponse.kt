@@ -1,4 +1,5 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.carrera
+
 import com.google.gson.annotations.SerializedName
 
 /**
@@ -12,8 +13,8 @@ data class CarrerasByDepartamentoResponse(
     val departamentoId: Long,
 
     @SerializedName("count")
-    val count: Int,
+    val count: Int = carreras.size,
 
     @SerializedName("message")
-    val message: String
+    val message: String? = null
 )

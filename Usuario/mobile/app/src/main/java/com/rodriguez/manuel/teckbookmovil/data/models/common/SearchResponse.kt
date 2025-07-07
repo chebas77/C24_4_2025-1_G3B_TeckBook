@@ -1,8 +1,9 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.common
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Respuesta de búsqueda genérica
+ * Respuesta genérica para operaciones de búsqueda.
  */
 data class SearchResponse<T>(
     @SerializedName("results")
@@ -23,17 +24,9 @@ data class SearchResponse<T>(
     @SerializedName("filters")
     val filters: Map<String, String>? = null
 ) {
-    /**
-     * Verifica si hay resultados
-     */
-    fun hasResults(): Boolean {
-        return results.isNotEmpty()
-    }
+    /** Verifica si hay resultados */
+    fun hasResults(): Boolean = results.isNotEmpty()
 
-    /**
-     * Verifica si hay sugerencias
-     */
-    fun hasSuggestions(): Boolean {
-        return !suggestions.isNullOrEmpty()
-    }
+    /** Verifica si hay sugerencias */
+    fun hasSuggestions(): Boolean = !suggestions.isNullOrEmpty()
 }

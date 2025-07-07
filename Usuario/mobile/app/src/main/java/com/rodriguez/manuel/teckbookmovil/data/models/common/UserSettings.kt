@@ -1,12 +1,13 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.common
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Configuración de usuario
+ * Configuración de usuario para personalización de la app.
  */
 data class UserSettings(
     @SerializedName("theme")
-    val theme: String = "system",
+    val theme: String = "system", // Opciones: "light", "dark", "system"
 
     @SerializedName("notifications")
     val notifications: Boolean = true,
@@ -23,24 +24,9 @@ data class UserSettings(
     @SerializedName("dataUsage")
     val dataUsage: String = "normal" // "low", "normal", "high"
 ) {
-    /**
-     * Verifica si está en modo oscuro
-     */
-    fun isDarkMode(): Boolean {
-        return theme == "dark"
-    }
+    fun isDarkMode(): Boolean = theme == "dark"
 
-    /**
-     * Verifica si las notificaciones están habilitadas
-     */
-    fun areNotificationsEnabled(): Boolean {
-        return notifications
-    }
+    fun areNotificationsEnabled(): Boolean = notifications
 
-    /**
-     * Verifica si está en modo de ahorro de datos
-     */
-    fun isDataSavingMode(): Boolean {
-        return dataUsage == "low"
-    }
+    fun isDataSavingMode(): Boolean = dataUsage == "low"
 }

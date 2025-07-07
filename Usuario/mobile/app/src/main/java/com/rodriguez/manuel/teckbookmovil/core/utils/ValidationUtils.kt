@@ -1,6 +1,5 @@
 package com.rodriguez.manuel.teckbookmovil.core.utils
 
-import com.rodriguez.manuel.teckbookmovil.core.config.AppConfig
 import com.rodriguez.manuel.teckbookmovil.core.config.Constants
 import java.util.regex.Pattern
 
@@ -20,7 +19,7 @@ object ValidationUtils {
             return ValidationResult.error("El correo electrónico es requerido")
         }
 
-        if (!email.endsWith(AppConfig.Validation.EMAIL_DOMAIN)) {
+        if (!email.endsWith(Constants.Validation.EMAIL_DOMAIN)) {
             return ValidationResult.error(Constants.ErrorMessages.INVALID_EMAIL_DOMAIN)
         }
 
@@ -40,9 +39,7 @@ object ValidationUtils {
             return ValidationResult.error("El correo electrónico es requerido")
         }
 
-        val emailPattern = Pattern.compile(
-            "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-        )
+        val emailPattern = Pattern.compile(Constants.Patterns.EMAIL_PATTERN)
 
         if (!emailPattern.matcher(email).matches()) {
             return ValidationResult.error("Formato de correo inválido")
@@ -53,24 +50,18 @@ object ValidationUtils {
 
     // ========== VALIDACIONES DE PASSWORD ==========
 
-    /**
-     * Valida fortaleza de contraseña
-     */
     fun validatePassword(password: String?): ValidationResult {
         if (password.isNullOrBlank()) {
             return ValidationResult.error("La contraseña es requerida")
         }
 
-        if (password.length < AppConfig.Validation.MIN_PASSWORD_LENGTH) {
+        if (password.length < Constants.Validation.MIN_PASSWORD_LENGTH) {
             return ValidationResult.error(Constants.ErrorMessages.WEAK_PASSWORD)
         }
 
         return ValidationResult.success()
     }
 
-    /**
-     * Valida que las contraseñas coincidan
-     */
     fun validatePasswordConfirmation(password: String?, confirmPassword: String?): ValidationResult {
         val passwordValidation = validatePassword(password)
         if (!passwordValidation.isValid) {
@@ -86,9 +77,6 @@ object ValidationUtils {
 
     // ========== VALIDACIONES DE NOMBRES ==========
 
-    /**
-     * Valida nombre de persona
-     */
     fun validateName(name: String?, fieldName: String = "Nombre"): ValidationResult {
         if (name.isNullOrBlank()) {
             return ValidationResult.error("$fieldName es requerido")
@@ -102,7 +90,6 @@ object ValidationUtils {
             return ValidationResult.error("$fieldName no puede exceder 50 caracteres")
         }
 
-        // Solo letras, espacios y algunos caracteres especiales
         val namePattern = Pattern.compile("^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\\s\\-']+$")
         if (!namePattern.matcher(name).matches()) {
             return ValidationResult.error("$fieldName contiene caracteres no válidos")
@@ -111,18 +98,12 @@ object ValidationUtils {
         return ValidationResult.success()
     }
 
-    /**
-     * Valida apellidos
-     */
     fun validateLastName(lastName: String?): ValidationResult {
         return validateName(lastName, "Apellidos")
     }
 
     // ========== VALIDACIONES DE TELÉFONO ==========
 
-    /**
-     * Valida número de teléfono peruano
-     */
     fun validatePhone(phone: String?): ValidationResult {
         if (phone.isNullOrBlank()) {
             return ValidationResult.error("El teléfono es requerido")
@@ -136,9 +117,6 @@ object ValidationUtils {
         return ValidationResult.success()
     }
 
-    /**
-     * Valida teléfono opcional
-     */
     fun validateOptionalPhone(phone: String?): ValidationResult {
         if (phone.isNullOrBlank()) {
             return ValidationResult.success()
@@ -149,9 +127,6 @@ object ValidationUtils {
 
     // ========== VALIDACIONES ACADÉMICAS ==========
 
-    /**
-     * Valida ciclo académico
-     */
     fun validateCycle(cycle: Int?): ValidationResult {
         if (cycle == null) {
             return ValidationResult.error("El ciclo es requerido")
@@ -164,9 +139,6 @@ object ValidationUtils {
         return ValidationResult.success()
     }
 
-    /**
-     * Valida ID de carrera
-     */
     fun validateCarreraId(carreraId: Long?): ValidationResult {
         if (carreraId == null || carreraId <= 0) {
             return ValidationResult.error("Debe seleccionar una carrera")
@@ -175,9 +147,6 @@ object ValidationUtils {
         return ValidationResult.success()
     }
 
-    /**
-     * Valida código de aula
-     */
     fun validateAulaCode(code: String?): ValidationResult {
         if (code.isNullOrBlank()) {
             return ValidationResult.error("El código de aula es requerido")
@@ -193,9 +162,6 @@ object ValidationUtils {
 
     // ========== VALIDACIONES DE CONTENIDO ==========
 
-    /**
-     * Valida título de anuncio
-     */
     fun validateAnuncioTitle(title: String?): ValidationResult {
         if (title.isNullOrBlank()) {
             return ValidationResult.error("El título es requerido")
@@ -208,9 +174,6 @@ object ValidationUtils {
         return ValidationResult.success()
     }
 
-    /**
-     * Valida contenido de anuncio
-     */
     fun validateAnuncioContent(content: String?): ValidationResult {
         if (content.isNullOrBlank()) {
             return ValidationResult.error("El contenido es requerido")
@@ -223,9 +186,6 @@ object ValidationUtils {
         return ValidationResult.success()
     }
 
-    /**
-     * Valida mensaje corto
-     */
     fun validateMessage(message: String?): ValidationResult {
         if (message.isNullOrBlank()) {
             return ValidationResult.error("El mensaje es requerido")
@@ -240,11 +200,8 @@ object ValidationUtils {
 
     // ========== VALIDACIONES DE ARCHIVOS ==========
 
-    /**
-     * Valida tamaño de archivo
-     */
     fun validateFileSize(sizeBytes: Long): ValidationResult {
-        val maxSizeBytes = AppConfig.Validation.MAX_FILE_SIZE_MB * 1024 * 1024
+        val maxSizeBytes = Constants.Validation.MAX_FILE_SIZE_MB * 1024 * 1024
 
         if (sizeBytes > maxSizeBytes) {
             return ValidationResult.error(Constants.ErrorMessages.IMAGE_TOO_LARGE)
@@ -253,15 +210,12 @@ object ValidationUtils {
         return ValidationResult.success()
     }
 
-    /**
-     * Valida tipo de imagen
-     */
     fun validateImageType(mimeType: String?): ValidationResult {
         if (mimeType.isNullOrBlank()) {
             return ValidationResult.error("Tipo de archivo no detectado")
         }
 
-        if (!AppConfig.Validation.ALLOWED_IMAGE_TYPES.contains(mimeType)) {
+        if (!Constants.Validation.ALLOWED_IMAGE_TYPES.contains(mimeType)) {
             return ValidationResult.error(Constants.ErrorMessages.INVALID_IMAGE_FORMAT)
         }
 
@@ -270,9 +224,6 @@ object ValidationUtils {
 
     // ========== VALIDACIONES COMPUESTAS ==========
 
-    /**
-     * Valida datos completos de registro
-     */
     fun validateRegistrationData(
         name: String?,
         lastName: String?,
@@ -293,9 +244,6 @@ object ValidationUtils {
         return ValidationResult.success("Datos válidos")
     }
 
-    /**
-     * Valida datos de login
-     */
     fun validateLoginData(email: String?, password: String?): ValidationResult {
         validateInstitutionalEmail(email).takeIf { !it.isValid }?.let { return it }
         validatePassword(password).takeIf { !it.isValid }?.let { return it }
@@ -303,9 +251,6 @@ object ValidationUtils {
         return ValidationResult.success()
     }
 
-    /**
-     * Valida datos de perfil para actualización
-     */
     fun validateProfileUpdate(
         name: String?,
         lastName: String?,
@@ -321,11 +266,6 @@ object ValidationUtils {
         return ValidationResult.success("Datos de perfil válidos")
     }
 
-    // ========== CLASE DE RESULTADO ==========
-
-    /**
-     * Resultado de validación
-     */
     data class ValidationResult(
         val isValid: Boolean,
         val message: String? = null
@@ -336,11 +276,6 @@ object ValidationUtils {
         }
     }
 
-    // ========== EXTENSIONES ÚTILES ==========
-
-    /**
-     * Extensión para validar múltiples campos
-     */
     fun validateAll(vararg validations: ValidationResult): ValidationResult {
         validations.forEach { validation ->
             if (!validation.isValid) {
@@ -350,9 +285,6 @@ object ValidationUtils {
         return ValidationResult.success()
     }
 
-    /**
-     * Extensión para validar con acción personalizada
-     */
     inline fun validateCustom(condition: Boolean, lazyMessage: () -> String): ValidationResult {
         return if (condition) {
             ValidationResult.success()

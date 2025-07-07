@@ -1,8 +1,10 @@
 package com.rodriguez.manuel.teckbookmovil.data.models.common
+
 import com.google.gson.annotations.SerializedName
 
 /**
- * Respuesta paginada genérica
+ * Respuesta paginada genérica.
+ * Compatible con backends que siguen la convención Spring Data Page.
  */
 data class PaginatedResponse<T>(
     @SerializedName("content")
@@ -29,31 +31,15 @@ data class PaginatedResponse<T>(
     @SerializedName("empty")
     val empty: Boolean
 ) {
-    /**
-     * Verifica si hay más páginas
-     */
-    fun hasNext(): Boolean {
-        return !last
-    }
+    /** Verifica si hay más páginas disponibles */
+    fun hasNext(): Boolean = !last
 
-    /**
-     * Verifica si hay página anterior
-     */
-    fun hasPrevious(): Boolean {
-        return !first
-    }
+    /** Verifica si hay una página anterior */
+    fun hasPrevious(): Boolean = !first
 
-    /**
-     * Obtiene el número de la siguiente página
-     */
-    fun getNextPage(): Int? {
-        return if (hasNext()) page + 1 else null
-    }
+    /** Obtiene el número de la siguiente página, o null si no hay */
+    fun getNextPage(): Int? = if (hasNext()) page + 1 else null
 
-    /**
-     * Obtiene el número de la página anterior
-     */
-    fun getPreviousPage(): Int? {
-        return if (hasPrevious()) page - 1 else null
-    }
+    /** Obtiene el número de la página anterior, o null si no hay */
+    fun getPreviousPage(): Int? = if (hasPrevious()) page - 1 else null
 }
